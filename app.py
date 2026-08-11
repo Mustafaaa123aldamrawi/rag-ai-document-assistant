@@ -85,7 +85,7 @@ if uploaded_file is not None:
             text_chunks = split_text_into_chunks(document_text)
 
             st.success(
-                f"Document processed successfully — "
+                f"Document processed successfully - "
                 f"{len(document_text):,} characters extracted."
             )
 
@@ -93,11 +93,11 @@ if uploaded_file is not None:
                 f"Document divided into {len(text_chunks)} text chunks."
             )
 
-         vector_store = create_vector_store(text_chunks)
+            vector_store = create_vector_store(text_chunks)
 
-st.success(
-    "Vector embeddings created successfully using Hugging Face."
-)
+            st.success(
+                "Vector embeddings created successfully using Hugging Face."
+            )
 
         else:
             st.warning(
@@ -106,7 +106,6 @@ st.success(
 
     except Exception as error:
         st.error(f"Error processing PDF: {error}")
-
 # Main interface
 st.subheader("💬 Ask Your Document")
 

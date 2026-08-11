@@ -166,7 +166,10 @@ Answer:
 
         with st.spinner("AI is analyzing the document..."):
             llm = load_llm()
-            result = llm(prompt)
+            result = llm(
+    prompt,
+    return_full_text=False
+)
 
         st.subheader("🤖 AI Answer")
         st.write(result[0]["generated_text"])

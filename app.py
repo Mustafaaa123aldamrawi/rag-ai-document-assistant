@@ -1,6 +1,9 @@
+import os
 import streamlit as st
 from pypdf import PdfReader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_openai import OpenAIEmbeddings
+from langchain_community.vectorstores import FAISS
 
 
 def extract_text_from_pdf(pdf_file):
@@ -26,6 +29,20 @@ def split_text_into_chunks(text):
     )
 
     return text_splitter.split_text(text)
+
+
+def create_vector_store(text_chunks):
+    """Create a FAISS vector store from document chunks."""
+    embeddings = OpenAIEmbeddings(
+        model="text-embedding-3-small"
+    )
+
+    vector_store = FAISS.from_texts(
+        text_chunks,
+        embedding=embeddings
+    )
+
+    return vector_store
 
 
 # Page configuration
@@ -58,6 +75,7 @@ with st.sidebar:
 # Process uploaded PDF
 document_text = ""
 text_chunks = []
+vector_store = None
 
 if uploaded_file is not None:
     try:
@@ -74,6 +92,17 @@ if uploaded_file is not None:
             st.info(
                 f"Document divided into {len(text_chunks)} text chunks."
             )
+
+            if os.getenv("OPENAI_API_KEY"):
+                vector_store = create_vector_store(text_chunks)
+
+                st.success(
+                    "Vector embeddings created successfully."
+                )
+            else:
+                st.warning(
+                    "OPENAI_API_KEY is not configured yet."
+                )
 
         else:
             st.warning(
@@ -101,8 +130,21 @@ if st.button("Ask AI"):
     elif not question:
         st.warning("Please enter a question.")
 
-    else:
-        st.info(
-            f"PDF processing and chunking are working. "
-            f"{len(text_chunks)} chunks are ready for vector embeddings."
+    elif vector_store is None:
+        st.warning(
+            "Vector database is not ready. Configure the OpenAI API key first."
         )
+
+    else:
+        relevant_documents = vector_store.similarity_search(
+            question,
+            k=4
+        )
+
+        st.success(
+            f"Retrieved {len(relevant_documents)} relevant document chunks."
+        )
+
+        for index, document in enumerate(relevant_documents, start=1):
+            with st.expander(f"Relevant Chunk {index}"):
+                st.write(document.page_content)

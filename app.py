@@ -47,7 +47,7 @@ def create_vector_store(text_chunks):
 def load_llm():
     """Load a lightweight local language model."""
     return pipeline(
-        "text2text-generation",
+        "text-generation",
         model="google/flan-t5-small",
         max_new_tokens=256
     )

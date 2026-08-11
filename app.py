@@ -1,5 +1,6 @@
 import streamlit as st
 from pypdf import PdfReader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 
 def extract_text_from_pdf(pdf_file):
@@ -14,6 +15,17 @@ def extract_text_from_pdf(pdf_file):
             text += page_text + "\n"
 
     return text
+
+
+def split_text_into_chunks(text):
+    """Split document text into smaller overlapping chunks."""
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1000,
+        chunk_overlap=200,
+        length_function=len
+    )
+
+    return text_splitter.split_text(text)
 
 
 # Page configuration
@@ -45,16 +57,24 @@ with st.sidebar:
 
 # Process uploaded PDF
 document_text = ""
+text_chunks = []
 
 if uploaded_file is not None:
     try:
         document_text = extract_text_from_pdf(uploaded_file)
 
         if document_text.strip():
+            text_chunks = split_text_into_chunks(document_text)
+
             st.success(
                 f"Document processed successfully — "
                 f"{len(document_text):,} characters extracted."
             )
+
+            st.info(
+                f"Document divided into {len(text_chunks)} text chunks."
+            )
+
         else:
             st.warning(
                 "No readable text was found in this PDF."
@@ -83,6 +103,6 @@ if st.button("Ask AI"):
 
     else:
         st.info(
-            "PDF text extraction is working. "
-            "RAG retrieval and AI answering will be added next."
+            f"PDF processing and chunking are working. "
+            f"{len(text_chunks)} chunks are ready for vector embeddings."
         )

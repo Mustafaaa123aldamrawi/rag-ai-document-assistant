@@ -154,7 +154,7 @@ if st.button("Ask AI"):
             document.page_content for document in relevant_documents
         )
 
-        prompt = f"""
+prompt = f"""
 Answer the question using only the document context below.
 
 Context:
@@ -166,9 +166,10 @@ Question:
 Answer:
 """
 
-        with st.spinner("AI is analyzing the document..."):
-            llm = load_llm()
-            result = llm(prompt)
+with st.spinner("AI is analyzing the document..."):
+    llm = load_llm()
+    result = llm(prompt)
 
-        st.subheader("🤖 AI Answer")
-        st.write(result[0]["generated_text"])
+st.subheader("🤖 AI Answer")
+st.write(result[0]["generated_text"])
+

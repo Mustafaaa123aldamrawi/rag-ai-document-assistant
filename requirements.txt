@@ -8,3 +8,4 @@ langchain-text-splitters
 langchain-huggingface
 sentence-transformers
 huggingface-hub
+torchvision

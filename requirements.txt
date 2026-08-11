@@ -2,7 +2,8 @@ streamlit
 pypdf
 langchain
 langchain-community
-langchain-openai
 faiss-cpu
 python-dotenv
 langchain-text-splitters
+langchain-huggingface
+sentence-transformers

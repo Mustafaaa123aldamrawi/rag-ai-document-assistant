@@ -1,8 +1,8 @@
-import os
+
 import streamlit as st
 from pypdf import PdfReader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_openai import OpenAIEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 
 
@@ -33,9 +33,9 @@ def split_text_into_chunks(text):
 
 def create_vector_store(text_chunks):
     """Create a FAISS vector store from document chunks."""
-    embeddings = OpenAIEmbeddings(
-        model="text-embedding-3-small"
-    )
+ embeddings = HuggingFaceEmbeddings(
+    model_name="sentence-transformers/all-MiniLM-L6-v2"
+)
 
     vector_store = FAISS.from_texts(
         text_chunks,
@@ -93,16 +93,11 @@ if uploaded_file is not None:
                 f"Document divided into {len(text_chunks)} text chunks."
             )
 
-            if os.getenv("OPENAI_API_KEY"):
-                vector_store = create_vector_store(text_chunks)
+         vector_store = create_vector_store(text_chunks)
 
-                st.success(
-                    "Vector embeddings created successfully."
-                )
-            else:
-                st.warning(
-                    "OPENAI_API_KEY is not configured yet."
-                )
+st.success(
+    "Vector embeddings created successfully using Hugging Face."
+)
 
         else:
             st.warning(

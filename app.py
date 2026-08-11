@@ -136,25 +136,25 @@ if st.button("Ask AI"):
             "Vector database is not ready. Configure the OpenAI API key first."
         )
 
-    else:
-        relevant_documents = vector_store.similarity_search(
-            question,
-            k=4
-        )
+   else:
+            relevant_documents = vector_store.similarity_search(
+                question,
+                k=4
+            )
 
-        st.success(
-            f"Retrieved {len(relevant_documents)} relevant document chunks."
-        )
+            st.success(
+                f"Retrieved {len(relevant_documents)} relevant document chunks."
+            )
 
-        for index, document in enumerate(relevant_documents, start=1):
-            with st.expander(f"Relevant Chunk {index}"):
-                st.write(document.page_content)
+            for index, document in enumerate(relevant_documents, start=1):
+                with st.expander(f"Relevant Chunk {index}"):
+                    st.write(document.page_content)
 
-   context = "\n\n".join(
-            document.page_content for document in relevant_documents
-        )
+            context = "\n\n".join(
+                document.page_content for document in relevant_documents
+            )
 
-prompt = f"""
+            prompt = f"""
 Answer the question using only the document context below.
 
 Context:
@@ -166,10 +166,9 @@ Question:
 Answer:
 """
 
-with st.spinner("AI is analyzing the document..."):
-    llm = load_llm()
-    result = llm(prompt)
+            with st.spinner("AI is analyzing the document..."):
+                llm = load_llm()
+                result = llm(prompt)
 
-st.subheader("🤖 AI Answer")
-st.write(result[0]["generated_text"])
-
+            st.subheader("🤖 AI Answer")
+            st.write(result[0]["generated_text"])

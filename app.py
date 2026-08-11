@@ -4,7 +4,7 @@ from pypdf import PdfReader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
-from transformers import pipeline
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 
 def extract_text_from_pdf(pdf_file):
     """Extract text from all pages of an uploaded PDF file."""
@@ -45,12 +45,13 @@ def create_vector_store(text_chunks):
     return vector_store
 @st.cache_resource
 def load_llm():
-    """Load a lightweight local language model."""
-    return pipeline(
-        "text-generation",
-        model="google/flan-t5-small",
-        max_new_tokens=256
-    )
+    """Load the FLAN-T5 tokenizer and model."""
+    model_name = "google/flan-t5-small"
+
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+
+    return tokenizer, model
 
 # Page configuration
 st.set_page_config(
@@ -165,12 +166,25 @@ Answer:
 """
 
         with st.spinner("AI is analyzing the document..."):
-            llm = load_llm()
-            result = llm(
-    prompt,
-    return_full_text=False
-)
+            tokenizer, model = load_llm()
+
+            inputs = tokenizer(
+                prompt,
+                return_tensors="pt",
+                truncation=True,
+                max_length=512
+            )
+
+            outputs = model.generate(
+                **inputs,
+                max_new_tokens=128
+            )
+
+            answer = tokenizer.decode(
+                outputs[0],
+                skip_special_tokens=True
+            )
 
         st.subheader("🤖 AI Answer")
-        st.write(result[0]["generated_text"])
+        st.write(answer)
            

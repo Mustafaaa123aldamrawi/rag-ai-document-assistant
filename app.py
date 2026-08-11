@@ -4,7 +4,7 @@ from pypdf import PdfReader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
-
+from transformers import pipeline
 
 def extract_text_from_pdf(pdf_file):
     """Extract text from all pages of an uploaded PDF file."""
@@ -43,7 +43,14 @@ def create_vector_store(text_chunks):
     )
 
     return vector_store
-
+@st.cache_resource
+def load_llm():
+    """Load a lightweight local language model."""
+    return pipeline(
+        "text2text-generation",
+        model="google/flan-t5-small",
+        max_new_tokens=256
+    )
 
 # Page configuration
 st.set_page_config(
@@ -142,3 +149,26 @@ if st.button("Ask AI"):
         for index, document in enumerate(relevant_documents, start=1):
             with st.expander(f"Relevant Chunk {index}"):
                 st.write(document.page_content)
+
+    context = "\n\n".join(
+                document.page_content for document in relevant_documents
+            )
+    
+            prompt = f"""
+    Answer the question using only the document context below.
+    
+    Context:
+    {context}
+    
+    Question:
+    {question}
+    
+    Answer:
+    """
+    
+            with st.spinner("AI is analyzing the document..."):
+                llm = load_llm()
+                result = llm(prompt)
+    
+            st.subheader("🤖 AI Answer")
+            st.write(result[0]["generated_text"])

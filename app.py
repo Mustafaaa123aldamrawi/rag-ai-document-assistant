@@ -154,9 +154,19 @@ if st.button("Ask AI"):
         )
 
         prompt = f"""
-Answer the question using only the document context below.
+You are a precise document question-answering assistant.
 
-Context:
+Use ONLY the information in the provided document context.
+
+Rules:
+- Answer only what the user asked.
+- Do not include unrelated skills, technologies, job titles, or experience.
+- Do not guess or invent information.
+- If the answer is not clearly present in the context, say:
+  "The information was not found in the document."
+- Keep the answer clear and concise.
+
+Document context:
 {context}
 
 Question:

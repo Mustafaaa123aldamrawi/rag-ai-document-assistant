@@ -150,25 +150,25 @@ if st.button("Ask AI"):
             with st.expander(f"Relevant Chunk {index}"):
                 st.write(document.page_content)
 
-    context = "\n\n".join(
-                document.page_content for document in relevant_documents
-            )
-    
-            prompt = f"""
-    Answer the question using only the document context below.
-    
-    Context:
-    {context}
-    
-    Question:
-    {question}
-    
-    Answer:
-    """
-    
-            with st.spinner("AI is analyzing the document..."):
-                llm = load_llm()
-                result = llm(prompt)
-    
-            st.subheader("🤖 AI Answer")
-            st.write(result[0]["generated_text"])
+   context = "\n\n".join(
+            document.page_content for document in relevant_documents
+        )
+
+        prompt = f"""
+Answer the question using only the document context below.
+
+Context:
+{context}
+
+Question:
+{question}
+
+Answer:
+"""
+
+        with st.spinner("AI is analyzing the document..."):
+            llm = load_llm()
+            result = llm(prompt)
+
+        st.subheader("🤖 AI Answer")
+        st.write(result[0]["generated_text"])

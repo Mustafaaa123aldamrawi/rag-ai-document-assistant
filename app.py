@@ -206,17 +206,17 @@ if st.button("Ask AI"):
                     if len(word.strip(".,?!:;\"'")) > 5
                 ]
         
-                relevant_documents = sorted(
-                    relevant_documents,
-                    key=lambda doc: sum(
-                        keyword in doc.page_content.lower()
-                        for keyword in question_keywords
-                    ),
-                    reverse=True
-                )
+        relevant_documents = sorted(
+            relevant_documents,
+            key=lambda doc: sum(
+                keyword in doc.page_content.lower()
+                for keyword in question_keywords
+            ),
+            reverse=True
+        )
         st.success(
             f"Retrieved {len(relevant_documents)} relevant document chunks."
-        )
+            )
 
     
         for index, document in enumerate(relevant_documents, start=1):

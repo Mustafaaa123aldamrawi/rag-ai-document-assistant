@@ -200,7 +200,20 @@ if st.button("Ask AI"):
                 question,
                 k=4
             )
-
+        question_keywords = [
+                    word.lower().strip(".,?!:;\"'")
+                    for word in question.split()
+                    if len(word.strip(".,?!:;\"'")) > 5
+                ]
+        
+                relevant_documents = sorted(
+                    relevant_documents,
+                    key=lambda doc: sum(
+                        keyword in doc.page_content.lower()
+                        for keyword in question_keywords
+                    ),
+                    reverse=True
+                )
         st.success(
             f"Retrieved {len(relevant_documents)} relevant document chunks."
         )

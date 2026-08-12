@@ -238,6 +238,7 @@ Use ONLY the information in the provided document context.
 Rules:
 - Carefully search the entire provided context before answering.
 - Answer only what the user asked.
+- When the user asks for a specific category, return only items from that category and exclude content from neighboring sections.
 - Do not include unrelated skills, technologies, job titles, or experience.
 - Do not guess or invent information.
 - If the answer is not clearly present in the context, say:

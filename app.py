@@ -106,7 +106,7 @@ with st.sidebar:
 )
 
     if uploaded_files:
-    st.success(f"{len(uploaded_files)} PDF file(s) uploaded successfully!")
+        st.success(f"{len(uploaded_files)} PDF file(s) uploaded successfully!")
 
 # Process uploaded PDF
 document_pages = []
@@ -153,10 +153,10 @@ question = st.text_input(
 
 if st.button("Ask AI"):
     if not uploaded_files:
-        st.warning("Please upload a PDF document first.")
+        st.warning("Please upload at least one PDF document first.")
 
     elif not document_pages:
-        st.warning("The uploaded PDF does not contain readable text.")
+        st.warning("The uploaded PDF files do not contain readable text.")
 
     elif not question:
         st.warning("Please enter a question.")

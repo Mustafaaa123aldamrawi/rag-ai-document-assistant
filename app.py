@@ -229,6 +229,7 @@ if st.button("Ask AI"):
         context = "\n\n".join(
             document.page_content for document in relevant_documents
         )
+        direct_answer = None
         if "certification" in question.lower():
             context_lower = context.lower()
             start = context_lower.find("certifications & training")
@@ -239,6 +240,7 @@ if st.button("Ask AI"):
                     context = context[start:end]
                 else:
                     context = context[start:]
+                direct_answer = context.replace("Certifications & Training", "").strip()    
         prompt = f"""
 You are a precise document question-answering assistant.
 
@@ -283,7 +285,8 @@ Answer:
                 outputs[0],
                 skip_special_tokens=True
             )
-           
+           if direct_answer is not None:
+                answer = direct_answer
             st.subheader("🤖 AI Answer")
             st.write(answer)
            

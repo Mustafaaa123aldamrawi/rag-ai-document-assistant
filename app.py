@@ -226,7 +226,7 @@ if st.button("Ask AI"):
             )
         else:
             search_results = vector_store.similarity_search_with_score(
-                question,st.write("DEBUG SEARCH RESULTS")
+                question,
                 k=8
             )
         st.write("DEBUG SEARCH RESULTS")

@@ -53,7 +53,10 @@ def create_vector_store(text_chunks):
         model_name="sentence-transformers/all-MiniLM-L6-v2"
     )
 
-    texts = [chunk["text"] for chunk in text_chunks]
+    texts = [
+    f"Source: {chunk['source']}\nPage: {chunk['page_number']}\n{chunk['text']}"
+    for chunk in text_chunks
+]
 
     metadatas = [
         {
@@ -165,23 +168,51 @@ if st.button("Ask AI"):
         st.warning("Vector database is not ready.")
 
     else:
-        relevant_documents = vector_store.similarity_search(
-            question,
-            k=4
-        )
+        question_lower = question.lower()
+        matched_source = None
+        
+        for uploaded_file in uploaded_files:
+            source_name = uploaded_file.name
+            source_words = (
+                source_name
+                .replace(".pdf", "")
+                .replace("_", " ")
+                .replace("-", " ")
+                .lower()
+                .split()
+            )
+        
+            if any(
+                len(word) > 2 and word in question_lower
+                for word in source_words
+            ):
+                matched_source = source_name
+                break
+        
+        if matched_source:
+            relevant_documents = vector_store.similarity_search(
+                question,
+                k=4,
+                filter={"source": matched_source}
+            )
+        else:
+            relevant_documents = vector_store.similarity_search(
+                question,
+                k=4
+            )
 
         st.success(
             f"Retrieved {len(relevant_documents)} relevant document chunks."
         )
 
     
-    for index, document in enumerate(relevant_documents, start=1):
-        source = document.metadata.get("source", "Unknown source")
-        page_number = document.metadata.get("page_number", "Unknown page")
+        for index, document in enumerate(relevant_documents, start=1):
+            source = document.metadata.get("source", "Unknown source")
+            page_number = document.metadata.get("page_number", "Unknown page")
 
-    with st.expander(f"Relevant Chunk {index}"):
-        st.write(f"Source: {source} | Page: {page_number}")
-        st.write(document.page_content)
+        with st.expander(f"Relevant Chunk {index}"):
+            st.write(f"Source: {source} | Page: {page_number}")
+            st.write(document.page_content)
 
         context = "\n\n".join(
             document.page_content for document in relevant_documents

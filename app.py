@@ -229,6 +229,17 @@ if st.button("Ask AI"):
         context = "\n\n".join(
             document.page_content for document in relevant_documents
         )
+        if "certification" in question.lower():
+            context_lower = context.lower()
+        
+            start = context_lower.find("certifications & training")
+            end = context_lower.find("languages", start)
+        
+            if start != -1:
+                if end != -1:
+                    context = context[start:end]
+                else:
+                    context = context[start:]
 
         prompt = f"""
 You are a precise document question-answering assistant.

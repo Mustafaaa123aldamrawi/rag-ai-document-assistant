@@ -242,6 +242,26 @@ if st.button("Ask AI"):
         context = "\n\n".join(
             document.page_content for document in relevant_documents
         )
+        question_terms = [
+            word.lower().strip(".,?!:;()[]{}")
+            for word in question.split()
+            if len(word.strip(".,?!:;()[]{}")) >= 3
+        ]
+        
+        context_lower = context.lower()
+        
+        important_terms = [
+            term for term in question_terms
+            if term not in {
+                "does", "have", "has", "what", "which", "with",
+                "mustafa", "certification", "certifications"
+            }
+        ]
+        
+        if important_terms and not any(term in context_lower for term in important_terms):
+            st.subheader("🤖 AI Answer")
+            st.write("The information was not found in the document.")
+            st.stop()
         direct_answer = None
         if "certification" in question.lower():
             context_lower = context.lower()

@@ -258,7 +258,13 @@ if st.button("Ask AI"):
             if len(word.strip(".,?!:;()[]{}\"'")) >= 3
             and word.lower().strip(".,?!:;()[]{}\"'") not in STOP_WORDS
         ]
+        # Detect verification questions that require explicit evidence
+        verification_starters = (
+            "does ", "do ", "did ", "is ", "are ",
+            "has ", "have ", "had ", "can ", "could "
+        )
         
+        is_verification_question = question_lower.startswith(verification_starters)
         evidence_documents = []
         
         for document, score in search_results:
@@ -281,10 +287,21 @@ if st.button("Ask AI"):
         )
         
         relevant_documents = [
-            document
-            for document, score, keyword_matches in evidence_documents
-            if keyword_matches > 0 or score <= 1.10
-        ]
+        document
+        for document, score, keyword_matches in evidence_documents
+        if (
+            (
+                is_verification_question
+                and len(question_keywords) > 0
+                and keyword_matches == len(question_keywords)
+            )
+            or
+            (
+                not is_verification_question
+                and (keyword_matches > 0 or score <= 1.10)
+            )
+        )
+    ]
         # Neighbor Expansion
         # Add the previous and next chunk from the same source/page
         # so information split across chunk boundaries is not lost.

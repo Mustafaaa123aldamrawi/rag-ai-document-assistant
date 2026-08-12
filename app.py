@@ -273,37 +273,37 @@ Answer:
                 outputs[0],
                 skip_special_tokens=True
             )
-            cleanup_prompt = f"""
-Question:
-{question}
-
-Draft answer:
-{answer}
-
-Return only the information that directly answers the question.
-Remove unrelated categories, neighboring section content, headings, and extra details.
-Do not add new information.
-
-Final answer:
-"""
-
-cleanup_inputs = tokenizer(
-    cleanup_prompt,
-    return_tensors="pt",
-    truncation=True,
-    max_length=512
-)
-
-cleanup_outputs = model.generate(
-    **cleanup_inputs,
-    max_new_tokens=256
-)
-
-answer = tokenizer.decode(
-    cleanup_outputs[0],
-    skip_special_tokens=True
-)
-
-st.subheader("🤖 AI Answer")
-st.write(answer)
+                        cleanup_prompt = f"""
+            Question:
+            {question}
+            
+            Draft answer:
+            {answer}
+            
+            Return only the information that directly answers the question.
+            Remove unrelated categories, neighboring section content, headings, and extra details.
+            Do not add new information.
+            
+            Final answer:
+            """
+            
+            cleanup_inputs = tokenizer(
+                cleanup_prompt,
+                return_tensors="pt",
+                truncation=True,
+                max_length=512
+            )
+            
+            cleanup_outputs = model.generate(
+                **cleanup_inputs,
+                max_new_tokens=256
+            )
+            
+            answer = tokenizer.decode(
+                cleanup_outputs[0],
+                skip_special_tokens=True
+            )
+            
+            st.subheader("🤖 AI Answer")
+            st.write(answer)
            

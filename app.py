@@ -240,7 +240,12 @@ if st.button("Ask AI"):
                     context = context[start:end]
                 else:
                     context = context[start:]
-                direct_answer = context.replace("Certifications & Training", "").strip()    
+                direct_answer = context.replace("Certifications & Training", "").strip()
+
+                direct_answer = direct_answer.replace(
+                    "Source: Mustafa_CV.pdf Page: 1 Solutions",
+                    "Solutions"
+                ).strip()    
         prompt = f"""
 You are a precise document question-answering assistant.
 

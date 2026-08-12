@@ -358,7 +358,11 @@ Answer:
 
             outputs = model.generate(
                 **inputs,
-                max_new_tokens=256
+                max_new_tokens=128,
+                num_beams=4,
+                do_sample=False,
+                no_repeat_ngram_size=3,
+                early_stopping=True
             )
 
             answer = tokenizer.decode(

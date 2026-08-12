@@ -322,20 +322,20 @@ if st.button("Ask AI"):
                 direct_answer = direct_answer.replace("Page: 1", "")
                 direct_answer = " ".join(direct_answer.split())    
         prompt = f"""
-You are a precise document question-answering assistant.
+Answer the question using only the document context below.
 
-Use ONLY the information in the provided document context.
-
-Rules:
-- Carefully search the entire provided context before answering.
-- Answer only what the user asked.
-- If the user asks for a list of items, include ALL matching items found anywhere in the provided context. Do not stop after the first few items.
-- When the user asks for a specific category, return only items from that category and exclude content from neighboring sections.
-- Do not include unrelated skills, technologies, job titles, or experience.
-- Do not guess or invent information.
-- If the answer is not clearly present in the context, say:
-  "The information was not found in the document."
-- Keep the answer clear and concise.
+Instructions:
+- Read the document context carefully.
+- Identify the main purpose of the document.
+- Answer the exact question asked.
+- For questions asking what a document, letter, report, or file is about, summarize its main purpose and the key fact it communicates.
+- Prefer specific facts, names, programs, degrees, dates, products, and actions stated in the document.
+- If the question asks for a list, include all matching items found in the context.
+- Do not add information that is not in the document.
+- Do not guess.
+- If the answer cannot be found in the context, answer exactly:
+"The information was not found in the document."
+- Keep the answer clear, factual, and concise.
 
 Document context:
 {context}

@@ -351,17 +351,22 @@ if st.button("Ask AI"):
                 direct_answer = direct_answer.replace("Source: Mustafa_CV.pdf", "")
                 direct_answer = direct_answer.replace("Page: 1", "")
                 direct_answer = " ".join(direct_answer.split())    
-        prompt = f"""
-            Based only on the document below, answer the question.
-            
-            Document:
-            {context}
-            
-            Question:
-            {question}
-            
-            Answer:
-            """
+        if is_summary_question:
+            prompt = f"""
+        summarize: {context}
+        """
+        else:
+            prompt = f"""
+        Based only on the document below, answer the question.
+        
+        Document:
+        {context}
+        
+        Question:
+        {question}
+        
+        Answer:
+        """
 
         with st.spinner("AI is analyzing the document..."):
             tokenizer, model = load_llm()

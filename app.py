@@ -273,7 +273,7 @@ Answer:
                 outputs[0],
                 skip_special_tokens=True
             )
-                        cleanup_prompt = f"""
+            cleanup_prompt = f"""
             Question:
             {question}
             

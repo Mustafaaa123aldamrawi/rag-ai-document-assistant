@@ -304,6 +304,6 @@ answer = tokenizer.decode(
     skip_special_tokens=True
 )
 
-        st.subheader("🤖 AI Answer")
-        st.write(answer)
+st.subheader("🤖 AI Answer")
+st.write(answer)
            

@@ -249,7 +249,9 @@ if st.button("Ask AI"):
         ]
         
         context_lower = context.lower()
-        
+        full_document_text = "\n".join(
+            page["text"] for page in document_pages
+        ).lower()
         important_terms = [
             term for term in question_terms
             if term not in {
@@ -258,7 +260,7 @@ if st.button("Ask AI"):
             }
         ]
         
-        if important_terms and not any(term in context_lower for term in important_terms):
+        if important_terms and not any(term in full_document_text for term in important_terms):
             st.subheader("🤖 AI Answer")
             st.write("The information was not found in the document.")
             st.stop()

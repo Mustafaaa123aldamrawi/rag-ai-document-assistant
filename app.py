@@ -285,7 +285,7 @@ Answer:
                 outputs[0],
                 skip_special_tokens=True
             )
-           if direct_answer is not None:
+            if direct_answer is not None:
                 answer = direct_answer
             st.subheader("🤖 AI Answer")
             st.write(answer)

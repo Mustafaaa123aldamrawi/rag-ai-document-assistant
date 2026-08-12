@@ -192,7 +192,7 @@ if st.button("Ask AI"):
         if matched_source:
             relevant_documents = vector_store.similarity_search(
                 question,
-                k=8,
+                k=12,
                 filter={"source": matched_source}
             )
         else:

@@ -274,7 +274,7 @@ if st.button("Ask AI"):
         relevant_documents = [
             document
             for document, score, keyword_matches in evidence_documents
-            if keyword_matches > 0
+            if keyword_matches > 0 or score <= 0.85
         ]
         # Neighbor Expansion
         # Add the previous and next chunk from the same source/page

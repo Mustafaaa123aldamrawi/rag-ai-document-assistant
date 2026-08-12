@@ -188,6 +188,10 @@ if st.button("Ask AI"):
             "summarize this report",
             "summarize the report",
             "give me a summary",
+            "purpose of the document",
+            "purpose of the letter",
+            "purpose of the report",
+            "purpose of the file",
             "main purpose",
             "main topic"
         ]

@@ -38,12 +38,12 @@ def split_text_into_chunks(pages):
         page_chunks = text_splitter.split_text(page["text"])
 
         for chunk_index, chunk in enumerate(page_chunks):
-        chunks.append({
-            "text": chunk,
-            "page_number": page["page_number"],
-            "source": page["source"],
-            "chunk_index": chunk_index
-        })
+            chunks.append({
+                "text": chunk,
+                "page_number": page["page_number"],
+                "source": page["source"],
+                "chunk_index": chunk_index
+            })
 
     return chunks
 

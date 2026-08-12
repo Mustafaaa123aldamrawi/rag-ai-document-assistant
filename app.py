@@ -7,39 +7,66 @@ from langchain_community.vectorstores import FAISS
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 
 def extract_text_from_pdf(pdf_file):
-    """Extract text from all pages of an uploaded PDF file."""
+    """Extract text page by page and preserve page numbers."""
     reader = PdfReader(pdf_file)
-    text = ""
-
-    for page in reader.pages:
+    pages = []
+source_name = getattr(pdf_file, "name", "Uploaded PDF")
+    for page_number, page in enumerate(reader.pages, start=1):
         page_text = page.extract_text()
 
         if page_text:
-            text += page_text + "\n"
+            pages.append({
+    "page_number": page_number,
+    "source": source_name,
+    "text": page_text
+})
 
-    return text
+    return pages
 
 
-def split_text_into_chunks(text):
-    """Split document text into smaller overlapping chunks."""
+def split_text_into_chunks(pages):
+    """Split each PDF page into chunks while preserving page numbers."""
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=1000,
         chunk_overlap=200,
         length_function=len
     )
 
-    return text_splitter.split_text(text)
+    chunks = []
+
+    for page in pages:
+        page_chunks = text_splitter.split_text(page["text"])
+
+        for chunk in page_chunks:
+            chunks.append({
+    "text": chunk,
+    "page_number": page["page_number"],
+    "source": page["source"]
+})
+
+    return chunks
 
 
 def create_vector_store(text_chunks):
-    """Create a FAISS vector store from document chunks."""
+    """Create a FAISS vector store while preserving source metadata."""
     embeddings = HuggingFaceEmbeddings(
         model_name="sentence-transformers/all-MiniLM-L6-v2"
     )
 
+    texts = [chunk["text"] for chunk in text_chunks]
+
+    metadatas = [
+        {
+            "page_number": chunk["page_number"],
+            "source": chunk["source"]
+        }
+        for chunk in text_chunks
+    ]
+
     vector_store = FAISS.from_texts(
-        text_chunks,
-        embedding=embeddings
+        texts,
+        embedding=embeddings,
+        metadatas=metadatas
     )
 
     return vector_store
@@ -81,20 +108,20 @@ with st.sidebar:
         st.success("PDF uploaded successfully!")
 
 # Process uploaded PDF
-document_text = ""
+document_pages = []
 text_chunks = []
 vector_store = None
 
 if uploaded_file is not None:
     try:
-        document_text = extract_text_from_pdf(uploaded_file)
+        document_pages = extract_text_from_pdf(uploaded_file)
 
-        if document_text.strip():
-            text_chunks = split_text_into_chunks(document_text)
+if document_pages:
+    text_chunks = split_text_into_chunks(document_pages)
 
             st.success(
                 f"Document processed successfully - "
-                f"{len(document_text):,} characters extracted."
+                f"{sum(len(page['text']) for page in document_pages):,} characters extracted."
             )
 
             st.info(
@@ -126,7 +153,7 @@ if st.button("Ask AI"):
     if uploaded_file is None:
         st.warning("Please upload a PDF document first.")
 
-    elif not document_text.strip():
+    elif not document_pages:
         st.warning("The uploaded PDF does not contain readable text.")
 
     elif not question:
@@ -145,9 +172,14 @@ if st.button("Ask AI"):
             f"Retrieved {len(relevant_documents)} relevant document chunks."
         )
 
-        for index, document in enumerate(relevant_documents, start=1):
-            with st.expander(f"Relevant Chunk {index}"):
-                st.write(document.page_content)
+    
+    for index, document in enumerate(relevant_documents, start=1):
+        source = document.metadata.get("source", "Unknown source")
+        page_number = document.metadata.get("page_number", "Unknown page")
+
+    with st.expander(f"Relevant Chunk {index}"):
+        st.write(f"Source: {source} | Page: {page_number}")
+        st.write(document.page_content)
 
         context = "\n\n".join(
             document.page_content for document in relevant_documents

@@ -200,32 +200,57 @@ if st.button("Ask AI"):
                 k=8
             )
         
-        # Keep only chunks with reasonable semantic relevance.
-        # FAISS returns distance: lower score = better match.
+        # Evidence Filtering v2
+        # FAISS distance: lower score = better semantic match.
         RELEVANCE_THRESHOLD = 1.20
+        
+        # Common question words that should not be treated as evidence.
+        STOP_WORDS = {
+            "what", "which", "who", "where", "when", "why", "how",
+            "does", "do", "did", "have", "has", "had", "is", "are",
+            "was", "were", "the", "a", "an", "and", "or", "of", "in",
+            "on", "for", "to", "with", "from", "about",
+            "mustafa"
+        }
+        
+        question_keywords = [
+            word.lower().strip(".,?!:;()[]{}\"'")
+            for word in question.split()
+            if len(word.strip(".,?!:;()[]{}\"'")) >= 3
+            and word.lower().strip(".,?!:;()[]{}\"'") not in STOP_WORDS
+        ]
+        
+        evidence_documents = []
+        
+        for document, score in search_results:
+            if score <= RELEVANCE_THRESHOLD:
+                document_text = document.page_content.lower()
+        
+                keyword_matches = sum(
+                    1 for keyword in question_keywords
+                    if keyword in document_text
+                )
+        
+                evidence_documents.append(
+                    (document, score, keyword_matches)
+                )
+        
+        # Prefer chunks that contain question evidence,
+        # then use semantic distance as the secondary ranking.
+        evidence_documents.sort(
+            key=lambda item: (-item[2], item[1])
+        )
         
         relevant_documents = [
             document
-            for document, score in search_results
-            if score <= RELEVANCE_THRESHOLD
+            for document, score, keyword_matches in evidence_documents
+            if keyword_matches > 0
         ]
-        question_keywords = [
-            word.lower().strip(".,?!:;\"'")
-            for word in question.split()
-            if len(word.strip(".,?!:;\"'")) > 5
-        ]
+        
         if not relevant_documents:
             st.subheader("🤖 AI Answer")
             st.write("The information was not found in the document.")
             st.stop()
-        relevant_documents = sorted(
-            relevant_documents,
-            key=lambda doc: sum(
-                keyword in doc.page_content.lower()
-                for keyword in question_keywords
-            ),
-            reverse=True
-        )
         st.success(
             f"Retrieved {len(relevant_documents)} relevant document chunks."
             )

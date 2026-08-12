@@ -37,12 +37,13 @@ def split_text_into_chunks(pages):
     for page in pages:
         page_chunks = text_splitter.split_text(page["text"])
 
-        for chunk in page_chunks:
-            chunks.append({
-    "text": chunk,
-    "page_number": page["page_number"],
-    "source": page["source"]
-})
+        for chunk_index, chunk in enumerate(page_chunks):
+        chunks.append({
+            "text": chunk,
+            "page_number": page["page_number"],
+            "source": page["source"],
+            "chunk_index": chunk_index
+        })
 
     return chunks
 
@@ -61,7 +62,8 @@ def create_vector_store(text_chunks):
     metadatas = [
         {
             "page_number": chunk["page_number"],
-            "source": chunk["source"]
+            "source": chunk["source"],
+            "chunk_index": chunk["chunk_index"]
         }
         for chunk in text_chunks
     ]
@@ -246,7 +248,44 @@ if st.button("Ask AI"):
             for document, score, keyword_matches in evidence_documents
             if keyword_matches > 0
         ]
+        # Neighbor Expansion
+        # Add the previous and next chunk from the same source/page
+        # so information split across chunk boundaries is not lost.
         
+        expanded_texts = []
+        seen_chunks = set()
+        
+        for document in relevant_documents:
+            source = document.metadata.get("source")
+            page_number = document.metadata.get("page_number")
+            chunk_index = document.metadata.get("chunk_index")
+        
+            for neighbor_index in (
+                chunk_index - 1,
+                chunk_index,
+                chunk_index + 1
+            ):
+                for chunk in text_chunks:
+                    if (
+                        chunk["source"] == source
+                        and chunk["page_number"] == page_number
+                        and chunk["chunk_index"] == neighbor_index
+                    ):
+                        chunk_key = (
+                            chunk["source"],
+                            chunk["page_number"],
+                            chunk["chunk_index"]
+                        )
+        
+                        if chunk_key not in seen_chunks:
+                            expanded_texts.append(
+                                f"Source: {chunk['source']} | "
+                                f"Page: {chunk['page_number']}\n"
+                                f"{chunk['text']}"
+                            )
+                            seen_chunks.add(chunk_key)
+        
+                        break
         if not relevant_documents:
             st.subheader("🤖 AI Answer")
             st.write("The information was not found in the document.")
@@ -264,42 +303,8 @@ if st.button("Ask AI"):
                 st.write(f"Source: {source} | Page: {page_number}")
                 st.write(document.page_content)
 
-        context = "\n\n".join(
-            document.page_content for document in relevant_documents
-        )
-        question_terms = [
-            word.lower().strip(".,?!:;()[]{}")
-            for word in question.split()
-            if len(word.strip(".,?!:;()[]{}")) >= 3
-        ]
+        context = "\n\n".join(expanded_texts)
         
-        context_lower = context.lower()
-        full_document_text = "\n".join(
-            page["text"] for page in document_pages
-        ).lower()
-        full_document_words = set(
-            full_document_text
-            .replace(",", " ")
-            .replace(".", " ")
-            .replace(":", " ")
-            .replace(";", " ")
-            .replace("(", " ")
-            .replace(")", " ")
-            .replace("|", " ")
-            .split()
-        )
-        important_terms = [
-            term for term in question_terms
-            if term not in {
-                "does", "have", "has", "what", "which", "with",
-                "mustafa", "certification", "certifications"
-            }
-        ]
-        
-        if important_terms and not any(term in full_document_words for term in important_terms):
-            st.subheader("🤖 AI Answer")
-            st.write("The information was not found in the document.")
-            st.stop()
         direct_answer = None
         if "certification" in question.lower():
             context_lower = context.lower()

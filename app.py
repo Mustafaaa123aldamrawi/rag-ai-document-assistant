@@ -252,6 +252,17 @@ if st.button("Ask AI"):
         full_document_text = "\n".join(
             page["text"] for page in document_pages
         ).lower()
+        full_document_words = set(
+            full_document_text
+            .replace(",", " ")
+            .replace(".", " ")
+            .replace(":", " ")
+            .replace(";", " ")
+            .replace("(", " ")
+            .replace(")", " ")
+            .replace("|", " ")
+            .split()
+        )
         important_terms = [
             term for term in question_terms
             if term not in {
@@ -260,7 +271,7 @@ if st.button("Ask AI"):
             }
         ]
         
-        if important_terms and not any(term in full_document_text for term in important_terms):
+        if important_terms and not any(term in full_document_words for term in important_terms):
             st.subheader("🤖 AI Answer")
             st.write("The information was not found in the document.")
             st.stop()

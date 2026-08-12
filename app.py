@@ -99,23 +99,25 @@ st.write(
 with st.sidebar:
     st.header("📄 Document Upload")
 
-    uploaded_file = st.file_uploader(
-        "Upload a PDF file",
-        type=["pdf"]
-    )
+    uploaded_files = st.file_uploader(
+    "Upload PDF files",
+    type=["pdf"],
+    accept_multiple_files=True
+)
 
-    if uploaded_file is not None:
-        st.success("PDF uploaded successfully!")
+    if uploaded_files:
+    st.success(f"{len(uploaded_files)} PDF file(s) uploaded successfully!")
 
 # Process uploaded PDF
 document_pages = []
 text_chunks = []
 vector_store = None
 
-if uploaded_file is not None:
+if uploaded_files:
     try:
-        document_pages = extract_text_from_pdf(uploaded_file)
-
+        for uploaded_file in uploaded_files:
+            file_pages = extract_text_from_pdf(uploaded_file)
+            document_pages.extend(file_pages)
         if document_pages:
             text_chunks = split_text_into_chunks(document_pages)
 
@@ -150,7 +152,7 @@ question = st.text_input(
 )
 
 if st.button("Ask AI"):
-    if uploaded_file is None:
+    if not uploaded_files:
         st.warning("Please upload a PDF document first.")
 
     elif not document_pages:

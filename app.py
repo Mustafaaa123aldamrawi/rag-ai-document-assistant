@@ -322,29 +322,16 @@ if st.button("Ask AI"):
                 direct_answer = direct_answer.replace("Page: 1", "")
                 direct_answer = " ".join(direct_answer.split())    
         prompt = f"""
-Answer the question using only the document context below.
-
-Instructions:
-- Read the document context carefully.
-- Identify the main purpose of the document.
-- Answer the exact question asked.
-- For questions asking what a document, letter, report, or file is about, summarize its main purpose and the key fact it communicates.
-- Prefer specific facts, names, programs, degrees, dates, products, and actions stated in the document.
-- If the question asks for a list, include all matching items found in the context.
-- Do not add information that is not in the document.
-- Do not guess.
-- If the answer cannot be found in the context, answer exactly:
-"The information was not found in the document."
-- Keep the answer clear, factual, and concise.
-
-Document context:
-{context}
-
-Question:
-{question}
-
-Answer:
-"""
+            Based only on the document below, answer the question.
+            
+            Document:
+            {context}
+            
+            Question:
+            {question}
+            
+            Answer:
+            """
 
         with st.spinner("AI is analyzing the document..."):
             tokenizer, model = load_llm()

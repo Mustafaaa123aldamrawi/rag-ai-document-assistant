@@ -227,7 +227,7 @@ if st.button("Ask AI"):
                 st.write(document.page_content)
 
         context = "\n\n".join(
-            document.page_content for document in relevant_documents
+            document.page_content for document in relevant_documents[:3]
         )
         
         prompt = f"""

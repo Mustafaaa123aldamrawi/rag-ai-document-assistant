@@ -116,8 +116,8 @@ if uploaded_file is not None:
     try:
         document_pages = extract_text_from_pdf(uploaded_file)
 
-if document_pages:
-    text_chunks = split_text_into_chunks(document_pages)
+        if document_pages:
+            text_chunks = split_text_into_chunks(document_pages)
 
             st.success(
                 f"Document processed successfully - "

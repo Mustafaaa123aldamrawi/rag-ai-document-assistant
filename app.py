@@ -229,18 +229,7 @@ if st.button("Ask AI"):
         context = "\n\n".join(
             document.page_content for document in relevant_documents
         )
-        if "certification" in question.lower():
-            context_lower = context.lower()
         
-            start = context_lower.find("certifications & training")
-            end = context_lower.find("languages", start)
-        
-            if start != -1:
-                if end != -1:
-                    context = context[start:end]
-                else:
-                    context = context[start:]
-
         prompt = f"""
 You are a precise document question-answering assistant.
 
@@ -284,37 +273,7 @@ Answer:
                 outputs[0],
                 skip_special_tokens=True
             )
-            cleanup_prompt = f"""
-            Question:
-            {question}
-            
-            Draft answer:
-            {answer}
-            
-            Return only the information that directly answers the question.
-            Remove unrelated categories, neighboring section content, headings, and extra details.
-            Do not add new information.
-            
-            Final answer:
-            """
-            
-            cleanup_inputs = tokenizer(
-                cleanup_prompt,
-                return_tensors="pt",
-                truncation=True,
-                max_length=512
-            )
-            
-            cleanup_outputs = model.generate(
-                **cleanup_inputs,
-                max_new_tokens=256
-            )
-            
-            answer = tokenizer.decode(
-                cleanup_outputs[0],
-                skip_special_tokens=True
-            )
-            
+           
             st.subheader("🤖 AI Answer")
             st.write(answer)
            

@@ -10,7 +10,7 @@ def extract_text_from_pdf(pdf_file):
     """Extract text page by page and preserve page numbers."""
     reader = PdfReader(pdf_file)
     pages = []
-source_name = getattr(pdf_file, "name", "Uploaded PDF")
+    source_name = getattr(pdf_file, "name", "Uploaded PDF")
     for page_number, page in enumerate(reader.pages, start=1):
         page_text = page.extract_text()
 

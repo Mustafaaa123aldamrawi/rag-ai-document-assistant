@@ -192,7 +192,7 @@ if st.button("Ask AI"):
         if matched_source:
             relevant_documents = vector_store.similarity_search(
                 question,
-                k=4,
+                k=8,
                 filter={"source": matched_source}
             )
         else:
@@ -224,6 +224,7 @@ You are a precise document question-answering assistant.
 Use ONLY the information in the provided document context.
 
 Rules:
+- Carefully search the entire provided context before answering.
 - Answer only what the user asked.
 - Do not include unrelated skills, technologies, job titles, or experience.
 - Do not guess or invent information.
@@ -247,12 +248,12 @@ Answer:
                 prompt,
                 return_tensors="pt",
                 truncation=True,
-                max_length=512
+                max_length=1024
             )
 
             outputs = model.generate(
                 **inputs,
-                max_new_tokens=128
+                max_new_tokens=256
             )
 
             answer = tokenizer.decode(

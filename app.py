@@ -223,9 +223,9 @@ if st.button("Ask AI"):
             source = document.metadata.get("source", "Unknown source")
             page_number = document.metadata.get("page_number", "Unknown page")
 
-        with st.expander(f"Relevant Chunk {index}"):
-            st.write(f"Source: {source} | Page: {page_number}")
-            st.write(document.page_content)
+            with st.expander(f"Relevant Chunk {index}"):
+                st.write(f"Source: {source} | Page: {page_number}")
+                st.write(document.page_content)
 
         context = "\n\n".join(
             document.page_content for document in relevant_documents

@@ -226,10 +226,19 @@ if st.button("Ask AI"):
             )
         else:
             search_results = vector_store.similarity_search_with_score(
-                question,
+                question,st.write("DEBUG SEARCH RESULTS")
                 k=8
             )
-        
+        st.write("DEBUG SEARCH RESULTS")
+
+        for i, (doc, score) in enumerate(search_results, start=1):
+            st.write(
+                f"Result {i} | Score: {score:.4f} | "
+                f"Source: {doc.metadata.get('source')} | "
+                f"Page: {doc.metadata.get('page_number')} | "
+                f"Chunk: {doc.metadata.get('chunk_index')}"
+            )
+            st.write(doc.page_content)
         # Evidence Filtering v2
         # FAISS distance: lower score = better semantic match.
         RELEVANCE_THRESHOLD = 1.20

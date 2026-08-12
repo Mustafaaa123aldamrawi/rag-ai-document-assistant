@@ -171,7 +171,31 @@ if st.button("Ask AI"):
     else:
         question_lower = question.lower()
         matched_source = None
+        # Detect questions that require understanding the whole document
+        summary_phrases = [
+            "what is this document about",
+            "what is the document about",
+            "what is this letter about",
+            "what is the letter about",
+            "what is this report about",
+            "what is the report about",
+            "what is this file about",
+            "what is the file about",
+            "summarize this document",
+            "summarize the document",
+            "summarize this letter",
+            "summarize the letter",
+            "summarize this report",
+            "summarize the report",
+            "give me a summary",
+            "main purpose",
+            "main topic"
+        ]
         
+        is_summary_question = any(
+            phrase in question_lower
+            for phrase in summary_phrases
+        )     
         for uploaded_file in uploaded_files:
             source_name = uploaded_file.name
             source_words = (
@@ -286,7 +310,7 @@ if st.button("Ask AI"):
                             seen_chunks.add(chunk_key)
         
                         break
-        if not relevant_documents:
+        if not relevant_documents and not is_summary_question:
             st.subheader("🤖 AI Answer")
             st.write("The information was not found in the document.")
             st.stop()
@@ -303,7 +327,13 @@ if st.button("Ask AI"):
                 st.write(f"Source: {source} | Page: {page_number}")
                 st.write(document.page_content)
 
-        context = "\n\n".join(expanded_texts)
+        if is_summary_question:
+            context = "\n\n".join(
+                f"Source: {chunk['source']} | Page: {chunk['page_number']}\n{chunk['text']}"
+                for chunk in text_chunks
+            )
+        else:
+            context = "\n\n".join(expanded_texts)
         
         direct_answer = None
         if "certification" in question.lower():

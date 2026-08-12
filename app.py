@@ -189,22 +189,35 @@ if st.button("Ask AI"):
                 break
         
         if matched_source:
-            relevant_documents = vector_store.similarity_search(
+            search_results = vector_store.similarity_search_with_score(
                 question,
                 k=12,
                 filter={"source": matched_source}
             )
         else:
-            relevant_documents = vector_store.similarity_search(
+            search_results = vector_store.similarity_search_with_score(
                 question,
-                k=4
+                k=8
             )
-        question_keywords = [
-                    word.lower().strip(".,?!:;\"'")
-                    for word in question.split()
-                    if len(word.strip(".,?!:;\"'")) > 5
-                ]
         
+        # Keep only chunks with reasonable semantic relevance.
+        # FAISS returns distance: lower score = better match.
+        RELEVANCE_THRESHOLD = 1.20
+        
+        relevant_documents = [
+            document
+            for document, score in search_results
+            if score <= RELEVANCE_THRESHOLD
+        ]
+        question_keywords = [
+            word.lower().strip(".,?!:;\"'")
+            for word in question.split()
+            if len(word.strip(".,?!:;\"'")) > 5
+        ]
+        if not relevant_documents:
+            st.subheader("🤖 AI Answer")
+            st.write("The information was not found in the document.")
+            st.stop()
         relevant_documents = sorted(
             relevant_documents,
             key=lambda doc: sum(

@@ -493,7 +493,7 @@ if st.button("Ask AI"):
                 st.text_area(
                     "Final context",
                     context,
-                    height=300
+                    height=400
                 )
         if is_summary_question:
             prompt = f"""

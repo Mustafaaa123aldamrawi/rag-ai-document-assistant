@@ -376,10 +376,39 @@ if st.button("Ask AI"):
                 st.write(document.page_content)
 
         if is_summary_question:
-            context = "\n\n".join(
-                f"Source: {chunk['source']} | Page: {chunk['page_number']}\n{chunk['text']}"
-                for chunk in text_chunks
+            full_document_text = "\n".join(
+                page["text"] for page in document_pages
             )
+        
+            full_document_lower = full_document_text.lower()
+        
+            # For professional experience summaries, focus on the experience section
+            if "professional experience" in question_lower:
+                start = full_document_lower.find("professional experience")
+        
+                end_markers = [
+                    "core skills",
+                    "certifications & training",
+                    "languages"
+                ]
+        
+                end_positions = [
+                    full_document_lower.find(marker, start)
+                    for marker in end_markers
+                    if full_document_lower.find(marker, start) != -1
+                ]
+        
+                if start != -1:
+                    if end_positions:
+                        end = min(end_positions)
+                        context = full_document_text[start:end].strip()
+                    else:
+                        context = full_document_text[start:].strip()
+                else:
+                    context = full_document_text
+        
+            else:
+                context = full_document_text
         else:
             context = "\n\n".join(expanded_texts)
             if "technolog" in question_lower:

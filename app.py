@@ -410,7 +410,20 @@ if st.button("Ask AI"):
                         context = full_document_text[start:].strip()
                 else:
                     context = full_document_text
-        
+                # Clean professional experience context before summarization
+                experience_lines = [
+                    line.strip(" •-\t")
+                    for line in context.splitlines()
+                    if line.strip()
+                ]
+                
+                complete_experience_lines = [
+                    line for line in experience_lines
+                    if len(line.split()) >= 6
+                ]
+                
+                if complete_experience_lines:
+                    context = "\n".join(complete_experience_lines)
             else:
                 context = full_document_text
         else:

@@ -233,16 +233,7 @@ if st.button("Ask AI"):
                 question,
                 k=8
             )
-        st.write("DEBUG SEARCH RESULTS")
-
-        for i, (doc, score) in enumerate(search_results, start=1):
-            st.write(
-                f"Result {i} | Score: {score:.4f} | "
-                f"Source: {doc.metadata.get('source')} | "
-                f"Page: {doc.metadata.get('page_number')} | "
-                f"Chunk: {doc.metadata.get('chunk_index')}"
-            )
-            st.write(doc.page_content)
+        
         # Evidence Filtering v2
         # FAISS distance: lower score = better semantic match.
         RELEVANCE_THRESHOLD = 1.20
@@ -366,19 +357,7 @@ if st.button("Ask AI"):
             st.subheader("🤖 AI Answer")
             st.write("The information was not found in the document.")
             st.stop()
-        st.success(
-            f"Retrieved {len(relevant_documents)} relevant document chunks."
-            )
-
-    
-        for index, document in enumerate(relevant_documents, start=1):
-            source = document.metadata.get("source", "Unknown source")
-            page_number = document.metadata.get("page_number", "Unknown page")
-
-            with st.expander(f"Relevant Chunk {index}"):
-                st.write(f"Source: {source} | Page: {page_number}")
-                st.write(document.page_content)
-
+        
         if is_summary_question:
             full_document_text = "\n".join(
                 page["text"] for page in document_pages

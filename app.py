@@ -523,6 +523,7 @@ if st.button("Ask AI"):
                         and "email:" not in clean_line.lower()
                         and "phone:" not in clean_line.lower()
                         and len(clean_line.split()) >= 6
+                        and clean_line.endswith((".", "!", "?"))
                     ):
                         experience_lines.append(clean_line)
         

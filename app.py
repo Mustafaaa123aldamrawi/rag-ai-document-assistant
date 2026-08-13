@@ -448,27 +448,19 @@ if st.button("Ask AI"):
                 direct_answer = " ".join(direct_answer.split())    
         if is_summary_question:
             prompt = f"""
-        You are summarizing professional experience from a document.
-        
-        Using only the document context below, write a concise professional summary.
-        
-        Requirements:
-        - State the person's role and employer if available.
-        - Mention the amount of experience if stated.
-        - Summarize the main responsibilities and type of work performed.
-        - Include important technical or project responsibilities only when relevant.
-        - Write 2 to 4 clear sentences.
-        - Do not copy section headings.
-        - Do not include certifications, languages, or unrelated skills.
-        - Do not invent information.
-        
-        Document context:
+        Context:
         {context}
         
-        Question:
-        {question}
+        Based only on the context above, answer the following question.
         
-        Professional summary:
+        Question: {question}
+        
+        Answer with 3 complete sentences describing Mustafa's professional experience.
+        Do not repeat or rephrase the question.
+        Do not write a question.
+        Do not include certifications or languages.
+        
+        Answer:
         """
         else:
             prompt = f"""
@@ -503,7 +495,7 @@ if st.button("Ask AI"):
 
             outputs = model.generate(
                 **inputs,
-                max_new_tokens=128,
+                max_new_tokens=200,
                 num_beams=4,
                 do_sample=False,
                 no_repeat_ngram_size=3,

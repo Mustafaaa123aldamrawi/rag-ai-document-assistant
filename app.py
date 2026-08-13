@@ -421,10 +421,13 @@ if st.button("Ask AI"):
             prompt = f"""
             Answer the question using only the information explicitly stated in the document below.
             
-            If the question asks for technologies, skills, certifications, tools, systems, or experience, include all relevant items found in the provided document context.
-            
-            Do not add information that is not stated in the document.
-            If the answer is not supported by the document, say: The information was not found in the document.
+            Rules:
+            - Answer only the category the user asked for.
+            - If the question asks for technologies, tools, platforms, or systems, return only technical technologies, tools, platforms, and systems.
+            - Do not include soft skills, leadership skills, job titles, management skills, certifications, or unrelated experience unless the user explicitly asks for them.
+            - If the question asks for a list, include all relevant matching items found in the provided document context.
+            - Do not add information that is not stated in the document.
+            - If the answer is not supported by the document, say: The information was not found in the document.
             
             Document:
             {context}

@@ -406,6 +406,12 @@ if st.button("Ask AI"):
     
         if technology_chunks:
             context = "\n\n".join(technology_chunks)
+            # Stop technology context before the Certifications section
+            context_lower = context.lower()
+            certifications_start = context_lower.find("certifications & training")
+        
+            if certifications_start != -1:
+                context = context[:certifications_start].strip()
         direct_answer = None
         if "certification" in question.lower() and not is_verification_question:
             context_lower = context.lower()

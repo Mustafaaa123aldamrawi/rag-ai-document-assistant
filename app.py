@@ -382,36 +382,21 @@ if st.button("Ask AI"):
             )
         else:
             context = "\n\n".join(expanded_texts)
-        # Prefer category-specific sections for technology questions
-        if "technolog" in question_lower:
-            technology_chunks = []
-
-        for i, chunk in enumerate(text_chunks):
-            chunk_text = chunk["text"]
-            chunk_lower = chunk_text.lower()
-    
-            if "core skills" in chunk_lower:
-                technology_chunks.append(chunk_text)
-    
-                # Include the next chunk because the Core Skills
-                # section may continue across a chunk boundary.
-                if i + 1 < len(text_chunks):
-                    next_chunk = text_chunks[i + 1]
-    
-                    if (
-                        next_chunk["source"] == chunk["source"]
-                        and next_chunk["page_number"] == chunk["page_number"]
-                    ):
-                        technology_chunks.append(next_chunk["text"])
-    
-        if technology_chunks:
-            context = "\n\n".join(technology_chunks)
-            # Stop technology context before the Certifications section
-            context_lower = context.lower()
-            certifications_start = context_lower.find("certifications & training")
-        
-            if certifications_start != -1:
-                context = context[:certifications_start].strip()
+            if "technolog" in question_lower:
+                full_document_text = "\n".join(
+                    page["text"] for page in document_pages
+                )
+            
+                full_document_lower = full_document_text.lower()
+            
+                start = full_document_lower.find("core skills")
+                end = full_document_lower.find("certifications & training", start)
+            
+                if start != -1:
+                    if end != -1:
+                        context = full_document_text[start:end]
+                    else:
+                        context = full_document_text[start:]
         direct_answer = None
         if "certification" in question.lower() and not is_verification_question:
             context_lower = context.lower()

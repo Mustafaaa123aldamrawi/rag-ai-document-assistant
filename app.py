@@ -497,22 +497,37 @@ if st.button("Ask AI"):
                 )
                 # Direct extractive answer for professional experience
         if "professional experience" in question_lower:
-            st.write("DEBUG: Professional experience condition triggered")
-            experience_sentences = []
+            full_document_text = "\n".join(
+                page["text"] for page in document_pages
+            )
         
-            for line in context.splitlines():
-                clean_line = line.strip(" •-\t")
+            full_document_lower = full_document_text.lower()
         
-                if (
-                    len(clean_line.split()) >= 6
-                    and "certification" not in clean_line.lower()
-                    and "languages" not in clean_line.lower()
-                    and "core skills" not in clean_line.lower()
-                ):
-                    experience_sentences.append(clean_line)
+            start = full_document_lower.find("professional experience")
+            end = full_document_lower.find("core skills", start)
         
-            if experience_sentences:
-                direct_answer = " ".join(experience_sentences[:5])
+            if start != -1:
+                if end != -1:
+                    experience_text = full_document_text[start:end]
+                else:
+                    experience_text = full_document_text[start:]
+        
+                experience_lines = []
+        
+                for line in experience_text.splitlines():
+                    clean_line = line.strip(" •-\t")
+        
+                    if (
+                        clean_line
+                        and "professional experience" not in clean_line.lower()
+                        and "email:" not in clean_line.lower()
+                        and "phone:" not in clean_line.lower()
+                        and len(clean_line.split()) >= 6
+                    ):
+                        experience_lines.append(clean_line)
+        
+                if experience_lines:
+                    direct_answer = " ".join(experience_lines[:6])
         if is_summary_question:
             prompt = f"""
         Context:

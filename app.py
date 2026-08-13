@@ -488,7 +488,13 @@ if st.button("Ask AI"):
 
                 direct_answer = direct_answer.replace("Source: Mustafa_CV.pdf", "")
                 direct_answer = direct_answer.replace("Page: 1", "")
-                direct_answer = " ".join(direct_answer.split())    
+                direct_answer = " ".join(direct_answer.split())
+                st.write("DEBUG - FINAL CONTEXT SENT TO MODEL:")
+                st.text_area(
+                    "Final context",
+                    context,
+                    height=300
+                )
         if is_summary_question:
             prompt = f"""
         Context:

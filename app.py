@@ -411,19 +411,24 @@ if st.button("Ask AI"):
                 else:
                     context = full_document_text
                 # Clean professional experience context before summarization
-                experience_lines = [
-                    line.strip(" •-\t")
-                    for line in context.splitlines()
-                    if line.strip()
-                ]
+                experience_lines = []
                 
-                complete_experience_lines = [
-                    line for line in experience_lines
-                    if len(line.split()) >= 6
-                ]
+                for line in context.splitlines():
+                    cleaned_line = line.strip(" •-\t")
+                    cleaned_lower = cleaned_line.lower()
                 
-                if complete_experience_lines:
-                    context = "\n".join(complete_experience_lines)
+                    if (
+                        "core skills" in cleaned_lower
+                        or "certifications & training" in cleaned_lower
+                        or cleaned_lower == "languages"
+                    ):
+                        break
+                
+                    if cleaned_line and len(cleaned_line.split()) >= 6:
+                        experience_lines.append(cleaned_line)
+                
+                if experience_lines:
+                    context = "\n".join(experience_lines)
             else:
                 context = full_document_text
         else:

@@ -265,6 +265,24 @@ if st.button("Ask AI"):
         )
         
         is_verification_question = question_lower.startswith(verification_starters)
+        generic_verification_terms = {
+            "certification",
+            "certifications",
+            "certificate",
+            "certificates"
+        }
+        
+        verification_keywords = [
+            keyword
+            for keyword in question_keywords
+            if keyword not in generic_verification_terms
+        ]
+        
+        evidence_keywords = (
+            verification_keywords
+            if is_verification_question
+            else question_keywords
+        )
         evidence_documents = []
         
         for document, score in search_results:
@@ -272,7 +290,7 @@ if st.button("Ask AI"):
                 document_text = document.page_content.lower()
         
                 keyword_matches = sum(
-                    1 for keyword in question_keywords
+                    1 for keyword in evidence_keywords
                     if keyword in document_text
                 )
         
@@ -293,7 +311,7 @@ if st.button("Ask AI"):
             (
                 is_verification_question
                 and len(question_keywords) > 0
-                and keyword_matches == len(question_keywords)
+                and keyword_matches == len(evidence_keywords)
             )
             or
             (

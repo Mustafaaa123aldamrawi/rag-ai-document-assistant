@@ -497,6 +497,7 @@ if st.button("Ask AI"):
                 )
                 # Direct extractive answer for professional experience
                 if "professional experience" in question_lower:
+                    st.write("DEBUG: Professional experience condition triggered")
                     experience_sentences = []
                 
                     for line in context.splitlines():

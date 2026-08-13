@@ -496,23 +496,23 @@ if st.button("Ask AI"):
                     height=400
                 )
                 # Direct extractive answer for professional experience
-                if "professional experience" in question_lower:
-                    st.write("DEBUG: Professional experience condition triggered")
-                    experience_sentences = []
-                
-                    for line in context.splitlines():
-                        clean_line = line.strip(" •-\t")
-                
-                        if (
-                            len(clean_line.split()) >= 6
-                            and "certification" not in clean_line.lower()
-                            and "languages" not in clean_line.lower()
-                            and "core skills" not in clean_line.lower()
-                        ):
-                            experience_sentences.append(clean_line)
-                
-                    if experience_sentences:
-                        direct_answer = " ".join(experience_sentences[:5])
+        if "professional experience" in question_lower:
+            st.write("DEBUG: Professional experience condition triggered")
+            experience_sentences = []
+        
+            for line in context.splitlines():
+                clean_line = line.strip(" •-\t")
+        
+                if (
+                    len(clean_line.split()) >= 6
+                    and "certification" not in clean_line.lower()
+                    and "languages" not in clean_line.lower()
+                    and "core skills" not in clean_line.lower()
+                ):
+                    experience_sentences.append(clean_line)
+        
+            if experience_sentences:
+                direct_answer = " ".join(experience_sentences[:5])
         if is_summary_question:
             prompt = f"""
         Context:

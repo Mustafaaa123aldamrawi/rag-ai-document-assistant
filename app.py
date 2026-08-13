@@ -496,7 +496,7 @@ if st.button("Ask AI"):
                     height=400
                 )
                 # Direct extractive answer for professional experience
-                if is_summary_question and "professional experience" in question_lower:
+                if "professional experience" in question_lower:
                     experience_sentences = []
                 
                     for line in context.splitlines():

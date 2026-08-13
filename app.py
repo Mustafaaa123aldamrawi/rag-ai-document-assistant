@@ -384,25 +384,28 @@ if st.button("Ask AI"):
             context = "\n\n".join(expanded_texts)
         # Prefer category-specific sections for technology questions
         if "technolog" in question_lower:
-            technology_section_markers = (
-                "core skills",
-                "technical skills",
-                "technologies",
-                "technology stack",
-                "tools & technologies"
-            )
-        
-            technology_chunks = [
-                chunk["text"]
-                for chunk in text_chunks
-                if any(
-                    marker in chunk["text"].lower()
-                    for marker in technology_section_markers
-                )
-            ]
-        
-            if technology_chunks:
-                context = "\n\n".join(technology_chunks)
+            technology_chunks = []
+
+        for i, chunk in enumerate(text_chunks):
+            chunk_text = chunk["text"]
+            chunk_lower = chunk_text.lower()
+    
+            if "core skills" in chunk_lower:
+                technology_chunks.append(chunk_text)
+    
+                # Include the next chunk because the Core Skills
+                # section may continue across a chunk boundary.
+                if i + 1 < len(text_chunks):
+                    next_chunk = text_chunks[i + 1]
+    
+                    if (
+                        next_chunk["source"] == chunk["source"]
+                        and next_chunk["page_number"] == chunk["page_number"]
+                    ):
+                        technology_chunks.append(next_chunk["text"])
+    
+        if technology_chunks:
+            context = "\n\n".join(technology_chunks)
         direct_answer = None
         if "certification" in question.lower() and not is_verification_question:
             context_lower = context.lower()

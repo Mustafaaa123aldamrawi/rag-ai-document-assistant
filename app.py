@@ -385,14 +385,7 @@ if st.button("Ask AI"):
             )
         
             full_document_lower = full_document_text.lower()
-            st.write("DEBUG - Professional Experience position:",
-                     full_document_lower.find("professional experience"))
             
-            st.text_area(
-                "DEBUG - Full document text",
-                full_document_text,
-                height=300
-            )
             # For professional experience summaries, focus on the experience section
             if "professional experience" in question_lower:
                 start = full_document_lower.find("professional experience")

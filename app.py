@@ -405,16 +405,21 @@ if st.button("Ask AI"):
         """
         else:
             prompt = f"""
-        Based only on the document below, answer the question.
-        
-        Document:
-        {context}
-        
-        Question:
-        {question}
-        
-        Answer:
-        """
+            Answer the question using only the information explicitly stated in the document below.
+            
+            If the question asks for technologies, skills, certifications, tools, systems, or experience, include all relevant items found in the provided document context.
+            
+            Do not add information that is not stated in the document.
+            If the answer is not supported by the document, say: The information was not found in the document.
+            
+            Document:
+            {context}
+            
+            Question:
+            {question}
+            
+            Answer:
+            """
 
         with st.spinner("AI is analyzing the document..."):
             tokenizer, model = load_llm()

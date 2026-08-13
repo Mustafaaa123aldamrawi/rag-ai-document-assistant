@@ -448,20 +448,27 @@ if st.button("Ask AI"):
                 direct_answer = " ".join(direct_answer.split())    
         if is_summary_question:
             prompt = f"""
-        Summarize the document based only on the information provided below.
+        You are summarizing professional experience from a document.
         
-        Focus on the main information relevant to the user's question.
-        If the question asks about professional experience, summarize roles, responsibilities, experience, and professional background.
-        Do not simply copy or list unrelated skills, certifications, languages, or section headings unless they are directly relevant.
-        Do not add information that is not explicitly stated in the document.
+        Using only the document context below, write a concise professional summary.
         
-        Document:
+        Requirements:
+        - State the person's role and employer if available.
+        - Mention the amount of experience if stated.
+        - Summarize the main responsibilities and type of work performed.
+        - Include important technical or project responsibilities only when relevant.
+        - Write 2 to 4 clear sentences.
+        - Do not copy section headings.
+        - Do not include certifications, languages, or unrelated skills.
+        - Do not invent information.
+        
+        Document context:
         {context}
         
         Question:
         {question}
         
-        Summary:
+        Professional summary:
         """
         else:
             prompt = f"""

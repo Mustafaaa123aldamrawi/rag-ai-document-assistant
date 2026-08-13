@@ -384,7 +384,7 @@ if st.button("Ask AI"):
             context = "\n\n".join(expanded_texts)
         
         direct_answer = None
-        if "certification" in question.lower():
+        if "certification" in question.lower() and not is_verification_question:
             context_lower = context.lower()
             start = context_lower.find("certifications & training")
             end = context_lower.find("languages", start)

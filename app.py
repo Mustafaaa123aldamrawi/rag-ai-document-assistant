@@ -415,7 +415,20 @@ if st.button("Ask AI"):
                 direct_answer = " ".join(direct_answer.split())    
         if is_summary_question:
             prompt = f"""
-        summarize: {context}
+        Summarize the document based only on the information provided below.
+        
+        Focus on the main information relevant to the user's question.
+        If the question asks about professional experience, summarize roles, responsibilities, experience, and professional background.
+        Do not simply copy or list unrelated skills, certifications, languages, or section headings unless they are directly relevant.
+        Do not add information that is not explicitly stated in the document.
+        
+        Document:
+        {context}
+        
+        Question:
+        {question}
+        
+        Summary:
         """
         else:
             prompt = f"""

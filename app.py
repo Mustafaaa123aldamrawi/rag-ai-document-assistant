@@ -47,7 +47,6 @@ def split_text_into_chunks(pages):
 
     return chunks
 
-
 def create_vector_store(text_chunks):
     """Create a FAISS vector store while preserving source metadata."""
     embeddings = HuggingFaceEmbeddings(

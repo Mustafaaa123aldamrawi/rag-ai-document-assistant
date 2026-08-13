@@ -196,10 +196,14 @@ if st.button("Ask AI"):
             "main topic"
         ]
         
-        is_summary_question = any(
-            phrase in question_lower
-            for phrase in summary_phrases
-        )     
+        is_summary_question = (
+            any(
+                phrase in question_lower
+                for phrase in summary_phrases
+            )
+            or question_lower.startswith("summarize ")
+            or question_lower.startswith("summarise ")
+        )
         for uploaded_file in uploaded_files:
             source_name = uploaded_file.name
             source_words = (

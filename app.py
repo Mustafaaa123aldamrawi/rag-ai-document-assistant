@@ -431,6 +431,31 @@ if st.button("Ask AI"):
                     else:
                         context = full_document_text[start:]
         direct_answer = None
+        # Direct handling for job title questions
+        job_title_phrases = [
+            "job title",
+            "current job title",
+            "current title",
+            "professional title",
+            "what is mustafa's job",
+            "what is mustafa’s job"
+        ]
+
+        if any(phrase in question_lower for phrase in job_title_phrases):
+            full_document_text = "\n".join(
+                page["text"] for page in document_pages
+            )
+        
+            full_document_lower = full_document_text.lower()
+        
+            title_start = full_document_lower.find("project manager")
+            title_end = full_document_lower.find("saudi arabia", title_start)
+        
+            if title_start != -1:
+                if title_end != -1:
+                    direct_answer = full_document_text[title_start:title_end].strip()
+                else:
+                    direct_answer = "Project Manager"
         if "certification" in question.lower() and not is_verification_question:
             context_lower = context.lower()
             start = context_lower.find("certifications & training")

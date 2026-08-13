@@ -489,12 +489,7 @@ if st.button("Ask AI"):
                 direct_answer = direct_answer.replace("Source: Mustafa_CV.pdf", "")
                 direct_answer = direct_answer.replace("Page: 1", "")
                 direct_answer = " ".join(direct_answer.split())
-                st.write("DEBUG - FINAL CONTEXT SENT TO MODEL:")
-                st.text_area(
-                    "Final context",
-                    context,
-                    height=400
-                )
+                
                 # Direct extractive answer for professional experience
         if "professional experience" in question_lower:
             full_document_text = "\n".join(

@@ -492,8 +492,8 @@ if st.button("Ask AI"):
         
                 technology_text = technology_text.replace("Core Skills", "").strip()
                 
-                    direct_answer = " ".join(technology_text.split())
-                    # Direct extractive answer for professional experience
+                direct_answer = " ".join(technology_text.split())
+                # Direct extractive answer for professional experience
             if "professional experience" in question_lower:
                 full_document_text = "\n".join(
                 page["text"] for page in document_pages

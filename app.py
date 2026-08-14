@@ -539,31 +539,33 @@ if st.button("Ask AI"):
             Answer:
             """
 
-        with st.spinner("AI is analyzing the document..."):
-            tokenizer, model = load_llm()
-
-            inputs = tokenizer(
-                prompt,
-                return_tensors="pt",
-                truncation=True,
-                max_length=1024
-            )
-
-            outputs = model.generate(
-                **inputs,
-                max_new_tokens=200,
-                num_beams=1,
-                do_sample=False,
-                no_repeat_ngram_size=3,
-                early_stopping=True
-            )
-
-            answer = tokenizer.decode(
-                outputs[0],
-                skip_special_tokens=True
-            )
-            if direct_answer is not None:
-                answer = direct_answer
-            st.subheader("🤖 AI Answer")
-            st.write(answer)
-           
+        if direct_answer is not None:
+            answer = direct_answer
+        else:
+            with st.spinner("AI is analyzing the document..."):
+                tokenizer, model = load_llm()
+        
+                inputs = tokenizer(
+                    prompt,
+                    return_tensors="pt",
+                    truncation=True,
+                    max_length=1024
+                )
+        
+                outputs = model.generate(
+                    **inputs,
+                    max_new_tokens=200,
+                    num_beams=1,
+                    do_sample=False,
+                    no_repeat_ngram_size=3,
+                    early_stopping=True
+                )
+        
+                answer = tokenizer.decode(
+                    outputs[0],
+                    skip_special_tokens=True
+                )
+        
+        st.subheader("🤖 AI Answer")
+        st.write(answer)
+                   

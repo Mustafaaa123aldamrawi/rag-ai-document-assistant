@@ -467,7 +467,32 @@ if st.button("Ask AI"):
                 direct_answer = direct_answer.replace("Source: Mustafa_CV.pdf", "")
                 direct_answer = direct_answer.replace("Page: 1", "")
                 direct_answer = " ".join(direct_answer.split())
-                
+                # Direct extractive answer for technologies and technical skills
+            if (
+                "technolog" in question_lower
+                or "technical skill" in question_lower
+                or "tools" in question_lower
+                or "platforms" in question_lower
+                or "systems" in question_lower
+            ):
+                full_document_text = "\n".join(
+                    page["text"] for page in document_pages
+                )
+            
+                full_document_lower = full_document_text.lower()
+            
+                start = full_document_lower.find("core skills")
+                end = full_document_lower.find("certifications & training", start)
+            
+                if start != -1:
+                    if end != -1:
+                        technology_text = full_document_text[start:end]
+                    else:
+                        technology_text = full_document_text[start:]
+            
+                    technology_text = technology_text.replace("Core Skills", "").strip()
+            
+                    direct_answer = " ".join(technology_text.split())
                 # Direct extractive answer for professional experience
         if "professional experience" in question_lower:
             full_document_text = "\n".join(

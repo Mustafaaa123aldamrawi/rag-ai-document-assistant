@@ -96,20 +96,21 @@ def call_qwen_llm(prompt):
         return data.get("results", [])
     def extract_text_from_pdf(pdf_file):
         """Extract text page by page and preserve page numbers."""
-    reader = PdfReader(pdf_file)
-    pages = []
-    source_name = getattr(pdf_file, "name", "Uploaded PDF")
-    for page_number, page in enumerate(reader.pages, start=1):
-        page_text = page.extract_text()
-
-        if page_text:
-            pages.append({
-    "page_number": page_number,
-    "source": source_name,
-    "text": page_text
-})
-
-    return pages
+        reader = PdfReader(pdf_file)
+        pages = []
+        source_name = getattr(pdf_file, "name", "Uploaded PDF")
+    
+        for page_number, page in enumerate(reader.pages, start=1):
+            page_text = page.extract_text()
+    
+            if page_text:
+                pages.append({
+                    "page_number": page_number,
+                    "source": source_name,
+                    "text": page_text
+                })
+    
+        return pages
 
 def split_text_into_chunks(pages):
     """Split each PDF page into chunks while preserving page numbers."""

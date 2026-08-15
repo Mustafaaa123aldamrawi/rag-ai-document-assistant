@@ -94,7 +94,7 @@ def call_qwen_llm(prompt):
         data = response.json()
     
         return data.get("results", [])
-def extract_text_from_pdf(pdf_file):
+    def extract_text_from_pdf(pdf_file):
     """Extract text page by page and preserve page numbers."""
     reader = PdfReader(pdf_file)
     pages = []

@@ -702,6 +702,7 @@ if st.button("Ask AI"):
         
         st.subheader("🤖 AI Answer")
         st.write(answer)
+        st.write("DEBUG USED SOURCES:", sorted(used_sources))
         if used_sources:
             st.markdown("### Sources")
             for source_name, page_number in sorted(used_sources):

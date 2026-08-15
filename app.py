@@ -640,15 +640,52 @@ if st.button("Ask AI"):
         Answer:
         """
         else:
+            subject = question.strip().rstrip("?")
+        
+            if question_lower.startswith("what is "):
+                subject = question[8:].strip().rstrip("?")
+        
+            normalized_subject = "".join(
+                char.lower() for char in subject
+                if char.isalnum()
+            )
+        
+            normalized_context = "".join(
+                char.lower() for char in context
+                if char.isalnum()
+            )
+        
+            subject_tokens = [
+                "".join(
+                    char.lower() for char in token
+                    if char.isalnum()
+                )
+                for token in subject.split()
+            ]
+            
+            subject_tokens = [
+                token for token in subject_tokens
+                if len(token) >= 2
+            ]
+            
+            subject_found = all(
+                token in normalized_context
+                for token in subject_tokens
+            )
+        
             prompt = f"""
-            Question:
-            {question}
-            
-            Document context:
-            {context}
-            
-            Answer the question using the document context above.
-            """
+        Question:
+        {question}
+        
+        Document context:
+        {context}
+        
+        Subject detected in document: {subject_found}
+        
+        If "Subject detected in document" is True, the requested subject exists in the document.
+        Use the related facts in the document context to answer the question.
+        Do not say the information was not found when the subject is detected.
+        """
         
         if direct_answer is not None:
             answer = direct_answer

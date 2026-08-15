@@ -307,24 +307,25 @@ if st.button("Ask AI"):
         )
         
         relevant_documents = [
-        document
-        for document, score, keyword_matches, product_matches in evidence_documents
-        if (
-            (
-                is_verification_question
-                and len(question_keywords) > 0
-                and keyword_matches == len(evidence_keywords)
-            )
-            or
-            (
-                not is_verification_question
-                and (
-                    product_matches > 0
-                    or keyword_matches > 0
-                    or score <= 1.10
+            document
+            for document, score, keyword_matches, product_matches in evidence_documents
+            if (
+                (
+                    is_verification_question
+                    and len(question_keywords) > 0
+                    and keyword_matches == len(evidence_keywords)
                 )
-        )
-    ]
+                or
+                (
+                    not is_verification_question
+                    and (
+                        product_matches > 0
+                        or keyword_matches > 0
+                        or score <= 1.10
+                    )
+                )
+            )
+        ]
         # Neighbor Expansion
         # Add the previous and next chunk from the same source/page
         # so information split across chunk boundaries is not lost.

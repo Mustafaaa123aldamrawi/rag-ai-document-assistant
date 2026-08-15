@@ -1,11 +1,42 @@
 
 import streamlit as st
+import requests
+import os
 from pypdf import PdfReader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+def call_qwen_llm(prompt):
+    url = "https://router.huggingface.co/v1/chat/completions"
 
+    headers = {
+        "Authorization": f"Bearer {st.secrets['HF_TOKEN']}",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "model": "Qwen/Qwen2.5-1.5B-Instruct:featherless-ai",
+        "messages": [
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        "temperature": 0.1,
+        "max_tokens": 250
+    }
+
+    response = requests.post(
+        url,
+        headers=headers,
+        json=payload,
+        timeout=60
+    )
+
+    response.raise_for_status()
+
+    return response.json()["choices"][0]["message"]["content"]
 def extract_text_from_pdf(pdf_file):
     """Extract text page by page and preserve page numbers."""
     reader = PdfReader(pdf_file)
@@ -611,28 +642,10 @@ if st.button("Ask AI"):
             answer = direct_answer
         else:
             with st.spinner("AI is analyzing the document..."):
-                tokenizer, model = load_llm()
-        
-                inputs = tokenizer(
-                    prompt,
-                    return_tensors="pt",
-                    truncation=True,
-                    max_length=1024
-                )
-        
-                outputs = model.generate(
-                    **inputs,
-                    max_new_tokens=200,
-                    num_beams=4,
-                    do_sample=False,
-                    no_repeat_ngram_size=3,
-                    early_stopping=True
-                )
-        
-                answer = tokenizer.decode(
-                    outputs[0],
-                    skip_special_tokens=True
-                )
+                try:
+                    answer = call_qwen_llm(prompt)
+                except Exception as e:
+                    answer = f"AI model error: {e}"
         
         st.subheader("🤖 AI Answer")
         st.write(answer)

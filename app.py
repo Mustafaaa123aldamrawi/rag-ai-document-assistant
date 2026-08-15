@@ -357,6 +357,8 @@ if st.button("Ask AI"):
             context = "\n\n".join(
                 document.page_content for document in relevant_documents
             )
+        st.write("FINAL CONTEXT SENT TO MODEL:")
+        st.code(context[:4000])
         if not relevant_documents and not is_summary_question:
             st.subheader("🤖 AI Answer")
             st.write("The information was not found in the document.")

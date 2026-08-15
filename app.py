@@ -66,6 +66,34 @@ def call_qwen_llm(prompt):
     response.raise_for_status()
 
     return response.json()["choices"][0]["message"]["content"]
+    def search_web_tavily(query):
+        url = "https://api.tavily.com/search"
+    
+        headers = {
+            "Authorization": f"Bearer {st.secrets['TAVILY_API_KEY']}",
+            "Content-Type": "application/json"
+        }
+    
+        payload = {
+            "query": query,
+            "search_depth": "advanced",
+            "max_results": 5,
+            "include_answer": False,
+            "include_raw_content": False
+        }
+    
+        response = requests.post(
+            url,
+            headers=headers,
+            json=payload,
+            timeout=60
+        )
+    
+        response.raise_for_status()
+    
+        data = response.json()
+    
+        return data.get("results", [])
 def extract_text_from_pdf(pdf_file):
     """Extract text page by page and preserve page numbers."""
     reader = PdfReader(pdf_file)
@@ -186,6 +214,8 @@ with st.sidebar:
 document_pages = []
 text_chunks = []
 vector_store = None
+web_results = []
+web_context = ""
 
 if uploaded_files:
     try:
@@ -226,14 +256,66 @@ question = st.text_input(
 )
 
 if st.button("Ask AI"):
-    if not uploaded_files:
+    if not question:
+        st.warning("Please enter a question.")
+
+    elif search_mode == "Web Only":
+        try:
+            with st.spinner("Searching the web..."):
+                web_results = search_web_tavily(question)
+
+            if not web_results:
+                st.warning("No relevant web results were found.")
+
+            else:
+                web_context_parts = []
+
+                for result in web_results:
+                    title = result.get("title", "")
+                    url = result.get("url", "")
+                    content = result.get("content", "")
+
+                    web_context_parts.append(
+                        f"Title: {title}\n"
+                        f"URL: {url}\n"
+                        f"Content: {content}"
+                    )
+
+                web_context = "\n\n".join(web_context_parts)
+
+                prompt = f"""
+Question:
+{question}
+
+Web search context:
+{web_context}
+
+Answer using only the web search context above.
+Do not invent information that is not supported by the web results.
+"""
+
+                answer = call_qwen_llm(prompt)
+
+                st.subheader("🤖 AI Answer")
+                st.write(answer)
+
+                st.markdown("### 🌐 Web Sources")
+
+                for result in web_results:
+                    title = result.get("title", "Web source")
+                    url = result.get("url", "")
+
+                    if url:
+                        st.markdown(f"- [{title}]({url})")
+
+        except Exception as e:
+            st.error(f"Web search error: {e}")
+
+    elif not uploaded_files:
         st.warning("Please upload at least one PDF document first.")
 
     elif not document_pages:
         st.warning("The uploaded PDF files do not contain readable text.")
-
-    elif not question:
-        st.warning("Please enter a question.")
 
     elif vector_store is None:
         st.warning("Vector database is not ready.")

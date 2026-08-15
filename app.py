@@ -16,7 +16,7 @@ def call_qwen_llm(prompt):
     }
 
     payload = {
-        "model": "Qwen/Qwen2.5-1.5B-Instruct:featherless-ai",
+        "model": "Qwen/Qwen2.5-7B-Instruct:featherless-ai",
         "messages": [
             {
                 "role": "system",

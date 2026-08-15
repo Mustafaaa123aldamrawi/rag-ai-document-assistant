@@ -38,6 +38,10 @@ def call_qwen_llm(prompt):
                     "Product names and model numbers in extracted PDF text may contain accidental spaces or formatting artifacts. "
                     "Treat obvious spacing variations in the same alphanumeric model identifier as the same product, "
                     "for example '110f' and '1 10f', when the surrounding context clearly refers to the same model. "
+                    "Do not transform a status field, displayed value, or monitored value into a product capability or feature. "
+                    "Do not claim that a product supports, provides, updates, controls, or performs something unless the context explicitly states that capability. "
+                    "Preserve the meaning of technical terms exactly; for example, a displayed firmware version does not mean firmware updates. "
+                    "When paraphrasing technical information, use wording that does not introduce any new capability, behavior, or specification. "
                     "Keep the answer concise, accurate, and technically clear."
                 )
             },

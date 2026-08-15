@@ -42,6 +42,8 @@ def call_qwen_llm(prompt):
                     "Do not claim that a product supports, provides, updates, controls, or performs something unless the context explicitly states that capability. "
                     "Preserve the meaning of technical terms exactly; for example, a displayed firmware version does not mean firmware updates. "
                     "When paraphrasing technical information, use wording that does not introduce any new capability, behavior, or specification. "
+                    "Do not generalize specific status or configuration fields into broader capabilities. "
+                    "Describe configuration options exactly as stated in the context instead of summarizing them as general product support or capability. "
                     "Keep the answer concise, accurate, and technically clear."
                 )
             },

@@ -65,51 +65,51 @@ def call_qwen_llm(prompt):
 
     response.raise_for_status()
 
-return response.json()["choices"][0]["message"]["content"]
-def search_web_tavily(query):
-    url = "https://api.tavily.com/search"
-
-    headers = {
-        "Authorization": f"Bearer {st.secrets['TAVILY_API_KEY']}",
-        "Content-Type": "application/json"
-    }
-
-    payload = {
-        "query": query,
-        "search_depth": "advanced",
-        "max_results": 5,
-        "include_answer": False,
-        "include_raw_content": False
-    }
-
-    response = requests.post(
-        url,
-        headers=headers,
-        json=payload,
-        timeout=60
-    )
-
-    response.raise_for_status()
-
-    data = response.json()
-
-    return data.get("results", [])
-def extract_text_from_pdf(pdf_file):
-    """Extract text page by page and preserve page numbers."""
-    reader = PdfReader(pdf_file)
-    pages = []
-    source_name = getattr(pdf_file, "name", "Uploaded PDF")
-    for page_number, page in enumerate(reader.pages, start=1):
-        page_text = page.extract_text()
-
-        if page_text:
-            pages.append({
-    "page_number": page_number,
-    "source": source_name,
-    "text": page_text
-})
-
-    return pages
+    return response.json()["choices"][0]["message"]["content"]
+    def search_web_tavily(query):
+        url = "https://api.tavily.com/search"
+    
+        headers = {
+            "Authorization": f"Bearer {st.secrets['TAVILY_API_KEY']}",
+            "Content-Type": "application/json"
+        }
+    
+        payload = {
+            "query": query,
+            "search_depth": "advanced",
+            "max_results": 5,
+            "include_answer": False,
+            "include_raw_content": False
+        }
+    
+        response = requests.post(
+            url,
+            headers=headers,
+            json=payload,
+            timeout=60
+        )
+    
+        response.raise_for_status()
+    
+        data = response.json()
+    
+        return data.get("results", [])
+    def extract_text_from_pdf(pdf_file):
+        """Extract text page by page and preserve page numbers."""
+        reader = PdfReader(pdf_file)
+        pages = []
+        source_name = getattr(pdf_file, "name", "Uploaded PDF")
+        for page_number, page in enumerate(reader.pages, start=1):
+            page_text = page.extract_text()
+    
+            if page_text:
+                pages.append({
+        "page_number": page_number,
+        "source": source_name,
+        "text": page_text
+    })
+    
+        return pages
 
 def split_text_into_chunks(pages):
     """Split each PDF page into chunks while preserving page numbers."""

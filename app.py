@@ -492,7 +492,27 @@ if st.button("Ask AI"):
         
                 technology_text = technology_text.replace("Core Skills", "").strip()
                 
-                direct_answer = " ".join(technology_text.split())
+                technology_items = [
+                    item.strip()
+                    for item in technology_text.split(",")
+                    if item.strip()
+                ]
+                
+                excluded_items = {
+                    "project management",
+                    "leadership",
+                    "ai for project management",
+                    "education technology",
+                    "cybersecurity fundamentals"
+                }
+                
+                technical_items = [
+                    item
+                    for item in technology_items
+                    if item.lower() not in excluded_items
+                ]
+                
+                direct_answer = ", ".join(technical_items)
                 st.write("TECH DIRECT ANSWER:", direct_answer)
                 # Direct extractive answer for professional experience
             if "professional experience" in question_lower:

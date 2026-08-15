@@ -350,13 +350,13 @@ if st.button("Ask AI"):
                             )
                             seen_chunks.add(chunk_key)
         
-                        break
-                if expanded_texts:
-                    context = "\n\n".join(expanded_texts)
-                else:
-                    context = "\n\n".join(
-                        document.page_content for document in relevant_documents
-                    )
+                break
+        if expanded_texts:
+            context = "\n\n".join(expanded_texts)
+        else:
+            context = "\n\n".join(
+                document.page_content for document in relevant_documents
+            )
         if not relevant_documents and not is_summary_question:
             st.subheader("🤖 AI Answer")
             st.write("The information was not found in the document.")

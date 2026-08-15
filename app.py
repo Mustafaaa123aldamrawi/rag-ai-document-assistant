@@ -484,7 +484,6 @@ if st.button("Ask AI"):
             else:
                 context = full_document_text
         else:
-            context = "\n\n".join(expanded_texts)
             if "technolog" in question_lower:
                 full_document_text = "\n".join(
                     page["text"] for page in document_pages

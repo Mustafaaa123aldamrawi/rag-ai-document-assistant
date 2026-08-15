@@ -676,6 +676,9 @@ if st.button("Ask AI"):
             st.write("DEBUG SUBJECT TOKENS:", subject_tokens)
             st.write("DEBUG SUBJECT FOUND:", subject_found)
             st.write("DEBUG 110F IN CONTEXT:", "110f" in normalized_context)
+            core_pos = normalized_context.find("core")
+            st.write("DEBUG CORE POSITION:", core_pos)
+            st.write("DEBUG CORE TEXT:", repr(normalized_context[core_pos:core_pos + 80]) if core_pos != -1 else "CORE NOT FOUND")
             prompt = f"""
         Question:
         {question}

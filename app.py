@@ -672,7 +672,8 @@ if st.button("Ask AI"):
                 token in normalized_context
                 for token in subject_tokens
             )
-        
+            st.write("DEBUG SUBJECT TOKENS:", subject_tokens)
+            st.write("DEBUG SUBJECT FOUND:", subject_found)
             prompt = f"""
         Question:
         {question}

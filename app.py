@@ -428,6 +428,14 @@ if st.button("Ask AI"):
             context = "\n\n".join(
                 document.page_content for document in relevant_documents
             )
+        
+            for document in relevant_documents:
+                used_sources.add(
+                    (
+                        document.metadata.get("source"),
+                        document.metadata.get("page_number")
+                    )
+                )
         st.write("FINAL CONTEXT SENT TO MODEL:")
         st.code(context[:4000])
         if not relevant_documents and not is_summary_question:

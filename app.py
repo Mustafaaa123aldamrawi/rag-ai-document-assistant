@@ -219,16 +219,20 @@ if st.button("Ask AI"):
             ):
                 matched_source = source_name
                 break
-        
+        search_query = question
+
+        if question_lower.startswith("what is "):
+            subject = question[8:].strip().rstrip("?")
+            search_query = f"{subject} overview description purpose features"
         if matched_source:
             search_results = vector_store.similarity_search_with_score(
-                question,
+                search_query,
                 k=4,
                 filter={"source": matched_source}
             )
         else:
             search_results = vector_store.similarity_search_with_score(
-                question,
+                search_query,
                 k=4
             )
         

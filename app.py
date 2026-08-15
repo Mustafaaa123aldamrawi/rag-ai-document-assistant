@@ -223,13 +223,13 @@ if st.button("Ask AI"):
         if matched_source:
             search_results = vector_store.similarity_search_with_score(
                 question,
-                k=12,
+                k=4,
                 filter={"source": matched_source}
             )
         else:
             search_results = vector_store.similarity_search_with_score(
                 question,
-                k=8
+                k=4
             )
         
         # Evidence Filtering v2

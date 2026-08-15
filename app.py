@@ -538,7 +538,11 @@ Do not invent information that is not supported by the web results.
                     )
                 )
         
-        if not relevant_documents and not is_summary_question:
+        if (
+            not relevant_documents
+            and not is_summary_question
+            and search_mode == "Documents Only"
+        ):
             st.subheader("🤖 AI Answer")
             st.write("The information was not found in the document.")
             st.stop()
@@ -611,6 +615,37 @@ Do not invent information that is not supported by the web results.
                         context = full_document_text[start:end]
                     else:
                         context = full_document_text[start:]
+        if search_mode == "Documents + Web":
+            try:
+                with st.spinner("Searching the web..."):
+                    web_results = search_web_tavily(question)
+        
+                if web_results:
+                    web_context_parts = []
+        
+                    for result in web_results:
+                        title = result.get("title", "")
+                        url = result.get("url", "")
+                        content = result.get("content", "")
+        
+                        web_context_parts.append(
+                            f"Title: {title}\n"
+                            f"URL: {url}\n"
+                            f"Content: {content}"
+                        )
+        
+                    web_context = "\n\n".join(web_context_parts)
+        
+                    context = f"""
+        DOCUMENT CONTEXT:
+        {context}
+        
+        WEB CONTEXT:
+        {web_context}
+        """
+        
+            except Exception as e:
+                st.warning(f"Web search could not be completed: {e}")
         direct_answer = None
         # Direct handling for job title questions
         job_title_phrases = [
@@ -815,3 +850,12 @@ Do not invent information that is not supported by the web results.
             st.markdown("### Sources")
             for source_name, page_number in sorted(used_sources):
                 st.write(f"- {source_name} — Page {page_number}")           
+        if search_mode == "Documents + Web" and web_results:
+            st.markdown("### 🌐 Web Sources")
+        
+            for result in web_results:
+                title = result.get("title", "Web source")
+                url = result.get("url", "")
+        
+                if url:
+                    st.markdown(f"- [{title}]({url})")

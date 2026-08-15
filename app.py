@@ -623,7 +623,7 @@ if st.button("Ask AI"):
                 outputs = model.generate(
                     **inputs,
                     max_new_tokens=200,
-                    num_beams=1,
+                    num_beams=4,
                     do_sample=False,
                     no_repeat_ngram_size=3,
                     early_stopping=True

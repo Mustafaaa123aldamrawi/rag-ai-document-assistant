@@ -638,24 +638,13 @@ if st.button("Ask AI"):
         """
         else:
             prompt = f"""
-            Use the context below to answer the user's question directly.
-            
             Question:
             {question}
             
-            Context:
+            Document context:
             {context}
             
-            Instructions:
-            - Give a clear and concise answer in 1 to 3 complete sentences.
-            - Answer only what the user asked.
-            - Do not copy source names, file names, page numbers, or metadata into the answer.
-            - Do not repeat the question.
-            - Do not list unrelated information.
-            - Use only information supported by the context.
-            - If the context does not contain enough information, say: The information was not found in the document.
-            
-            Answer:
+            Answer the question using the document context above.
             """
         
         if direct_answer is not None:

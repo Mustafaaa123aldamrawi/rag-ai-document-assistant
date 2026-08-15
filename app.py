@@ -95,7 +95,7 @@ def call_qwen_llm(prompt):
     
         return data.get("results", [])
     def extract_text_from_pdf(pdf_file):
-    """Extract text page by page and preserve page numbers."""
+        """Extract text page by page and preserve page numbers."""
     reader = PdfReader(pdf_file)
     pages = []
     source_name = getattr(pdf_file, "name", "Uploaded PDF")

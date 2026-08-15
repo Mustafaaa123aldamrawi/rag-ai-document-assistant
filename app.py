@@ -513,7 +513,7 @@ if st.button("Ask AI"):
                 ]
                 
                 direct_answer = ", ".join(technical_items)
-                st.write("TECH DIRECT ANSWER:", direct_answer)
+                
                 # Direct extractive answer for professional experience
             if "professional experience" in question_lower:
                 full_document_text = "\n".join(
@@ -548,7 +548,7 @@ if st.button("Ask AI"):
             
                     if experience_lines:
                         direct_answer = " ".join(experience_lines[:6])
-                        st.write("EXPERIENCE DIRECT ANSWER:", direct_answer)
+                        
         if is_summary_question:
             prompt = f"""
         Context:
@@ -585,7 +585,7 @@ if st.button("Ask AI"):
             
             Answer:
             """
-        st.write("FINAL DIRECT ANSWER:", direct_answer)
+        
         if direct_answer is not None:
             answer = direct_answer
         else:

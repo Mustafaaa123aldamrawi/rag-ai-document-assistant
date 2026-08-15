@@ -666,6 +666,7 @@ if st.button("Ask AI"):
             subject_tokens = [
                 token for token in subject_tokens
                 if len(token) >= 2
+                and token not in {"the", "a", "an"}
             ]
             
             subject_found = all(

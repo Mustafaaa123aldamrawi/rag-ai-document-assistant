@@ -35,6 +35,9 @@ def call_qwen_llm(prompt):
                     "Do not return 'The information was not found in the document.' when the product or subject name appears in the context with related facts. "
                     "Only say 'The information was not found in the document.' when the context contains no relevant information at all. "
                     "Never add information from your training knowledge even if you know the product. "
+                    "Product names and model numbers in extracted PDF text may contain accidental spaces or formatting artifacts. "
+                    "Treat obvious spacing variations in the same alphanumeric model identifier as the same product, "
+                    "for example '110f' and '1 10f', when the surrounding context clearly refers to the same model. "
                     "Keep the answer concise, accurate, and technically clear."
                 )
             },

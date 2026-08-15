@@ -491,7 +491,8 @@ if st.button("Ask AI"):
                     technology_text = full_document_text[start:]
         
                 technology_text = technology_text.replace("Core Skills", "").strip()
-                
+                st.write("RAW TECHNOLOGY TEXT:")
+                st.code(technology_text)
                 technology_items = [
                     item.strip()
                     for item in technology_text.split(",")

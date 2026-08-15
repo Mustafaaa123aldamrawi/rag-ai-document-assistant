@@ -436,8 +436,7 @@ if st.button("Ask AI"):
                         document.metadata.get("page_number")
                     )
                 )
-        st.write("FINAL CONTEXT SENT TO MODEL:")
-        st.code(context[:4000])
+        
         if not relevant_documents and not is_summary_question:
             st.subheader("🤖 AI Answer")
             st.write("The information was not found in the document.")
@@ -710,7 +709,7 @@ if st.button("Ask AI"):
         
         st.subheader("🤖 AI Answer")
         st.write(answer)
-        st.write("DEBUG USED SOURCES:", sorted(used_sources))
+        
         if used_sources:
             st.markdown("### Sources")
             for source_name, page_number in sorted(used_sources):

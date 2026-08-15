@@ -171,17 +171,17 @@ with st.sidebar:
         st.success(f"{len(uploaded_files)} PDF file(s) uploaded successfully!")
     st.divider()
     
-        st.header("🔎 Search Mode")
-    
-        search_mode = st.radio(
-            "Choose where the AI should search:",
-            [
-                "Documents Only",
-                "Documents + Web",
-                "Web Only"
-            ],
-            index=0
-        )
+    st.header("🔎 Search Mode")
+
+    search_mode = st.radio(
+        "Choose where the AI should search:",
+        [
+            "Documents Only",
+            "Documents + Web",
+            "Web Only"
+        ],
+        index=0
+    )
 # Process uploaded PDF
 document_pages = []
 text_chunks = []

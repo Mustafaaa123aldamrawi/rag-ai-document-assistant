@@ -26,8 +26,8 @@ def extract_text_from_pdf(pdf_file):
 def split_text_into_chunks(pages):
     """Split each PDF page into chunks while preserving page numbers."""
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=350,
-        chunk_overlap=50,
+        chunk_size=700,
+        chunk_overlap=100,
         length_function=len
     )
 

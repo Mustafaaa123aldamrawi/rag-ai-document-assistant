@@ -19,6 +19,18 @@ def call_qwen_llm(prompt):
         "model": "Qwen/Qwen2.5-1.5B-Instruct:featherless-ai",
         "messages": [
             {
+                "role": "system",
+                "content": (
+                    "You are a document-grounded AV technical assistant. "
+                    "Answer only from the information explicitly provided in the user's context. "
+                    "Do not use outside knowledge, assumptions, or general product knowledge. "
+                    "If the context does not support a claim, do not include it. "
+                    "If the answer is not supported by the context, say: "
+                    "'The information was not found in the document.' "
+                    "Keep the answer concise, accurate, and technically clear."
+                )
+            },
+            {
                 "role": "user",
                 "content": prompt
             }

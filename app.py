@@ -386,6 +386,7 @@ if st.button("Ask AI"):
         
         expanded_texts = []
         seen_chunks = set()
+        used_sources = set()
         
         for document in relevant_documents:
             source = document.metadata.get("source")
@@ -416,6 +417,9 @@ if st.button("Ask AI"):
                                 f"{chunk['text']}"
                             )
                             seen_chunks.add(chunk_key)
+                            used_sources.add(
+                                (chunk["source"], chunk["page_number"])
+                            )
         
                 break
         if expanded_texts:
@@ -698,4 +702,7 @@ if st.button("Ask AI"):
         
         st.subheader("🤖 AI Answer")
         st.write(answer)
-                   
+        if used_sources:
+            st.markdown("### Sources")
+            for source_name, page_number in sorted(used_sources):
+                st.write(f"- {source_name} — Page {page_number}")           

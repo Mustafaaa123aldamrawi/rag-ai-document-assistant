@@ -252,6 +252,11 @@ if st.button("Ask AI"):
             if len(word.strip(".,?!:;()[]{}\"'")) >= 3
             and word.lower().strip(".,?!:;()[]{}\"'") not in STOP_WORDS
         ]
+        product_keywords = [
+            keyword
+            for keyword in question_keywords
+            if any(char.isdigit() for char in keyword)
+        ]
         # Detect verification questions that require explicit evidence
         verification_starters = (
             "does ", "do ", "did ", "is ", "are ",
@@ -287,20 +292,23 @@ if st.button("Ask AI"):
                     1 for keyword in evidence_keywords
                     if keyword in document_text
                 )
-        
+                product_matches = sum(
+                    1 for keyword in product_keywords
+                    if keyword in document_text
+                )
                 evidence_documents.append(
-                    (document, score, keyword_matches)
+                    (document, score, keyword_matches, product_matches)
                 )
         
         # Prefer chunks that contain question evidence,
         # then use semantic distance as the secondary ranking.
         evidence_documents.sort(
-            key=lambda item: (-item[2], item[1])
+            key=lambda item: (-item[3], -item[2], item[1])
         )
         
         relevant_documents = [
         document
-        for document, score, keyword_matches in evidence_documents
+        for document, score, keyword_matches, product_matches in evidence_documents
         if (
             (
                 is_verification_question
@@ -310,8 +318,11 @@ if st.button("Ask AI"):
             or
             (
                 not is_verification_question
-                and (keyword_matches > 0 or score <= 1.10)
-            )
+                and (
+                    product_matches > 0
+                    or keyword_matches > 0
+                    or score <= 1.10
+                )
         )
     ]
         # Neighbor Expansion

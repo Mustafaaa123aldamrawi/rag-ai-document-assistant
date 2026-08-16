@@ -401,13 +401,14 @@ if st.button("Ask AI"):
                     url = result.get("url", "")
                     source_type = result.get("source_type", "External")
                     content = result.get("content", "")
+                    source_number = len(web_context_parts) + 1
 
                     web_context_parts.append(
+                        f"Source [{source_number}]\n"
                         f"Title: {title}\n"
                         f"URL: {url}\n"
                         f"Content: {content}"
                     )
-
                 web_context = "\n\n".join(web_context_parts)
 
                 prompt = f"""
@@ -419,6 +420,13 @@ Web search context:
 
 Answer using only the web search context above.
 Do not invent information that is not supported by the web results.
+
+For every factual claim, cite the supporting source using its number in square brackets,
+for example [1] or [2].
+
+Use only source numbers that actually appear in the Web search context.
+Do not create or guess source numbers.
+If multiple sources support the same claim, cite them like [1][2].
 """
 
                 answer = call_qwen_llm(prompt)
@@ -428,20 +436,23 @@ Do not invent information that is not supported by the web results.
 
                 st.markdown("### 🌐 Web Sources")
 
-                for result in web_results:
+                for source_number, result in enumerate(web_results, start=1):
                     title = result.get("title", "Web source")
                     url = result.get("url", "")
                     source_type = result.get("source_type", "External")
-
+                
                     if url:
                         if source_type == "Official":
                             manufacturer = get_manufacturer_name(url)
-                            st.markdown(f"- ✅ **{manufacturer} Official** — [{title}]({url})")
+                            st.markdown(
+                                f"- **[{source_number}]** ✅ **{manufacturer} Official** — [{title}]({url})"
+                            )
                         else:
-                            st.markdown(f"- 🌐 **External Source** — [{title}]({url})")
-
-        except Exception as e:
-            st.error(f"Web search error: {e}")
+                            st.markdown(
+                                f"- **[{source_number}]** 🌐 **External Source** — [{title}]({url})"
+                            )
+                except Exception as e:
+                    st.error(f"Web search error: {e}")
 
     elif not uploaded_files:
         st.warning("Please upload at least one PDF document first.")

@@ -317,6 +317,7 @@ if st.button("Ask AI"):
                 for result in web_results:
                     title = result.get("title", "")
                     url = result.get("url", "")
+                    source_type = result.get("source_type", "External")
                     content = result.get("content", "")
 
                     web_context_parts.append(
@@ -348,9 +349,13 @@ Do not invent information that is not supported by the web results.
                 for result in web_results:
                     title = result.get("title", "Web source")
                     url = result.get("url", "")
+                    source_type = result.get("source_type", "External")
 
                     if url:
-                        st.markdown(f"- [{title}]({url})")
+                        if source_type == "Official":
+                            st.markdown(f"- ✅ **Official Source** — [{title}]({url})")
+                        else:
+                            st.markdown(f"- 🌐 **External Source** — [{title}]({url})")
 
         except Exception as e:
             st.error(f"Web search error: {e}")
@@ -899,6 +904,10 @@ Do not invent information that is not supported by the web results.
             for result in web_results:
                 title = result.get("title", "Web source")
                 url = result.get("url", "")
+                source_type = result.get("source_type", "External")
         
                 if url:
-                    st.markdown(f"- [{title}]({url})")
+                    if source_type == "Official":
+                        st.markdown(f"- ✅ **Official Source** — [{title}]({url})")
+                    else:
+                        st.markdown(f"- 🌐 **External Source** — [{title}]({url})")

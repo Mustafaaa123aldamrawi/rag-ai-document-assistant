@@ -1100,6 +1100,7 @@ If multiple sources support the same claim, cite them like [1][2].
             for web_number, result in enumerate(web_results, start=1):
                 web_source_content[web_number] = result.get("content", "")
         # Verify each cited claim against the actual cited source content
+        claim_verification_passed = False
         if direct_answer is None and not answer.startswith("AI model error:"):
             verification_context_parts = []
         
@@ -1143,10 +1144,10 @@ If multiple sources support the same claim, cite them like [1][2].
         
                 try:
                     answer = call_qwen_llm(claim_verification_prompt)
+                    claim_verification_passed = true
                 except Exception:
                     pass
-        st.subheader("🤖 AI Answer")
-        st.write(answer)
+        
         # Show only sources actually cited in the final verified answer
         final_cited_docs = {
             int(x) for x in re.findall(r"\[DOC (\d+)\]", answer)
@@ -1155,6 +1156,11 @@ If multiple sources support the same claim, cite them like [1][2].
         final_cited_web = {
             int(x) for x in re.findall(r"\[WEB (\d+)\]", answer)
         }
+        st.subheader("🤖 AI Answer")
+        st.write(answer)
+        
+        if claim_verification_passed and (final_cited_docs or final_cited_web):
+            st.success("✅ Verified against cited sources")
         if final_cited_docs:
             st.markdown("### 📄 Document Sources")
         

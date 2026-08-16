@@ -630,6 +630,7 @@ If multiple sources support the same claim, cite them like [1][2].
         expanded_texts = []
         seen_chunks = set()
         used_sources = set()
+        doc_source_numbers = {}
         
         for document in relevant_documents:
             source = document.metadata.get("source")
@@ -654,7 +655,17 @@ If multiple sources support the same claim, cite them like [1][2].
                         )
         
                         if chunk_key not in seen_chunks:
-                            expanded_texts.append(
+                            doc_key = (
+                                chunk["source"],
+                                chunk["page_number"]
+                            )
+                            
+                            if doc_key not in doc_source_numbers:
+                                doc_source_numbers[doc_key] = len(doc_source_numbers) + 1
+                            
+                            doc_number = doc_source_numbers[doc_key]
+                           expanded_texts.append(
+                                f"[DOC {doc_number}]\n"
                                 f"Source: {chunk['source']} | "
                                 f"Page: {chunk['page_number']}\n"
                                 f"{chunk['text']}"
@@ -969,13 +980,23 @@ If multiple sources support the same claim, cite them like [1][2].
         Question:
         {question}
         
-        Document context:
+        Combined context:
         {context}
         
         Subject detected in document: {subject_found}
         
+        Answer using only the information provided in the context above.
+        
+        Citation rules:
+        - When a claim comes from an uploaded document, cite it using [DOC X].
+        - When a claim comes from a web source, cite it using [WEB X].
+        - Use only citation labels that actually appear in the context.
+        - Do not invent citation numbers.
+        - Place the citation immediately after the claim it supports.
+        - If both document and web sources support the same claim, cite both, for example [DOC 1][WEB 1].
+        
         If "Subject detected in document" is True, the requested subject exists in the document.
-        Use the related facts in the document context to answer the question.
+        Use the related facts in the context to answer the question.
         Do not say the information was not found when the subject is detected.
         """
         
@@ -992,9 +1013,15 @@ If multiple sources support the same claim, cite them like [1][2].
         st.write(answer)
         
         if used_sources:
-            st.markdown("### Sources")
-            for source_name, page_number in sorted(used_sources):
-                st.write(f"- {source_name} — Page {page_number}")           
+            st.markdown("### 📄 Document Sources")
+        
+            for (source_name, page_number), doc_number in sorted(
+                doc_source_numbers.items(),
+                key=lambda item: item[1]
+            ):
+                st.write(
+                    f"[DOC {doc_number}] {source_name} — Page {page_number}"
+                )    
         if search_mode == "Documents + Web" and web_results:
             st.markdown("### 🌐 Web Sources")
         

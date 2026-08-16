@@ -927,9 +927,10 @@ Do not invent information that is not supported by the web results.
                 title = result.get("title", "Web source")
                 url = result.get("url", "")
                 source_type = result.get("source_type", "External")
+                manufacturer = get_manufacturer_name(url) if source_type == "Official" else None
         
                 if url:
                     if source_type == "Official":
-                        st.markdown(f"- ✅ **Official Source** — [{title}]({url})")
+                        st.markdown(f"- ✅ **Official Source · {manufacturer}** – [{title}]({url})")
                     else:
                         st.markdown(f"- 🌐 **External Source** — [{title}]({url})")

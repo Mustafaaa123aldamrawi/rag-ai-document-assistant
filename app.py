@@ -452,7 +452,7 @@ If multiple sources support the same claim, cite them like [1][2].
                             f"- **[{source_number}]** 🌐 **External Source** — [{title}]({url})"
                         )
         except Exception as e:
-        st.error(f"Web search error: {e}")
+            st.error(f"Web search error: {e}")
 
     elif not uploaded_files:
         st.warning("Please upload at least one PDF document first.")

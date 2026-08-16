@@ -137,6 +137,27 @@ def search_web_tavily(query):
             result["source_type"] = "External"
 
     return results
+def get_manufacturer_name(url):
+    domain_map = {
+        "qsys.com": "Q-SYS",
+        "cisco.com": "Cisco",
+        "shure.com": "Shure",
+        "extron.com": "Extron",
+        "crestron.com": "Crestron",
+        "barco.com": "Barco",
+        "biamp.com": "Biamp",
+        "lightware.com": "Lightware",
+        "samsung.com": "Samsung",
+        "lg.com": "LG"
+    }
+
+    url_lower = url.lower()
+
+    for domain, manufacturer in domain_map.items():
+        if domain in url_lower:
+            return manufacturer
+
+    return "Official Manufacturer"
 def extract_text_from_pdf(pdf_file):
     """Extract text page by page and preserve page numbers."""
     reader = PdfReader(pdf_file)
@@ -353,7 +374,8 @@ Do not invent information that is not supported by the web results.
 
                     if url:
                         if source_type == "Official":
-                            st.markdown(f"- ✅ **Official Source** — [{title}]({url})")
+                            manufacturer = get_manufacturer_name(url)
+                            st.markdown(f"- ✅ **{manufacturer} Official** — [{title}]({url})")
                         else:
                             st.markdown(f"- 🌐 **External Source** — [{title}]({url})")
 

@@ -189,7 +189,7 @@ def search_web_tavily(query):
     seen_urls = set()
     
     for result in results:
-    url = result.get("url", "").strip()
+        url = result.get("url", "").strip()
     
     if url and url not in seen_urls:
         unique_results.append(result)

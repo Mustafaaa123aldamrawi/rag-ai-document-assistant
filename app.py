@@ -135,7 +135,23 @@ def search_web_tavily(query):
 
         for result in results:
             result["source_type"] = "External"
-
+    # Calculate trust score for every result
+    for result in results:
+        title = result.get("title", "")
+        url = result.get("url", "")
+        source_type = result.get("source_type", "External")
+    
+        result["trust_score"] = get_source_trust_score(
+            title,
+            url,
+            source_type
+        )
+    
+    # Sort highest-trust sources first
+    results.sort(
+        key=lambda result: result.get("trust_score", 0),
+        reverse=True
+    )
     return results
 def get_manufacturer_name(url):
     domain_map = {
@@ -158,6 +174,38 @@ def get_manufacturer_name(url):
             return manufacturer
 
     return "Official Manufacturer"
+    def get_source_trust_score(title, url, source_type):
+        title_lower = title.lower()
+        url_lower = url.lower()
+    
+        if source_type != "Official":
+            return 10
+    
+        if (
+            "manual" in title_lower
+            or "user guide" in title_lower
+            or "datasheet" in title_lower
+            or "data sheet" in title_lower
+            or "manual" in url_lower
+            or "datasheet" in url_lower
+        ):
+            return 100
+    
+        if (
+            "product" in title_lower
+            or "/products/" in url_lower
+            or "/product/" in url_lower
+        ):
+            return 90
+    
+        if (
+            "support" in title_lower
+            or "knowledge" in title_lower
+            or "support" in url_lower
+        ):
+            return 80
+    
+        return 70
 def extract_text_from_pdf(pdf_file):
     """Extract text page by page and preserve page numbers."""
     reader = PdfReader(pdf_file)

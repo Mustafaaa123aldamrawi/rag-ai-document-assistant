@@ -74,10 +74,25 @@ def search_web_tavily(query):
         "Content-Type": "application/json"
     }
 
-    payload = {
+    official_domains = [
+        "qsys.com",
+        "cisco.com",
+        "shure.com",
+        "extron.com",
+        "crestron.com",
+        "barco.com",
+        "biamp.com",
+        "lightware.com",
+        "samsung.com",
+        "lg.com"
+    ]
+
+    # STEP 1: Search official AV manufacturer websites first
+    official_payload = {
         "query": query,
         "search_depth": "advanced",
         "max_results": 5,
+        "include_domains": official_domains,
         "include_answer": False,
         "include_raw_content": False
     }
@@ -85,15 +100,43 @@ def search_web_tavily(query):
     response = requests.post(
         url,
         headers=headers,
-        json=payload,
+        json=official_payload,
         timeout=60
     )
 
     response.raise_for_status()
-
     data = response.json()
+    results = data.get("results", [])
 
-    return data.get("results", [])
+    # Mark these results as official
+    for result in results:
+        result["source_type"] = "Official"
+
+    # STEP 2: If official search returns nothing, search the general web
+    if not results:
+        fallback_payload = {
+            "query": query,
+            "search_depth": "advanced",
+            "max_results": 5,
+            "include_answer": False,
+            "include_raw_content": False
+        }
+
+        response = requests.post(
+            url,
+            headers=headers,
+            json=fallback_payload,
+            timeout=60
+        )
+
+        response.raise_for_status()
+        data = response.json()
+        results = data.get("results", [])
+
+        for result in results:
+            result["source_type"] = "External"
+
+    return results
 def extract_text_from_pdf(pdf_file):
     """Extract text page by page and preserve page numbers."""
     reader = PdfReader(pdf_file)

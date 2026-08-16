@@ -1144,9 +1144,9 @@ If multiple sources support the same claim, cite them like [1][2].
         
                 try:
                     answer = call_qwen_llm(claim_verification_prompt)
-                    claim_verification_passed = true
-                except Exception:
-                    pass
+                    claim_verification_passed = True
+                except Exception as e:
+                    st.warning(f"Claim verification error: {e}")
         
         # Show only sources actually cited in the final verified answer
         final_cited_docs = {

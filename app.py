@@ -660,22 +660,25 @@ If multiple sources support the same claim, cite them like [1][2].
                                 chunk["page_number"]
                             )
                             
-                            if doc_key not in doc_source_numbers:
-                                doc_source_numbers[doc_key] = len(doc_source_numbers) + 1
-                            
-                            doc_number = doc_source_numbers[doc_key]
-                           expanded_texts.append(
-                                f"[DOC {doc_number}]\n"
-                                f"Source: {chunk['source']} | "
-                                f"Page: {chunk['page_number']}\n"
-                                f"{chunk['text']}"
-                            )
-                            seen_chunks.add(chunk_key)
-                            used_sources.add(
-                                (chunk["source"], chunk["page_number"])
-                            )
+                        if doc_key not in doc_source_numbers:
+                            doc_source_numbers[doc_key] = len(doc_source_numbers) + 1
+                        
+                        doc_number = doc_source_numbers[doc_key]
+                        
+                        expanded_texts.append(
+                            f"[DOC {doc_number}]\n"
+                            f"Source: {chunk['source']} | "
+                            f"Page: {chunk['page_number']}\n"
+                            f"{chunk['text']}"
+                        )
+                        
+                        seen_chunks.add(chunk_key)
+                        
+                        used_sources.add(
+                            (chunk["source"], chunk["page_number"])
+                        )
         
-                break
+                        break
         if expanded_texts:
             context = "\n\n".join(expanded_texts)
         else:

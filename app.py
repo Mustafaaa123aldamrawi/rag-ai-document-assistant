@@ -388,6 +388,11 @@ question = st.text_input(
 )
 
 if st.button("Ask AI"):
+    if question:
+        st.session_state.messages.append({
+            "role": "user",
+            "content": question
+        })
     if not question:
         st.warning("Please enter a question.")
 

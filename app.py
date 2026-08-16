@@ -1099,6 +1099,49 @@ If multiple sources support the same claim, cite them like [1][2].
         if search_mode == "Documents + Web" and web_results:
             for web_number, result in enumerate(web_results, start=1):
                 web_source_content[web_number] = result.get("content", "")
+        # Verify each cited claim against the actual cited source content
+        if direct_answer is None and not answer.startswith("AI model error:"):
+            verification_context_parts = []
+        
+            for doc_number, source_text in doc_source_content.items():
+                verification_context_parts.append(
+                    f"[DOC {doc_number}]\n{source_text}"
+                )
+        
+            for web_number, source_text in web_source_content.items():
+                verification_context_parts.append(
+                    f"[WEB {web_number}]\n{source_text}"
+                )
+        
+            verification_context = "\n\n".join(verification_context_parts)
+        
+            if verification_context:
+                claim_verification_prompt = f"""
+        Review the answer against the exact cited source content below.
+        
+        ANSWER:
+        {answer}
+        
+        SOURCE CONTENT:
+        {verification_context}
+        
+        Verification rules:
+        - Check every factual claim against the source cited immediately after that claim.
+        - A [DOC X] claim must be supported by the matching [DOC X] content.
+        - A [WEB X] claim must be supported by the matching [WEB X] content.
+        - Do not assume that a citation supports a claim merely because the citation exists.
+        - Remove any factual claim that is not supported by its cited source.
+        - Preserve supported claims and their correct citations.
+        - Never invent, change, or guess citation numbers.
+        - Return only the verified corrected answer.
+        
+        Verified answer:
+        """
+        
+                try:
+                    answer = call_qwen_llm(claim_verification_prompt)
+                except Exception:
+                    pass
         st.subheader("🤖 AI Answer")
         st.write(answer)
         

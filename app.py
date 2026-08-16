@@ -1013,7 +1013,42 @@ If multiple sources support the same claim, cite them like [1][2].
                     answer = call_qwen_llm(prompt)
                 except Exception as e:
                     answer = f"AI model error: {e}"
+        # Validate citation coverage before displaying the answer
+        if direct_answer is None and not answer.startswith("AI model error:"):
+            answer_lines = answer.splitlines()
         
+            uncited_bullets = [
+                line for line in answer_lines
+                if line.strip().startswith(("-", "*", "•"))
+                and "[DOC " not in line
+                and "[WEB " not in line
+            ]
+        
+            if uncited_bullets:
+                citation_review_prompt = f"""
+        Review the answer below using the provided context.
+        
+        CONTEXT:
+        {context}
+        
+        ANSWER:
+        {answer}
+        
+        Citation requirements:
+        - Preserve the meaning of the answer.
+        - Every factual bullet point must end with the correct citation.
+        - Use only [DOC X] and [WEB X] labels that actually appear in the context.
+        - Never invent or guess a citation.
+        - If a factual statement cannot be supported by the context, remove it.
+        - Return only the corrected answer.
+        
+        Corrected answer:
+        """
+        
+                try:
+                    answer = call_qwen_llm(citation_review_prompt)
+                except Exception:
+                    pass
         st.subheader("🤖 AI Answer")
         st.write(answer)
         

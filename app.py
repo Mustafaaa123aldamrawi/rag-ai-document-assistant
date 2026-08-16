@@ -1127,13 +1127,16 @@ If multiple sources support the same claim, cite them like [1][2].
         
         Verification rules:
         - Check every factual claim against the source cited immediately after that claim.
-        - A [DOC X] claim must be supported by the matching [DOC X] content.
-        - A [WEB X] claim must be supported by the matching [WEB X] content.
+        - A [DOC X] claim must be directly supported by the matching [DOC X] content.
+        - A [WEB X] claim must be directly supported by the matching [WEB X] content.
         - Do not assume that a citation supports a claim merely because the citation exists.
-        - Remove any factual claim that is not supported by its cited source.
-        - Preserve supported claims and their correct citations.
-        - Never invent, change, or guess citation numbers.
-        - Return only the verified corrected answer.
+        - If a claim is not supported by its cited source, DELETE that claim silently.
+        - Do NOT explain that information was missing, unsupported, unavailable, or not found.
+        - Do NOT add notes, warnings, explanations, verification comments, or summaries.
+        - Preserve only supported claims and their correct citations.
+        - Never invent, change, renumber, or guess citation numbers.
+        - Preserve the original answer format whenever possible.
+        - Return ONLY the cleaned verified answer and nothing else.
         
         Verified answer:
         """

@@ -184,6 +184,18 @@ def search_web_tavily(query):
         key=lambda result: result.get("trust_score", 0),
         reverse=True
     )
+    # Remove duplicate web sources while keeping the highest-trust result
+    unique_results = []
+    seen_urls = set()
+    
+    for result in results:
+    url = result.get("url", "").strip()
+    
+    if url and url not in seen_urls:
+        unique_results.append(result)
+        seen_urls.add(url)
+    
+    results = unique_results
     return results
 def get_manufacturer_name(url):
     domain_map = {

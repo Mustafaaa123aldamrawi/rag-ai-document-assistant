@@ -1080,6 +1080,25 @@ If multiple sources support the same claim, cite them like [1][2].
                     "Citation validation warning: invalid source reference(s) detected: "
                     + ", ".join(invalid_labels)
                 )
+        # Build document source content map for claim verification
+        doc_source_content = {}
+        
+        for page in document_pages:
+            source_name = page.get("source")
+            page_number = page.get("page_number")
+            page_text = page.get("text", "")
+        
+            doc_key = (source_name, page_number)
+        
+            if doc_key in doc_source_numbers:
+                doc_number = doc_source_numbers[doc_key]
+                doc_source_content[doc_number] = page_text
+        # Build web source content map for claim verification
+        web_source_content = {}
+        
+        if search_mode == "Documents + Web" and web_results:
+            for web_number, result in enumerate(web_results, start=1):
+                web_source_content[web_number] = result.get("content", "")
         st.subheader("🤖 AI Answer")
         st.write(answer)
         

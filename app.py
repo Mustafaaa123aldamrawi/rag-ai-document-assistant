@@ -1049,6 +1049,37 @@ If multiple sources support the same claim, cite them like [1][2].
                     answer = call_qwen_llm(citation_review_prompt)
                 except Exception:
                     pass
+        # Validate that citation labels reference real available sources
+        import re
+        
+        if direct_answer is None and not answer.startswith("AI model error:"):
+            cited_docs = {
+                int(x) for x in re.findall(r"\[DOC (\d+)\]", answer)
+            }
+        
+            cited_web = {
+                int(x) for x in re.findall(r"\[WEB (\d+)\]", answer)
+            }
+        
+            valid_docs = set(doc_source_numbers.values())
+        
+            valid_web = set(
+                range(1, len(web_results) + 1)
+            ) if search_mode == "Documents + Web" and web_results else set()
+        
+            invalid_docs = cited_docs - valid_docs
+            invalid_web = cited_web - valid_web
+        
+            if invalid_docs or invalid_web:
+                invalid_labels = (
+                    [f"[DOC {x}]" for x in sorted(invalid_docs)]
+                    + [f"[WEB {x}]" for x in sorted(invalid_web)]
+                )
+        
+                st.warning(
+                    "Citation validation warning: invalid source reference(s) detected: "
+                    + ", ".join(invalid_labels)
+                )
         st.subheader("🤖 AI Answer")
         st.write(answer)
         

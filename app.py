@@ -302,7 +302,9 @@ st.set_page_config(
     page_icon="🤖",
     layout="wide"
 )
-
+# Initialize conversational memory
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 # Application title
 st.title("🤖 RAG AI Document Assistant")
 

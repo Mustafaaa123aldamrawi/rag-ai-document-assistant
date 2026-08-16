@@ -429,29 +429,29 @@ Do not create or guess source numbers.
 If multiple sources support the same claim, cite them like [1][2].
 """
 
-                answer = call_qwen_llm(prompt)
-
-        st.subheader("🤖 AI Answer")
-        st.write(answer)
-
-        st.markdown("### 🌐 Web Sources")
-
-        for source_number, result in enumerate(web_results, start=1):
-            title = result.get("title", "Web source")
-            url = result.get("url", "")
-            source_type = result.get("source_type", "External")
-        
-            if url:
-                if source_type == "Official":
-                    manufacturer = get_manufacturer_name(url)
-                    st.markdown(
-                        f"- **[{source_number}]** ✅ **{manufacturer} Official** — [{title}]({url})"
-                    )
-                else:
-                    st.markdown(
-                        f"- **[{source_number}]** 🌐 **External Source** — [{title}]({url})"
-                    )
-    except Exception as e:
+            answer = call_qwen_llm(prompt)
+    
+            st.subheader("🤖 AI Answer")
+            st.write(answer)
+    
+            st.markdown("### 🌐 Web Sources")
+    
+            for source_number, result in enumerate(web_results, start=1):
+                title = result.get("title", "Web source")
+                url = result.get("url", "")
+                source_type = result.get("source_type", "External")
+            
+                if url:
+                    if source_type == "Official":
+                        manufacturer = get_manufacturer_name(url)
+                        st.markdown(
+                            f"- **[{source_number}]** ✅ **{manufacturer} Official** — [{title}]({url})"
+                        )
+                    else:
+                        st.markdown(
+                            f"- **[{source_number}]** 🌐 **External Source** — [{title}]({url})"
+                        )
+        except Exception as e:
         st.error(f"Web search error: {e}")
 
     elif not uploaded_files:

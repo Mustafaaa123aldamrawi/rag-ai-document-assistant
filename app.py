@@ -1147,21 +1147,32 @@ If multiple sources support the same claim, cite them like [1][2].
                     pass
         st.subheader("🤖 AI Answer")
         st.write(answer)
+        # Show only sources actually cited in the final verified answer
+        final_cited_docs = {
+            int(x) for x in re.findall(r"\[DOC (\d+)\]", answer)
+        }
         
-        if used_sources:
+        final_cited_web = {
+            int(x) for x in re.findall(r"\[WEB (\d+)\]", answer)
+        }
+        if final_cited_docs:
             st.markdown("### 📄 Document Sources")
         
             for (source_name, page_number), doc_number in sorted(
                 doc_source_numbers.items(),
                 key=lambda item: item[1]
             ):
-                st.write(
-                    f"[DOC {doc_number}] {source_name} — Page {page_number}"
-                )    
-        if search_mode == "Documents + Web" and web_results:
+                if doc_number in final_cited_docs:
+                    st.write(
+                        f"[DOC {doc_number}] {source_name} – Page {page_number}"
+                    )
+        if search_mode == "Documents + Web" and web_results and final_cited_web:
             st.markdown("### 🌐 Web Sources")
         
-            for result in web_results:
+            for web_number, result in enumerate(web_results, start=1):
+                if web_number not in final_cited_web:
+                    continue
+        
                 title = result.get("title", "Web source")
                 url = result.get("url", "")
                 source_type = result.get("source_type", "External")
@@ -1169,6 +1180,10 @@ If multiple sources support the same claim, cite them like [1][2].
         
                 if url:
                     if source_type == "Official":
-                        st.markdown(f"- ✅ **Official Source · {manufacturer}** – [{title}]({url})")
+                        st.markdown(
+                            f"- **[WEB {web_number}]** ✅ **Official Source · {manufacturer}** – [{title}]({url})"
+                        )
                     else:
-                        st.markdown(f"- 🌐 **External Source** — [{title}]({url})")
+                        st.markdown(
+                            f"- **[WEB {web_number}]** 🌐 **External Source** – [{title}]({url})"
+                        )

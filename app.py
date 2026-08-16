@@ -991,12 +991,14 @@ If multiple sources support the same claim, cite them like [1][2].
         Answer using only the information provided in the context above.
         
         Citation rules:
-        - When a claim comes from an uploaded document, cite it using [DOC X].
-        - When a claim comes from a web source, cite it using [WEB X].
+        - Every factual claim in the answer MUST include a citation immediately after the claim.
+        - If the information comes from an uploaded document, use the exact [DOC X] label attached to that information in the context.
+        - If the information comes from a web source, use the exact [WEB X] label attached to that information in the context.
+        - If both a document and a web source support the same claim, cite both, for example [DOC 1][WEB 1].
+        - Never write a factual claim without a citation when a supporting citation is available.
         - Use only citation labels that actually appear in the context.
-        - Do not invent citation numbers.
-        - Place the citation immediately after the claim it supports.
-        - If both document and web sources support the same claim, cite both, for example [DOC 1][WEB 1].
+        - Never invent, renumber, or guess citation labels.
+        - For bullet-point answers, place the citation at the end of EACH bullet point it supports.
         
         If "Subject detected in document" is True, the requested subject exists in the document.
         Use the related facts in the context to answer the question.

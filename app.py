@@ -66,38 +66,38 @@ def call_qwen_llm(prompt):
     response.raise_for_status()
 
     return response.json()["choices"][0]["message"]["content"]
-    def get_source_trust_score(title, url, source_type):
-        title_lower = title.lower()
-        url_lower = url.lower()
-    
-        if source_type != "Official":
-            return 10
-    
-        if (
-            "manual" in title_lower
-            or "user guide" in title_lower
-            or "datasheet" in title_lower
-            or "data sheet" in title_lower
-            or "manual" in url_lower
-            or "datasheet" in url_lower
-        ):
-            return 100
-    
-        if (
-            "product" in title_lower
-            or "/products/" in url_lower
-            or "/product/" in url_lower
-        ):
-            return 90
-    
-        if (
-            "support" in title_lower
-            or "knowledge" in title_lower
-            or "support" in url_lower
-        ):
-            return 80
-    
-        return 70
+def get_source_trust_score(title, url, source_type):
+    title_lower = title.lower()
+    url_lower = url.lower()
+
+    if source_type != "Official":
+        return 10
+
+    if (
+        "manual" in title_lower
+        or "user guide" in title_lower
+        or "datasheet" in title_lower
+        or "data sheet" in title_lower
+        or "manual" in url_lower
+        or "datasheet" in url_lower
+    ):
+        return 100
+
+    if (
+        "product" in title_lower
+        or "/products/" in url_lower
+        or "/product/" in url_lower
+    ):
+        return 90
+
+    if (
+        "support" in title_lower
+        or "knowledge" in title_lower
+        or "support" in url_lower
+    ):
+        return 80
+
+    return 70
 def search_web_tavily(query):
     url = "https://api.tavily.com/search"
 

@@ -765,14 +765,17 @@ If multiple sources support the same claim, cite them like [1][2].
                 if web_results:
                     web_context_parts = []
         
-                    for result in web_results:
+                    for source_number, result in enumerate(web_results, start=1):
                         title = result.get("title", "")
                         url = result.get("url", "")
                         content = result.get("content", "")
+                        source_type = result.get("source_type", "External")
         
                         web_context_parts.append(
+                            f"[WEB {source_number}]\n"
                             f"Title: {title}\n"
                             f"URL: {url}\n"
+                            f"Source Type: {source_type}\n"
                             f"Content: {content}"
                         )
         

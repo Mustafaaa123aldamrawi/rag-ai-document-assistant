@@ -989,18 +989,56 @@ If multiple sources support the same claim, cite them like [1][2].
                 token in normalized_context
                 for token in subject_tokens
             )
+        # Detect whether the current question is likely a conversational follow-up
+        follow_up_starters = (
+            "what about",
+            "how about",
+            "and what",
+            "and how",
+            "and does",
+            "and is",
+            "and can",
+            "what else",
+            "how many",
+            "how much",
+        )
+        
+        follow_up_references = {
+            "it",
+            "its",
+            "this",
+            "that",
+            "they",
+            "their",
+            "them",
+        }
+        
+        question_words = set(
+            question_lower
+            .replace("?", "")
+            .replace(",", "")
+            .replace(".", "")
+            .split()
+        )
+        
+        is_follow_up = (
+            question_lower.startswith(follow_up_starters)
+            or bool(question_words & follow_up_references)
+        )
         # Build recent conversation history for contextual follow-up questions
         conversation_history = ""
-        
-        for message in st.session_state.messages[:-1][-6:]:
-            role = "User" if message["role"] == "user" else "Assistant"
-            conversation_history += f"{role}: {message['content']}\n"    
+        if is_follow_up:
+            for message in st.session_state.messages[:-1][-6:]:
+                role = "User" if message["role"] == "user" else "Assistant"
+                conversation_history += f"{role}: {message['content']}\n"    
             prompt = f"""
         Recent conversation:
         {conversation_history}    
         Question:
         {question}
-        
+        Follow-up question detected: {is_follow_up}
+        If Follow-up question detected is False, treat the current question as a new topic and do not carry over entities or assumptions from previous conversation turns.
+        If it is True, use the recent conversation only to resolve references such as it, its, this, that, or omitted product names.
         Combined context:
         {context}
         

@@ -1167,6 +1167,10 @@ If multiple sources support the same claim, cite them like [1][2].
         final_cited_web = {
             int(x) for x in re.findall(r"\[WEB (\d+)\]", answer)
         }
+        st.session_state.messages.append({
+            "role": "assistant",
+            "content": answer
+        })
         st.subheader("🤖 AI Answer")
         st.write(answer)
         

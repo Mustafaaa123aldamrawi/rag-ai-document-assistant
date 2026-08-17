@@ -989,8 +989,15 @@ If multiple sources support the same claim, cite them like [1][2].
                 token in normalized_context
                 for token in subject_tokens
             )
-            
+        # Build recent conversation history for contextual follow-up questions
+        conversation_history = ""
+        
+        for message in st.session_state.messages[:-1][-6:]:
+            role = "User" if message["role"] == "user" else "Assistant"
+            conversation_history += f"{role}: {message['content']}\n"    
             prompt = f"""
+        Recent conversation:
+        {conversation_history}    
         Question:
         {question}
         
@@ -998,8 +1005,11 @@ If multiple sources support the same claim, cite them like [1][2].
         {context}
         
         Subject detected in document: {subject_found}
-        
         Answer using only the information provided in the context above.
+        Use the recent conversation only to understand the user's follow-up question and conversational context.
+        Do not treat the recent conversation as a factual source.
+        All factual claims must still be supported by the Combined context and its citations.
+        
         
         Citation rules:
         - Every factual claim in the answer MUST include a citation immediately after the claim.

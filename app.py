@@ -1031,7 +1031,7 @@ If multiple sources support the same claim, cite them like [1][2].
             for message in st.session_state.messages[:-1][-6:]:
                 role = "User" if message["role"] == "user" else "Assistant"
                 conversation_history += f"{role}: {message['content']}\n"    
-            prompt = f"""
+        prompt = f"""
         Recent conversation:
         {conversation_history}    
         Question:

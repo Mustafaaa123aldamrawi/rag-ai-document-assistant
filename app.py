@@ -783,9 +783,56 @@ If multiple sources support the same claim, cite them like [1][2].
                     else:
                         context = full_document_text[start:]
         if search_mode == "Documents + Web":
+            web_search_query = question
+        # Make follow-up web searches aware of the previous user question
+        web_follow_up_starters = (
+            "what about",
+            "how about",
+            "and what",
+            "and how",
+            "and does",
+            "and is",
+            "and can",
+        )
+        
+        web_follow_up_references = {
+            "it",
+            "its",
+            "this",
+            "that",
+            "they",
+            "their",
+            "them",
+        }
+        
+        web_question_words = set(
+            question_lower
+            .replace("?", "")
+            .replace(",", "")
+            .replace(".", "")
+            .split()
+        )
+        
+        is_web_follow_up = (
+            question_lower.startswith(web_follow_up_starters)
+            or bool(web_question_words & web_follow_up_references)
+        )
+        
+        if is_web_follow_up:
+            previous_user_questions = [
+                message["content"]
+                for message in st.session_state.messages[:-1]
+                if message["role"] == "user"
+            ]
+        
+            if previous_user_questions:
+                web_search_query = (
+                    f"{previous_user_questions[-1]} "
+                    f"{question}"
+                )
             try:
                 with st.spinner("Searching the web..."):
-                    web_results = search_web_tavily(question)
+                    web_results = search_web_tavily(web_search_query)
         
                 if web_results:
                     web_context_parts = []

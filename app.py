@@ -826,9 +826,12 @@ If multiple sources support the same claim, cite them like [1][2].
             ]
         
             if previous_user_questions:
+                previous_question = previous_user_questions[-1]
+
                 web_search_query = (
-                    f"{previous_user_questions[-1]} "
-                    f"{question}"
+                    f"Product/context from previous question: {previous_question}. "
+                    f"Current follow-up question: {question}. "
+                    f"Return results specifically about the same product and the exact topic asked in the follow-up."
                 )
             try:
                 with st.spinner("Searching the web..."):

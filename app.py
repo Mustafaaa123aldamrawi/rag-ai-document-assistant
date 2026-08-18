@@ -98,6 +98,29 @@ def get_source_trust_score(title, url, source_type):
         return 80
 
     return 70
+def rewrite_follow_up_query(previous_question, current_question):
+    rewrite_prompt = f"""
+Rewrite the current follow-up question as one standalone web search query.
+
+Previous question:
+{previous_question}
+
+Current follow-up question:
+{current_question}
+
+Rules:
+- Resolve references such as it, its, this, that, they, and their using the previous question.
+- Preserve the exact product or model name from the previous question.
+- Preserve the exact topic requested in the current follow-up.
+- Do not answer the question.
+- Do not add facts.
+- Return only the standalone search query and nothing else.
+
+Standalone search query:
+"""
+
+    rewritten_query = call_qwen_llm(rewrite_prompt)
+    return rewritten_query.strip().strip('"')
 def search_web_tavily(query):
     url = "https://api.tavily.com/search"
 
@@ -828,10 +851,9 @@ If multiple sources support the same claim, cite them like [1][2].
             if previous_user_questions:
                 previous_question = previous_user_questions[-1]
 
-                web_search_query = (
-                    f"Product/context from previous question: {previous_question}. "
-                    f"Current follow-up question: {question}. "
-                    f"Return results specifically about the same product and the exact topic asked in the follow-up."
+                web_search_query = rewrite_follow_up_query(
+                    previous_question,
+                    question
                 )
             try:
                 with st.spinner("Searching the web..."):

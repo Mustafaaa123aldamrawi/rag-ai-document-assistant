@@ -807,95 +807,101 @@ If multiple sources support the same claim, cite them like [1][2].
                         context = full_document_text[start:]
         if search_mode == "Documents + Web":
             web_search_query = question
-            st.write("DEBUG: Documents + Web block reached")
-            st.write("DEBUG web query:", web_search_query)
-        # Make follow-up web searches aware of the previous user question
-        web_follow_up_starters = (
-            "what about",
-            "how about",
-            "and what",
-            "and how",
-            "and does",
-            "and is",
-            "and can",
-        )
-        
-        web_follow_up_references = {
-            "it",
-            "its",
-            "this",
-            "that",
-            "they",
-            "their",
-            "them",
-        }
-        
-        web_question_words = set(
-            question_lower
-            .replace("?", "")
-            .replace(",", "")
-            .replace(".", "")
-            .split()
-        )
-        
-        is_web_follow_up = (
-            question_lower.startswith(web_follow_up_starters)
-            or bool(web_question_words & web_follow_up_references)
-        )
-        
-        if is_web_follow_up:
-            previous_user_questions = [
-                message["content"]
-                for message in st.session_state.messages[:-1]
-                if message["role"] == "user"
-            ]
-        
-            if previous_user_questions:
-                previous_question = previous_user_questions[-1]
-        
-                web_search_query = rewrite_follow_up_query(
-                    previous_question,
-                    question
-                )
-        
-                try:
-                    with st.spinner("Searching the web..."):
-                        web_results = search_web_tavily(web_search_query)
-        
-                    st.write(
-                        "DEBUG web results count:",
-                        len(web_results) if web_results else 0
+
+            # Detect whether this is a web follow-up question
+            web_follow_up_starters = (
+                "what about",
+                "how about",
+                "and what",
+                "and how",
+                "and does",
+                "and is",
+                "and can",
+            )
+
+            web_follow_up_references = {
+                "it",
+                "its",
+                "this",
+                "that",
+                "they",
+                "their",
+                "them",
+            }
+
+            web_question_words = set(
+                question_lower
+                .replace("?", "")
+                .replace(",", "")
+                .replace(".", "")
+                .split()
+            )
+
+            is_web_follow_up = (
+                question_lower.startswith(web_follow_up_starters)
+                or bool(web_question_words & web_follow_up_references)
+            )
+
+            # Rewrite the query only when this is a follow-up
+            if is_web_follow_up:
+                previous_user_questions = [
+                    message["content"]
+                    for message in st.session_state.messages[:-1]
+                    if message["role"] == "user"
+                ]
+
+                if previous_user_questions:
+                    previous_question = previous_user_questions[-1]
+
+                    web_search_query = rewrite_follow_up_query(
+                        previous_question,
+                        question
                     )
-        
-                    if web_results:
-                        web_context_parts = []
-        
-                        for source_number, result in enumerate(web_results, start=1):
-                            title = result.get("title", "")
-                            url = result.get("url", "")
-                            content = result.get("content", "")
-                            source_type = result.get("source_type", "External")
-        
-                            web_context_parts.append(
-                                f"[WEB {source_number}]\n"
-                                f"Title: {title}\n"
-                                f"URL: {url}\n"
-                                f"Source Type: {source_type}\n"
-                                f"Content: {content}"
-                            )
-        
-                        web_context = "\n\n".join(web_context_parts)
-        
-                        context = f"""
-        DOCUMENT CONTEXT:
-        {context}
-        
-        WEB CONTEXT:
-        {web_context}
-        """
-        
-                except Exception as e:
-                    st.warning(f"Web search could not be completed: {e}")
+
+            # Search the web for BOTH new questions and follow-up questions
+            try:
+                with st.spinner("Searching the web..."):
+                    web_results = search_web_tavily(web_search_query)
+
+                st.write(
+                    "DEBUG web query:",
+                    web_search_query
+                )
+
+                st.write(
+                    "DEBUG web results count:",
+                    len(web_results) if web_results else 0
+                )
+
+                if web_results:
+                    web_context_parts = []
+
+                    for source_number, result in enumerate(web_results, start=1):
+                        title = result.get("title", "")
+                        url = result.get("url", "")
+                        content = result.get("content", "")
+                        source_type = result.get("source_type", "External")
+
+                        web_context_parts.append(
+                            f"[WEB {source_number}]\n"
+                            f"Title: {title}\n"
+                            f"URL: {url}\n"
+                            f"Source Type: {source_type}\n"
+                            f"Content: {content}"
+                        )
+
+                    web_context = "\n\n".join(web_context_parts)
+
+                    context = f"""
+DOCUMENT CONTEXT:
+{context}
+
+WEB CONTEXT:
+{web_context}
+"""
+
+            except Exception as e:
+                st.warning(f"Web search could not be completed: {e}")
         direct_answer = None
         # Direct handling for job title questions
         job_title_phrases = [

@@ -907,7 +907,7 @@ If multiple sources support the same claim, cite them like [1][2].
                 "what is mustafa’s job"
             ]
 
-            if any(phrase in question_lower for phrase in job_title_phrases):
+        if any(phrase in question_lower for phrase in job_title_phrases):
             full_document_text = "\n".join(
                 page["text"] for page in document_pages
             )

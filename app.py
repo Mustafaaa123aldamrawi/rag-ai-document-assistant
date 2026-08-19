@@ -807,6 +807,8 @@ If multiple sources support the same claim, cite them like [1][2].
                         context = full_document_text[start:]
         if search_mode == "Documents + Web":
             web_search_query = question
+            st.write("DEBUG: Documents + Web block reached")
+            st.write("DEBUG web query:", web_search_query)
         # Make follow-up web searches aware of the previous user question
         web_follow_up_starters = (
             "what about",

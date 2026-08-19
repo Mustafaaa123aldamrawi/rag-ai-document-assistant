@@ -856,7 +856,7 @@ If multiple sources support the same claim, cite them like [1][2].
             web_search_query = rewrite_follow_up_query
             previous_question,
             question
-        )
+            )
         try:
             with st.spinner("Searching the web..."):
                 web_results = search_web_tavily(web_search_query)

@@ -896,18 +896,18 @@ If multiple sources support the same claim, cite them like [1][2].
         
                 except Exception as e:
                     st.warning(f"Web search could not be completed: {e}")
-                direct_answer = None
-                # Direct handling for job title questions
-                job_title_phrases = [
-                    "job title",
-                    "current job title",
-                    "current title",
-                    "professional title",
-                    "what is mustafa's job",
-                    "what is mustafa’s job"
-                ]
+            direct_answer = None
+            # Direct handling for job title questions
+            job_title_phrases = [
+                "job title",
+                "current job title",
+                "current title",
+                "professional title",
+                "what is mustafa's job",
+                "what is mustafa’s job"
+            ]
 
-        if any(phrase in question_lower for phrase in job_title_phrases):
+            if any(phrase in question_lower for phrase in job_title_phrases):
             full_document_text = "\n".join(
                 page["text"] for page in document_pages
             )

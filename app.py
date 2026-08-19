@@ -853,7 +853,7 @@ If multiple sources support the same claim, cite them like [1][2].
         if previous_user_questions:
             previous_question = previous_user_questions[-1]
 
-            web_search_query = rewrite_follow_up_query
+            web_search_query = rewrite_follow_up_query(
             previous_question,
             question
             )

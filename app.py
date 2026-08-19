@@ -850,17 +850,17 @@ If multiple sources support the same claim, cite them like [1][2].
                 if message["role"] == "user"
             ]
         
-            if previous_user_questions:
-                previous_question = previous_user_questions[-1]
+        if previous_user_questions:
+            previous_question = previous_user_questions[-1]
 
-                web_search_query = rewrite_follow_up_query
-                    previous_question,
-                    question
-                )
-            try:
-                with st.spinner("Searching the web..."):
-                    web_results = search_web_tavily(web_search_query)
-                st.write("DEBUG web results count:", len(web_results) if web_results else 0)
+            web_search_query = rewrite_follow_up_query
+                previous_question,
+                question
+            )
+        try:
+            with st.spinner("Searching the web..."):
+                web_results = search_web_tavily(web_search_query)
+            st.write("DEBUG web results count:", len(web_results) if web_results else 0)
         
                 if web_results:
                     web_context_parts = []

@@ -852,46 +852,51 @@ If multiple sources support the same claim, cite them like [1][2].
         
             if previous_user_questions:
                 previous_question = previous_user_questions[-1]
-    
+        
                 web_search_query = rewrite_follow_up_query(
-                previous_question,
-                question
+                    previous_question,
+                    question
                 )
-        try:
-            with st.spinner("Searching the web..."):
-                web_results = search_web_tavily(web_search_query)
-            st.write("DEBUG web results count:", len(web_results) if web_results else 0)
         
-            if web_results:
-                web_context_parts = []
+                try:
+                    with st.spinner("Searching the web..."):
+                        web_results = search_web_tavily(web_search_query)
         
-                for source_number, result in enumerate(web_results, start=1):
-                    title = result.get("title", "")
-                    url = result.get("url", "")
-                    content = result.get("content", "")
-                    source_type = result.get("source_type", "External")
-    
-                    web_context_parts.append(
-                        f"[WEB {source_number}]\n"
-                        f"Title: {title}\n"
-                        f"URL: {url}\n"
-                        f"Source Type: {source_type}\n"
-                        f"Content: {content}"
+                    st.write(
+                        "DEBUG web results count:",
+                        len(web_results) if web_results else 0
                     )
         
-                web_context = "\n\n".join(web_context_parts)
-    
-                context = f"""
-    DOCUMENT CONTEXT:
-    {context}
-    
-    WEB CONTEXT:
-    {web_context}
-    """
+                    if web_results:
+                        web_context_parts = []
         
-            except Exception as e:
-                st.warning(f"Web search could not be completed: {e}")
-        direct_answer = None
+                        for source_number, result in enumerate(web_results, start=1):
+                            title = result.get("title", "")
+                            url = result.get("url", "")
+                            content = result.get("content", "")
+                            source_type = result.get("source_type", "External")
+        
+                            web_context_parts.append(
+                                f"[WEB {source_number}]\n"
+                                f"Title: {title}\n"
+                                f"URL: {url}\n"
+                                f"Source Type: {source_type}\n"
+                                f"Content: {content}"
+                            )
+        
+                        web_context = "\n\n".join(web_context_parts)
+        
+                        context = f"""
+        DOCUMENT CONTEXT:
+        {context}
+        
+        WEB CONTEXT:
+        {web_context}
+        """
+        
+                except Exception as e:
+                    st.warning(f"Web search could not be completed: {e}")
+    direct_answer = None
         # Direct handling for job title questions
         job_title_phrases = [
             "job title",

@@ -1329,9 +1329,13 @@ WEB CONTEXT:
                     [f"[DOC {x}]" for x in sorted(invalid_docs)]
                     + [f"[WEB {x}]" for x in sorted(invalid_web)]
                 )
-        
+            
+                # Remove invalid citation labels before claim verification
+                for invalid_label in invalid_labels:
+                    answer = answer.replace(invalid_label, "")
+            
                 st.warning(
-                    "Citation validation warning: invalid source reference(s) detected: "
+                    "Invalid citation reference(s) were removed: "
                     + ", ".join(invalid_labels)
                 )
         # Build document source content map for claim verification

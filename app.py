@@ -966,19 +966,6 @@ If multiple sources support the same claim, cite them like [1][2].
                     )
 
             # Search the web for BOTH new questions and follow-up questions
-            try:
-                with st.spinner("Searching the web..."):
-                    web_results = search_web_tavily(web_search_query)
-
-                st.write(
-                    "DEBUG web query:",
-                    web_search_query
-                )
-
-                st.write(
-                    "DEBUG web results count:",
-                    len(web_results) if web_results else 0
-                )
             def extract_relevant_web_evidence(raw_content, query, max_chars=3500):
                 if not raw_content:
                     return ""
@@ -1035,6 +1022,20 @@ If multiple sources support the same claim, cite them like [1][2].
                         break
             
                 return "\n".join(selected_blocks)
+            try:
+                with st.spinner("Searching the web..."):
+                    web_results = search_web_tavily(web_search_query)
+
+                st.write(
+                    "DEBUG web query:",
+                    web_search_query
+                )
+
+                st.write(
+                    "DEBUG web results count:",
+                    len(web_results) if web_results else 0
+                )
+            
             if web_results:
                 web_context_parts = []
 

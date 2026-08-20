@@ -64,8 +64,10 @@ def call_qwen_llm(prompt):
         timeout=60
     )
 
-    response.raise_for_status()
-
+    if not response.ok:
+        raise Exception(
+            f"Hugging Face API error {response.status_code}: {response.text}"
+        )
     return response.json()["choices"][0]["message"]["content"]
 def get_source_trust_score(title, url, source_type):
     title_lower = title.lower()

@@ -121,6 +121,29 @@ Standalone search query:
 
     rewritten_query = call_qwen_llm(rewrite_prompt)
     return rewritten_query.strip().strip('"')
+def normalize_search_query(question):
+    normalize_prompt = f"""
+Convert the user's question into one clean standalone English web search query.
+
+User question:
+{question}
+
+Rules:
+- Understand Arabic, English, mixed Arabic-English, colloquial language, and spelling mistakes.
+- Correct obvious spelling and grammar mistakes.
+- Translate Arabic wording into natural English when needed.
+- Preserve product names, manufacturer names, model numbers, acronyms, and technical terms exactly when possible.
+- Do not answer the question.
+- Do not add facts or specifications.
+- Do not guess a product that the user did not mention.
+- Keep the user's original intent.
+- Return only the cleaned English search query and nothing else.
+
+Clean search query:
+"""
+
+    normalized_query = call_qwen_llm(normalize_prompt)
+    return normalized_query.strip().strip('"')
 def search_web_tavily(query):
     url = "https://api.tavily.com/search"
 
@@ -856,7 +879,7 @@ If multiple sources support the same claim, cite them like [1][2].
                     else:
                         context = full_document_text[start:]
         if search_mode == "Documents + Web":
-            web_search_query = question
+            web_search_query = normalize_search_query(question)
 
             # Detect whether this is a web follow-up question
             web_follow_up_starters = (

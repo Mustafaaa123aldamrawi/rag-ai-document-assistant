@@ -221,6 +221,26 @@ def search_web_tavily(query):
         key=lambda result: result.get("trust_score", 0),
         reverse=True
     )
+    # Prefer exact product/model matches when available
+    if product_tokens:
+        exact_product_results = []
+    
+        for result in results:
+            title = result.get("title", "")
+            url = result.get("url", "")
+            content = result.get("content", "")
+    
+            result_text = f"{title} {url} {content}".lower()
+    
+            if all(
+                product_token in result_text
+                for product_token in product_tokens
+            ):
+                exact_product_results.append(result)
+    
+        # Only apply the filter when exact matches actually exist
+        if exact_product_results:
+            results = exact_product_results
     # Remove duplicate web sources by URL and normalized title
     unique_results = []
     seen_urls = set()

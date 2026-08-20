@@ -577,7 +577,9 @@ If multiple sources support the same claim, cite them like [1][2].
 """
 
             answer = call_qwen_llm(prompt)
-    
+
+            st.write("DEBUG raw AI answer:", repr(answer))
+            
             st.subheader("🤖 AI Answer")
             st.write(answer)
     

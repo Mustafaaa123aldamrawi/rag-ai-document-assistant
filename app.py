@@ -221,16 +221,32 @@ def search_web_tavily(query):
         key=lambda result: result.get("trust_score", 0),
         reverse=True
     )
-    # Remove duplicate web sources while keeping the highest-trust result
+    # Remove duplicate web sources by URL and normalized title
     unique_results = []
     seen_urls = set()
+    seen_titles = set()
     
     for result in results:
         url = result.get("url", "").strip()
+        title = result.get("title", "").strip().lower()
     
-        if url and url not in seen_urls:
+        normalized_title = (
+            title
+            .split("|")[0]
+            .split(" - shure")[0]
+            .strip()
+        )
+    
+        if (
+            url
+            and url not in seen_urls
+            and normalized_title not in seen_titles
+        ):
             unique_results.append(result)
             seen_urls.add(url)
+    
+            if normalized_title:
+                seen_titles.add(normalized_title)
     
     results = unique_results
     return results

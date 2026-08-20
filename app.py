@@ -238,7 +238,41 @@ def search_web_tavily(query):
         for product_token in product_tokens:
             if product_token in result_text:
                 result["trust_score"] += 25
+    # Prefer primary English-language official sources
+    english_url_markers = (
+        "/en-us/",
+        "/en-gb/",
+        "/en-emea/",
+        "/en-mea/",
+        "/en/"
+    )
     
+    non_english_url_markers = (
+        "/es/",
+        "/es-",
+        "/pt/",
+        "/pt-",
+        "/zh/",
+        "/zh-",
+        "/fr/",
+        "/fr-",
+        "/de/",
+        "/de-",
+        "/it/",
+        "/it-",
+        "/ja/",
+        "/ja-",
+        "/ko/",
+        "/ko-"
+    )
+    
+    url_lower = url.lower()
+    
+    if source_type == "Official":
+        if any(marker in url_lower for marker in english_url_markers):
+            result["trust_score"] += 15
+        elif any(marker in url_lower for marker in non_english_url_markers):
+            result["trust_score"] -= 10
     # Sort highest-trust sources first
     results.sort(
         key=lambda result: result.get("trust_score", 0),

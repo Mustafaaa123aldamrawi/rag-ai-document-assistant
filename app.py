@@ -1409,7 +1409,67 @@ WEB CONTEXT:
                     claim_verification_passed = True
                 except Exception as e:
                     st.warning(f"Claim verification error: {e}")
+        # Final answer cleanup: preserve user language and normalize citation format
+
+        # Remove malformed citation wrappers such as:
+        # [CITE: [WEB 1], [WEB 3]]
+        answer = re.sub(
+            r"\[CITE:\s*((?:\[(?:WEB|DOC) \d+\](?:\s*,\s*)?)+)\s*\]",
+            lambda match: match.group(1).replace(", ", ""),
+            answer
+        )
         
+        # Detect whether the user asked in Arabic
+        user_used_arabic = bool(
+            re.search(r"[\u0600-\u06FF]", question)
+        )
+        
+        arabic_chars_in_answer = len(
+            re.findall(r"[\u0600-\u06FF]", answer)
+        )
+        
+        chinese_chars_in_answer = len(
+            re.findall(r"[\u4e00-\u9fff]", answer)
+        )
+        
+        # If an Arabic question accidentally produced a non-Arabic answer,
+        # translate only the verified answer while preserving facts and citations.
+        if (
+            user_used_arabic
+            and (
+                arabic_chars_in_answer < 10
+                or chinese_chars_in_answer > arabic_chars_in_answer
+            )
+        ):
+            language_fix_prompt = f"""
+        Translate the VERIFIED ANSWER below into natural Arabic.
+        
+        VERIFIED ANSWER:
+        {answer}
+        
+        Rules:
+        - Translate only the wording.
+        - Do not add, remove, infer, or change any factual information.
+        - Preserve product names, model numbers, acronyms, numbers, and technical terms accurately.
+        - Preserve every citation exactly as [DOC X] or [WEB X].
+        - Do not create new citations.
+        - Do not use citation wrappers such as [CITE: ...].
+        - Return only the translated answer.
+        
+        Arabic answer:
+        """
+        
+            try:
+                answer = call_qwen_llm(language_fix_prompt)
+            except Exception as e:
+                st.warning(f"Answer language correction error: {e}")
+        
+        # Run citation-wrapper cleanup again in case the language pass changed formatting
+        answer = re.sub(
+            r"\[CITE:\s*((?:\[(?:WEB|DOC) \d+\](?:\s*,\s*)?)+)\s*\]",
+            lambda match: match.group(1).replace(", ", ""),
+            answer
+        )
         # Show only sources actually cited in the final verified answer
         final_cited_docs = {
             int(x) for x in re.findall(r"\[DOC (\d+)\]", answer)

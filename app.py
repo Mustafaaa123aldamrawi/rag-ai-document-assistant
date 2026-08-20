@@ -190,7 +190,15 @@ def search_web_tavily(query):
 
         for result in results:
             result["source_type"] = "External"
-    # Calculate trust score for every result
+    # Extract product/model tokens from the user's query
+    query_tokens = set(query.lower().replace("-", " ").split())
+    
+    product_tokens = {
+        token for token in query_tokens
+        if any(char.isdigit() for char in token)
+    }
+    
+    # Calculate trust and relevance score for every result
     for result in results:
         title = result.get("title", "")
         url = result.get("url", "")
@@ -201,6 +209,12 @@ def search_web_tavily(query):
             url,
             source_type
         )
+    
+        result_text = f"{title} {url} {result.get('content', '')}".lower()
+    
+        for product_token in product_tokens:
+            if product_token in result_text:
+                result["trust_score"] += 25
     
     # Sort highest-trust sources first
     results.sort(
@@ -214,9 +228,9 @@ def search_web_tavily(query):
     for result in results:
         url = result.get("url", "").strip()
     
-    if url and url not in seen_urls:
-        unique_results.append(result)
-        seen_urls.add(url)
+        if url and url not in seen_urls:
+            unique_results.append(result)
+            seen_urls.add(url)
     
     results = unique_results
     return results

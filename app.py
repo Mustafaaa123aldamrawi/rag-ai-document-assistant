@@ -172,7 +172,7 @@ def search_web_tavily(query):
         "max_results": 5,
         "include_domains": official_domains,
         "include_answer": False,
-        "include_raw_content": False
+        "include_raw_content": True
     }
 
     response = requests.post(
@@ -1356,7 +1356,10 @@ WEB CONTEXT:
         
         if search_mode == "Documents + Web" and web_results:
             for web_number, result in enumerate(web_results, start=1):
-                web_source_content[web_number] = result.get("content", "")
+                web_source_content[web_number] = (
+                    result.get("raw_content")
+                    or result.get("content", "")
+                )
         # Verify each cited claim against the actual cited source content
         claim_verification_passed = False
         if direct_answer is None and not answer.startswith("AI model error:"):

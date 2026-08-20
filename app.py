@@ -1048,15 +1048,15 @@ If multiple sources support the same claim, cite them like [1][2].
                             raw_content,
                             web_search_query
                         )
-                            source_type = result.get("source_type", "External")
-    
-                            web_context_parts.append(
-                                f"[WEB {source_number}]\n"
-                                f"Title: {title}\n"
-                                f"URL: {url}\n"
-                                f"Source Type: {source_type}\n"
-                                f"Content: {content}"
-                            )
+                        source_type = result.get("source_type", "External")
+
+                        web_context_parts.append(
+                            f"[WEB {source_number}]\n"
+                            f"Title: {title}\n"
+                            f"URL: {url}\n"
+                            f"Source Type: {source_type}\n"
+                            f"Content: {content}"
+                        )
     
                         web_context = "\n\n".join(web_context_parts)
     

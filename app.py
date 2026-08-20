@@ -1395,6 +1395,10 @@ WEB CONTEXT:
         - Preserve only supported claims and their correct citations.
         - Never invent, change, renumber, or guess citation numbers.
         - Preserve the original answer format whenever possible.
+        - Preserve the language of the ANSWER exactly. Do not translate the answer into the language of the source content.
+        - If the ANSWER is Arabic, return Arabic. If the ANSWER is English, return English.
+        - Citation format must be exactly [DOC X] or [WEB X].
+        - Never output citation wrappers such as [CITE: ...], CITE:, Source:, or similar citation formats.
         - Return ONLY the cleaned verified answer and nothing else.
         
         Verified answer:

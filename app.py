@@ -143,8 +143,11 @@ Rules:
 Clean search query:
 """
 
-    normalized_query = call_qwen_llm(normalize_prompt)
-    return normalized_query.strip().strip('"')
+    try:
+        normalized_query = call_qwen_llm(normalize_prompt)
+        return normalized_query.strip().strip('"')
+    except Exception:
+        return question.strip()
 def search_web_tavily(query):
     url = "https://api.tavily.com/search"
 

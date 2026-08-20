@@ -979,14 +979,74 @@ If multiple sources support the same claim, cite them like [1][2].
                     "DEBUG web results count:",
                     len(web_results) if web_results else 0
                 )
+            def extract_relevant_web_evidence(raw_content, query, max_chars=3500):
+                if not raw_content:
+                    return ""
+            
+                # Normalize the query into useful search terms
+                query_terms = {
+                    word.lower().strip(".,!?()[]{}:;\"'")
+                    for word in query.split()
+                    if len(word) >= 3
+                }
+            
+                # Split the page into manageable text blocks
+                blocks = re.split(r"\n\s*\n|\n", raw_content)
+            
+                scored_blocks = []
+            
+                for index, block in enumerate(blocks):
+                    cleaned_block = " ".join(block.split())
+            
+                    if len(cleaned_block) < 30:
+                        continue
+            
+                    block_lower = cleaned_block.lower()
+            
+                    score = sum(
+                        1 for term in query_terms
+                        if term in block_lower
+                    )
+            
+                    if score > 0:
+                        scored_blocks.append(
+                            (score, index, cleaned_block)
+                        )
+            
+                if not scored_blocks:
+                    return raw_content[:max_chars]
+            
+                # Highest relevance first
+                scored_blocks.sort(
+                    key=lambda item: (-item[0], item[1])
+                )
+            
+                selected_blocks = []
+                total_chars = 0
+            
+                for score, index, block in scored_blocks:
+                    if total_chars + len(block) > max_chars:
+                        continue
+            
+                    selected_blocks.append(block)
+                    total_chars += len(block)
+            
+                    if total_chars >= max_chars:
+                        break
+            
+                return "\n".join(selected_blocks)
+            if web_results:
+                web_context_parts = []
 
-                if web_results:
-                    web_context_parts = []
+                for source_number, result in enumerate(web_results, start=1):
+                    title = result.get("title", "")
+                    url = result.get("url", "")
+                    raw_content = result.get("raw_content") or result.get("content", "")
 
-                    for source_number, result in enumerate(web_results, start=1):
-                        title = result.get("title", "")
-                        url = result.get("url", "")
-                        content = result.get("content", "")
+                    content = extract_relevant_web_evidence(
+                        raw_content,
+                        web_search_query
+                    )
                         source_type = result.get("source_type", "External")
 
                         web_context_parts.append(

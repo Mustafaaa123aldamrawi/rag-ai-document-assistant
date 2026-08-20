@@ -54,7 +54,7 @@ def call_qwen_llm(prompt):
             }
         ],
         "temperature": 0,
-        "max_tokens": 700
+        "max_tokens": 2000
     }
 
     response = requests.post(

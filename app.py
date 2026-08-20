@@ -68,7 +68,9 @@ def call_qwen_llm(prompt):
         raise Exception(
             f"Hugging Face API error {response.status_code}: {response.text}"
         )
-    return response.json()["choices"][0]["message"]["content"]
+    data = response.json()
+    st.write("DEBUG Hugging Face response:", data)
+    return data["choices"][0]["message"].get("content", "")
 def get_source_trust_score(title, url, source_type):
     title_lower = title.lower()
     url_lower = url.lower()

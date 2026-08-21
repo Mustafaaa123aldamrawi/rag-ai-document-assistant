@@ -197,6 +197,20 @@ Web search query:
     return normalize_search_query(question)
 
 
+def is_official_domain(url, official_domains):
+    try:
+        domain = url.lower().split("/")[2]
+        domain = domain.split(":")[0]
+
+        return any(
+            domain == official_domain
+            or domain.endswith("." + official_domain)
+            for official_domain in official_domains
+        )
+    except Exception:
+        return False
+
+
 def search_web_tavily(query):
     url = "https://api.tavily.com/search"
 
@@ -239,9 +253,14 @@ def search_web_tavily(query):
     data = response.json()
     results = data.get("results", [])
 
-    # Mark these results as official
+    # Validate source domains before marking results as official
     for result in results:
-        result["source_type"] = "Official"
+        result_url = result.get("url", "")
+    
+        if is_official_domain(result_url, official_domains):
+            result["source_type"] = "Official"
+        else:
+            result["source_type"] = "External"
 
     # STEP 2: If official search returns nothing, search the general web
     if not results:

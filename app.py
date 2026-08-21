@@ -17,7 +17,7 @@ def call_qwen_llm(prompt):
     }
 
     payload = {
-        "model": "Qwen/Qwen3.5-9B",
+        "model": "Qwen/Qwen2.5-7B-Instruct",
         "messages": [
             {
                 "role": "system",

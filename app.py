@@ -191,8 +191,8 @@ Web search query:
         if generated_query:
             return generated_query
 
-    except Exception:
-        pass
+    except Exception as e:
+        st.write("DEBUG document-aware query error:", str(e))
 
     return normalize_search_query(question)
 

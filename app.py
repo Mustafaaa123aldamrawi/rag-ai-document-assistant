@@ -1108,7 +1108,11 @@ If multiple sources support the same claim, cite them like [1][2].
                     direct_answer = full_document_text[title_start:title_end].strip()
                 else:
                     direct_answer = "Project Manager"
-        if "certification" in question.lower() and not is_verification_question:
+        if (
+            search_mode == "Documents Only"
+            and "certification" in question_lower
+            and not is_verification_question
+        ):
             context_lower = context.lower()
             start = context_lower.find("certifications & training")
             end = context_lower.find("languages", start)

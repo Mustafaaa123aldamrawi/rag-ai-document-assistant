@@ -1546,6 +1546,7 @@ If multiple sources support the same claim, cite them like [1][2].
         - Use only citation labels that actually appear in the context.
         - Never invent, renumber, or guess citation labels.
         - For bullet-point answers, place the citation at the end of EACH bullet point it supports.
+        - Do not add new facts, recommendations, products, certifications, or alternatives.
         
         If "Subject detected in document" is True, the requested subject exists in the document.
         Use the related facts in the context to answer the question.
@@ -1587,6 +1588,10 @@ If multiple sources support the same claim, cite them like [1][2].
         - Use only [DOC X] and [WEB X] labels that actually appear in the context.
         - Never invent or guess a citation.
         - If a factual statement cannot be supported by the context, remove it.
+        - Do not add new facts, recommendations, products, certifications, or alternatives.
+        - Do not expand the answer beyond what is already written.
+        - Only fix citation placement or remove unsupported claims.
+        - Preserve the original answer's brevity, structure, recommendation, and wording as much as possible.
         - Return only the corrected answer.
         
         Corrected answer:

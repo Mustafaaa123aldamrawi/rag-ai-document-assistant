@@ -73,7 +73,7 @@ def call_qwen_llm(prompt):
             f"Hugging Face API error {response.status_code}: {response.text}"
         )
     data = response.json()
-    st.write("DEBUG Hugging Face response:", data)
+    
     return data["choices"][0]["message"].get("content", "")
 def get_source_trust_score(title, url, source_type):
     title_lower = title.lower()
@@ -583,8 +583,6 @@ If multiple sources support the same claim, cite them like [1][2].
 """
 
             answer = call_qwen_llm(prompt)
-
-            st.write("DEBUG raw AI answer:", repr(answer))
             
             st.subheader("🤖 AI Answer")
             st.write(answer)

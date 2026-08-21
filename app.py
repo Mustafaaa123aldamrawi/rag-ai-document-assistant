@@ -156,6 +156,47 @@ Clean search query:
         return normalized_query.strip().strip('"')
     except Exception:
         return question.strip()
+def build_document_aware_web_query(question, document_context):
+    query_prompt = f"""
+Create a concise and effective web search query using both the user's question
+and the relevant information extracted from the uploaded document.
+
+USER QUESTION:
+{question}
+
+DOCUMENT CONTEXT:
+{document_context}
+
+Instructions:
+- Understand what the user is asking before creating the search query.
+- Use relevant facts from the document to resolve names, products, technologies,
+  certifications, roles, organizations, or other references in the question.
+- Include only document details that are useful for the web search.
+- Do not search for the person's name unless the question specifically requires it.
+- For recommendation questions, search for authoritative information that can
+  support useful recommendations based on the document context.
+- Preserve important technical terms, product names, standards, and certification names.
+- Prefer queries that can find official or authoritative sources.
+- Do not answer the user's question.
+- Do not invent information that is not present in the question or document context.
+- Return only one clean English web search query and nothing else.
+
+Web search query:
+"""
+
+    try:
+        generated_query = call_qwen_llm(query_prompt)
+        generated_query = generated_query.strip().strip('"')
+
+        if generated_query:
+            return generated_query
+
+    except Exception:
+        pass
+
+    return normalize_search_query(question)
+
+
 def search_web_tavily(query):
     url = "https://api.tavily.com/search"
 

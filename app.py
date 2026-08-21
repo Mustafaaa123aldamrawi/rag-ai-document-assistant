@@ -17,7 +17,7 @@ def call_qwen_llm(prompt):
     }
 
     payload = {
-        "model": "Qwen/Qwen2.5-7B-Instruct-1M",
+        "model": "Qwen/Qwen3.5-9B",
         "messages": [
             {
                 "role": "system",
@@ -55,7 +55,7 @@ def call_qwen_llm(prompt):
         ],
         "temperature": 0.7,
         "top_p": 0.8,
-        "max_tokens": 700,
+        "max_tokens": 2000,
     }
     response = requests.post(
         url,

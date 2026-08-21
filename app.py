@@ -1136,7 +1136,9 @@ If multiple sources support the same claim, cite them like [1][2].
                 question_lower.startswith(web_follow_up_starters)
                 or bool(web_question_words & web_follow_up_references)
             )
-
+            
+            st.write("DEBUG is_web_follow_up:", is_web_follow_up)
+            
             # Rewrite the query only when this is a follow-up
             if is_web_follow_up:
                 previous_user_questions = [

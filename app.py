@@ -191,8 +191,40 @@ Web search query:
         generated_query = generated_query.strip().strip('"')
 
         if generated_query:
-            return generated_query
-
+            normalized_generated = generated_query.strip().lower()
+            normalized_question = question.strip().lower()
+        
+            if normalized_generated != normalized_question:
+                return generated_query
+            retry_prompt = f"""
+    The previous search query was too similar to the user's original question.
+    
+    Create a better web search query using specific relevant information from the document.
+    
+    USER QUESTION:
+    {question}
+    
+    DOCUMENT CONTEXT:
+    {document_context}
+    
+    Requirements:
+    - Include at least two specific relevant terms from the document.
+    - Focus on certifications, technologies, products, roles, or organizations relevant to the question.
+    - Do not repeat or paraphrase the user's question.
+    - Do not answer the question.
+    - Return only one clean English web search query.
+    
+    Web search query:
+    """
+    
+    retry_query = call_qwen_llm(retry_prompt)
+    retry_query = retry_query.strip().strip('"')
+    
+    if retry_query:
+        normalized_retry = retry_query.strip().lower()
+    
+        if normalized_retry != normalized_question:
+            return retry_query
     except Exception as e:
         st.write("DEBUG document-aware query error:", str(e))
 

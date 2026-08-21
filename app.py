@@ -15,9 +15,49 @@ def call_qwen_llm(prompt):
         "Authorization": f"Bearer {st.secrets['HF_TOKEN']}",
         "Content-Type": "application/json"
     }
+    models_url = "https://router.huggingface.co/v1/models"
 
+    models_response = requests.get(
+        models_url,
+        headers=headers,
+        timeout=30
+    )
+    
+    if not models_response.ok:
+        raise Exception(
+            f"Hugging Face models API error "
+            f"{models_response.status_code}: {models_response.text}"
+        )
+    
+    models_data = models_response.json().get("data", [])
+    
+    preferred_models = [
+        "google/gemma-2-2b-it",
+        "Qwen/Qwen2.5-Coder-32B-Instruct",
+        "openai/gpt-oss-20b",
+    ]
+    
+    available_model_ids = {
+        model.get("id")
+        for model in models_data
+        if model.get("id")
+    }
+    
+    selected_model = next(
+        (
+            model_id
+            for model_id in preferred_models
+            if model_id in available_model_ids
+        ),
+        None
+    )
+    
+    if selected_model is None:
+        raise Exception(
+            "No compatible non-thinking chat model is currently available."
+        )
     payload = {
-        "model": "Qwen/Qwen3.5-9B",
+        "model": selected_model,
         "messages": [
             {
                 "role": "system",
@@ -69,7 +109,7 @@ def call_qwen_llm(prompt):
             f"Hugging Face API error {response.status_code}: {response.text}"
         )
     data = response.json()
-    st.write("DEBUG HF response:", data)
+   
     return data["choices"][0]["message"].get("content", "")
 def get_source_trust_score(title, url, source_type):
     title_lower = title.lower()

@@ -1519,6 +1519,7 @@ If multiple sources support the same claim, cite them like [1][2].
         - Give a direct recommendation first, then briefly explain why it is the best fit.
         - Do not invent certifications, products, requirements, or credentials that are not supported by the available context.
         Answer quality rules:
+        - Never describe CTS, CTS-D, and CTS-I as levels of the same certification. Describe CTS as the foundational credential, and CTS-D / CTS-I as specialized certifications that may follow CTS when supported by the context.
         - Be concise and decision-oriented.
         - For a recommendation question, give ONE primary recommendation and at most ONE alternative.
         - Start with the recommendation directly.

@@ -156,6 +156,77 @@ Clean search query:
         return normalized_query.strip().strip('"')
     except Exception:
         return question.strip()
+def build_document_keyword_fallback(question, document_context, max_terms=8):
+    if not document_context:
+        return normalize_search_query(question)
+
+    question_words = {
+        word.lower()
+        for word in re.findall(r"[A-Za-z0-9+#.-]+", question)
+        if len(word) >= 3
+    }
+
+    lines = [
+        line.strip()
+        for line in document_context.splitlines()
+        if line.strip()
+    ]
+
+    candidates = []
+
+    for line in lines:
+        line_lower = line.lower()
+
+        relevance = sum(
+            1 for word in question_words
+            if word in line_lower
+        )
+
+        phrases = re.findall(
+            r"\b[A-Z][A-Za-z0-9+#&.-]*(?:\s+[A-Z][A-Za-z0-9+#&.-]*){0,4}",
+            line
+        )
+
+        for phrase in phrases:
+            phrase = phrase.strip()
+
+            if len(phrase) < 3:
+                continue
+
+            score = relevance
+
+            if len(phrase.split()) > 1:
+                score += 1
+
+            if any(char.isdigit() for char in phrase):
+                score += 1
+
+            if "-" in phrase or phrase.isupper():
+                score += 1
+
+            candidates.append((score, phrase))
+
+    candidates.sort(key=lambda item: item[0], reverse=True)
+
+    selected_terms = []
+
+    for _, phrase in candidates:
+        if phrase.lower() not in {
+            term.lower() for term in selected_terms
+        }:
+            selected_terms.append(phrase)
+
+        if len(selected_terms) >= max_terms:
+            break
+
+    if not selected_terms:
+        return normalize_search_query(question)
+
+    base_query = normalize_search_query(question)
+
+    return f"{base_query} {' '.join(selected_terms)}"
+
+
 def build_document_aware_web_query(question, document_context):
     query_prompt = f"""
 Create a concise and effective web search query using both the user's question
@@ -225,10 +296,13 @@ Web search query:
             
                 if normalized_retry != normalized_question:
                     return retry_query
-    except Exception as e:
-        st.write("DEBUG document-aware query error:", str(e))
+    except Exception:
+        pass
 
-    return normalize_search_query(question)
+    return build_document_keyword_fallback(
+        question,
+        document_context
+    )
 
 
 def is_official_domain(url, official_domains):

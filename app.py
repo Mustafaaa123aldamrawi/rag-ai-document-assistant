@@ -1132,9 +1132,26 @@ If multiple sources support the same claim, cite them like [1][2].
                 .split()
             )
 
+            document_reference_phrases = (
+                "this profile",
+                "this document",
+                "this file",
+                "this cv",
+                "this resume",
+                "this pdf",
+            )
+            
+            is_document_reference = any(
+                phrase in question_lower
+                for phrase in document_reference_phrases
+            )
+            
             is_web_follow_up = (
-                question_lower.startswith(web_follow_up_starters)
-                or bool(web_question_words & web_follow_up_references)
+                not is_document_reference
+                and (
+                    question_lower.startswith(web_follow_up_starters)
+                    or bool(web_question_words & web_follow_up_references)
+                )
             )
             
             st.write("DEBUG is_web_follow_up:", is_web_follow_up)

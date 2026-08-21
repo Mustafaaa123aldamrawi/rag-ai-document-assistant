@@ -1518,6 +1518,14 @@ If multiple sources support the same claim, cite them like [1][2].
         - Clearly distinguish between sourced facts and your recommendation.
         - Give a direct recommendation first, then briefly explain why it is the best fit.
         - Do not invent certifications, products, requirements, or credentials that are not supported by the available context.
+        Answer quality rules:
+        - Prefer a concise, decision-oriented answer over a long list.
+        - For recommendation questions, give one primary recommendation and optionally one strong alternative.
+        - Do not list unrelated certifications or products unless they materially affect the recommendation.
+        - Use precise credential names exactly as supported by the context.
+        - Explain the recommendation in terms of the user's current experience, existing training, and career direction.
+        - If the evidence supports a logical progression, state the progression clearly.
+        - Avoid repeating the same conclusion at the beginning and end of the answer.
         Use the recent conversation only to understand the user's follow-up question and conversational context.
         Do not treat the recent conversation as a factual source.
         All factual claims must still be supported by the Combined context and its citations.

@@ -966,8 +966,10 @@ If multiple sources support the same claim, cite them like [1][2].
                     else:
                         context = full_document_text[start:]
         if search_mode == "Documents + Web":
-            web_search_query = normalize_search_query(question)
-
+            web_search_query = build_document_aware_web_query(
+                question,
+                context
+            )
             # Detect whether this is a web follow-up question
             web_follow_up_starters = (
                 "what about",

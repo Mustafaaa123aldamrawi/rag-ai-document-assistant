@@ -1511,6 +1511,13 @@ If multiple sources support the same claim, cite them like [1][2].
         
         Subject detected in document: {subject_found}
         Answer using only the information provided in the context above.
+        Recommendation and decision questions:
+        - If the user asks for a recommendation, comparison, best option, next step, career path, or professional judgment, you MAY synthesize a recommendation from the supported facts in the document and web context.
+        - Do not require the recommendation itself to appear explicitly in the source.
+        - Base the recommendation only on supported evidence from the context.
+        - Clearly distinguish between sourced facts and your recommendation.
+        - Give a direct recommendation first, then briefly explain why it is the best fit.
+        - Do not invent certifications, products, requirements, or credentials that are not supported by the available context.
         Use the recent conversation only to understand the user's follow-up question and conversational context.
         Do not treat the recent conversation as a factual source.
         All factual claims must still be supported by the Combined context and its citations.

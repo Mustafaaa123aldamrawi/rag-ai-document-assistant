@@ -179,6 +179,8 @@ Instructions:
 - Prefer queries that can find official or authoritative sources.
 - Do not answer the user's question.
 - Do not invent information that is not present in the question or document context.
+- The search query must include at least two specific relevant terms taken from the DOCUMENT CONTEXT when such terms are available.
+- Do not simply repeat or paraphrase the user's question when the document contains useful identifying details for the search.
 - Return only one clean English web search query and nothing else.
 
 Web search query:

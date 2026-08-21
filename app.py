@@ -1098,7 +1098,7 @@ If multiple sources support the same claim, cite them like [1][2].
                     else:
                         context = full_document_text[start:]
         if search_mode == "Documents + Web":
-            st.write("DEBUG document context:", context[:1500])
+            
             web_search_query = build_document_aware_web_query(
                 question,
                 context
@@ -1519,13 +1519,18 @@ If multiple sources support the same claim, cite them like [1][2].
         - Give a direct recommendation first, then briefly explain why it is the best fit.
         - Do not invent certifications, products, requirements, or credentials that are not supported by the available context.
         Answer quality rules:
-        - Prefer a concise, decision-oriented answer over a long list.
-        - For recommendation questions, give one primary recommendation and optionally one strong alternative.
-        - Do not list unrelated certifications or products unless they materially affect the recommendation.
+        - Be concise and decision-oriented.
+        - For a recommendation question, give ONE primary recommendation and at most ONE alternative.
+        - Start with the recommendation directly.
+        - Explain the recommendation using only the most relevant facts from the user's document and supporting web evidence.
+        - Do not enumerate certifications, products, or credentials merely because they are absent from the user's profile.
+        - Do not include long lists of unrelated alternatives.
+        - Keep recommendation answers focused on the user's actual question and career direction.
         - Use precise credential names exactly as supported by the context.
-        - Explain the recommendation in terms of the user's current experience, existing training, and career direction.
-        - If the evidence supports a logical progression, state the progression clearly.
-        - Avoid repeating the same conclusion at the beginning and end of the answer.
+        - Do not describe CTS, CTS-D, and CTS-I as three "levels". Treat CTS as the foundational credential and CTS-D / CTS-I as specialized certification paths when supported by the context.
+        - If a logical progression is supported, explain it clearly, for example: current preparation → recommended credential → possible specialized next step.
+        - Avoid repeating the recommendation or conclusion.
+        - Prefer roughly 100–180 words for a straightforward recommendation unless the user asks for more detail.
         Use the recent conversation only to understand the user's follow-up question and conversational context.
         Do not treat the recent conversation as a factual source.
         All factual claims must still be supported by the Combined context and its citations.

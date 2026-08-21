@@ -56,10 +56,6 @@ def call_qwen_llm(prompt):
         "temperature": 0.7,
         "top_p": 0.8,
         "max_tokens": 700,
-        "chat_template_kwargs": {
-            "enable_thinking": False
-        }
-    
     }
     response = requests.post(
         url,

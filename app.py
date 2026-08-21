@@ -1024,6 +1024,7 @@ If multiple sources support the same claim, cite them like [1][2].
                     else:
                         context = full_document_text[start:]
         if search_mode == "Documents + Web":
+            st.write("DEBUG document context:", context[:1500])
             web_search_query = build_document_aware_web_query(
                 question,
                 context

@@ -1565,6 +1565,8 @@ If multiple sources support the same claim, cite them like [1][2].
         - Keep recommendation answers focused on the user's actual question and career direction.
         - Use precise credential names exactly as supported by the context.
         - Do not describe CTS, CTS-D, and CTS-I as three "levels". Treat CTS as the foundational credential and CTS-D / CTS-I as specialized certification paths when supported by the context.
+        - Never recommend CTS-D or CTS-I as the immediate next certification unless the context explicitly confirms that the user already holds an active CTS credential.
+        - If the context shows CTS Preparation but does not confirm an active CTS credential, recommend completing CTS first.
         - If a logical progression is supported, explain it clearly, for example: current preparation → recommended credential → possible specialized next step.
         - Avoid repeating the recommendation or conclusion.
         - Prefer roughly 100–180 words for a straightforward recommendation unless the user asks for more detail.

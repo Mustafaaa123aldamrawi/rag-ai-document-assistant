@@ -1771,6 +1771,39 @@ If multiple sources support the same claim, cite them like [1][2].
             lambda match: match.group(1).replace(", ", ""),
             answer
         )
+        # Final answer quality guard for recommendation questions
+        recommendation_cues = (
+            "recommend",
+            "recommendation",
+            "best option",
+            "next step",
+            "career path",
+            "should pursue",
+        )
+        
+        is_recommendation_question = any(
+            cue in question_lower
+            for cue in recommendation_cues
+        )
+        
+        if is_recommendation_question:
+            # Remove inaccurate "three levels" wording about CTS / CTS-D / CTS-I
+            answer = re.sub(
+                r"(?im)^.*CTS.*three levels.*$",
+                "",
+                answer
+            )
+        
+            # Remove unnecessary lists describing credentials only because
+            # they are not present in the user's document/profile
+            answer = re.sub(
+                r"(?im)^.*(?:context|document|profile).*does not list.*$",
+                "",
+                answer
+            )
+        
+            # Clean extra blank lines created by removals
+            answer = re.sub(r"\n{3,}", "\n\n", answer).strip()
         # Show only sources actually cited in the final verified answer
         final_cited_docs = {
             int(x) for x in re.findall(r"\[DOC (\d+)\]", answer)

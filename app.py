@@ -229,7 +229,12 @@ def search_web_tavily(query):
         "biamp.com",
         "lightware.com",
         "samsung.com",
-        "lg.com"
+        "lg.com",
+        "avixa.org",
+        "audinate.com",
+        "microsoft.com",
+        "zoom.us",
+        "hp.com",
     ]
 
     # STEP 1: Search official AV manufacturer websites first

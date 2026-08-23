@@ -1282,16 +1282,16 @@ If multiple sources support the same claim, cite them like [1][2].
                     if message["role"] == "user"
                 ]
 
-                    if previous_user_questions:
-                        previous_question = previous_user_questions[-1]
-                    
-                        if st.session_state.document_scope_active:
-                            web_search_query = None
-                        else:
-                            web_search_query = rewrite_follow_up_query(
-                                previous_question,
-                                question
-                            )
+                if previous_user_questions:
+                    previous_question = previous_user_questions[-1]
+                
+                    if st.session_state.document_scope_active:
+                        web_search_query = None
+                    else:
+                        web_search_query = rewrite_follow_up_query(
+                            previous_question,
+                            question
+                        )
 
             # Search the web for BOTH new questions and follow-up questions
             def extract_relevant_web_evidence(raw_content, query, max_chars=3500):

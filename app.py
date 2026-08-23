@@ -1629,6 +1629,117 @@ If multiple sources support the same claim, cite them like [1][2].
                     answer = call_qwen_llm(citation_review_prompt)
                 except Exception:
                     pass
+        # Deterministic guard for high-risk factual claims
+        def get_cited_source_text(source_type, source_number, full_context):
+            label = f"[{source_type} {source_number}]"
+        
+            pattern = (
+                rf"{re.escape(label)}[\s\S]*?"
+                rf"(?=\n\[DOC \d+\]|\n\[WEB \d+\]|\Z)"
+            )
+        
+            match = re.search(pattern, full_context, re.IGNORECASE)
+        
+            if match:
+                return match.group(0).lower()
+        
+            return ""
+        
+        
+        high_risk_phrases = (
+            "leading professional credential",
+            "globally recognized",
+            "highly valued",
+            "most recognized",
+            "industry standard",
+            "worldwide",
+        )
+        
+        verified_sentences = []
+        
+        for sentence in re.split(r"(?<=[.!?])\s+", answer):
+            sentence_lower = sentence.lower()
+        
+            citations = re.findall(
+                r"\[(DOC|WEB) (\d+)\]",
+                sentence
+            )
+        
+            high_risk_found = [
+                phrase
+                for phrase in high_risk_phrases
+                if phrase in sentence_lower
+            ]
+        
+            numbers = re.findall(
+                r"\b\d+(?:\.\d+)?%?\b",
+                re.sub(r"\[(?:DOC|WEB) \d+\]", "", sentence)
+            )
+        
+            if (high_risk_found or numbers) and citations:
+                cited_source_texts = [
+                    get_cited_source_text(
+                        source_type,
+                        source_number,
+                        context
+                    )
+                    for source_type, source_number in citations
+                ]
+        
+                combined_cited_text = " ".join(cited_source_texts)
+        
+                phrase_aliases = {
+                    "leading professional credential": (
+                        "leading professional credential",
+                        "leading credential",
+                        "professional credential",
+                    ),
+                    "globally recognized": (
+                        "globally recognized",
+                        "recognized worldwide",
+                        "internationally recognized",
+                    ),
+                    "highly valued": (
+                        "highly valued",
+                        "highly regarded",
+                        "valued by employers",
+                    ),
+                    "most recognized": (
+                        "most recognized",
+                        "widely recognized",
+                        "well recognized",
+                    ),
+                    "industry standard": (
+                        "industry standard",
+                        "industry-standard",
+                        "standard in the industry",
+                    ),
+                    "worldwide": (
+                        "worldwide",
+                        "globally",
+                        "internationally",
+                    ),
+                }
+                
+                phrase_supported = all(
+                    any(
+                        alias in combined_cited_text
+                        for alias in phrase_aliases.get(phrase, (phrase,))
+                    )
+                    for phrase in high_risk_found
+                )
+        
+                numbers_supported = all(
+                    number in combined_cited_text
+                    for number in numbers
+                )
+        
+                if not phrase_supported or not numbers_supported:
+                    continue
+        
+            verified_sentences.append(sentence)
+        
+        answer = " ".join(verified_sentences).strip()
         # Validate that citation labels reference real available sources
         import re
         

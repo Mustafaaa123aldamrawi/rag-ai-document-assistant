@@ -1614,6 +1614,8 @@ If multiple sources support the same claim, cite them like [1][2].
         - Use only [DOC X] and [WEB X] labels that actually appear in the context.
         - Never invent or guess a citation.
         - If a factual statement cannot be supported by the context, remove it.
+        - A citation must support the exact claim immediately before it, not merely a related topic.
+        - If a claim contains multiple facts, every fact must be supported by the cited source or the claim must be shortened to only the supported portion.
         - Do not add new facts, recommendations, products, certifications, or alternatives.
         - Do not expand the answer beyond what is already written.
         - Only fix citation placement or remove unsupported claims.

@@ -1932,10 +1932,6 @@ If multiple sources support the same claim, cite them like [1][2].
                 for invalid_label in invalid_labels:
                     answer = answer.replace(invalid_label, "")
             
-                st.warning(
-                    "Invalid citation reference(s) were removed: "
-                    + ", ".join(invalid_labels)
-                )
         # Build document source content map for claim verification
         doc_source_content = {}
         

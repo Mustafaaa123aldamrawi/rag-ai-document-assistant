@@ -1733,6 +1733,13 @@ If multiple sources support the same claim, cite them like [1][2].
         
         Subject detected in document: {subject_found}
         Answer using only the information provided in the context above.
+        Current factual information questions:
+        - If the user explicitly asks for current fees, prices, costs, requirements, eligibility, registration details, exam dates, or deadlines, answer those requested facts directly first.
+        - Do not turn a factual current-information question into a career recommendation.
+        - Do not use personal profile or CV details unless they are necessary to answer the user's question.
+        - Do not substitute training-course pricing or preparation costs when the user asks for an exam fee.
+        - If the exact requested fee, price, requirement, or deadline is not present in the available context, clearly say that the exact information was not found in the retrieved sources.
+        - Do not add unrelated next-step recommendations unless the user explicitly asks for advice or a recommendation.
         Recommendation and decision questions:
         - If the user asks for a recommendation, comparison, best option, next step, career path, or professional judgment, you MAY synthesize a recommendation from the supported facts in the document and web context.
         - Do not require the recommendation itself to appear explicitly in the source.

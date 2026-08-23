@@ -516,6 +516,46 @@ def search_web_tavily(query):
         for product_token in product_tokens:
             if product_token in result_text:
                 result["trust_score"] += 25
+        # Boost results that directly match pricing, fees, and requirements intent
+        fee_intent_terms = (
+            "fee",
+            "fees",
+            "exam fee",
+            "exam fees",
+            "cost",
+            "price",
+            "pricing",
+        )
+        
+        requirement_intent_terms = (
+            "requirement",
+            "requirements",
+            "eligibility",
+            "prerequisite",
+            "prerequisites",
+        )
+        
+        asks_about_fees = any(
+            term in query_lower
+            for term in fee_intent_terms
+        )
+        
+        asks_about_requirements = any(
+            term in query_lower
+            for term in requirement_intent_terms
+        )
+        
+        if asks_about_fees:
+            for term in fee_intent_terms:
+                if term in result_text:
+                    result["trust_score"] += 40
+                    break
+        
+        if asks_about_requirements:
+            for term in requirement_intent_terms:
+                if term in result_text:
+                    result["trust_score"] += 30
+                    break
     # Prefer primary English-language official sources
     english_url_markers = (
         "/en-us/",

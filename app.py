@@ -880,7 +880,29 @@ If multiple sources support the same claim, cite them like [1][2].
                 break
         search_query = question
 
-        if is_follow_up:
+        retrieval_follow_up_references = {
+            "it",
+            "its",
+            "this",
+            "that",
+            "they",
+            "their",
+            "them",
+        }
+        
+        retrieval_question_words = set(
+            question_lower
+            .replace("?", "")
+            .replace(",", "")
+            .replace(".", "")
+            .split()
+        )
+        
+        retrieval_is_follow_up = bool(
+            retrieval_question_words & retrieval_follow_up_references
+        )
+        
+        if retrieval_is_follow_up:
             previous_user_questions = [
                 message["content"]
                 for message in st.session_state.messages[:-1]

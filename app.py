@@ -880,6 +880,21 @@ If multiple sources support the same claim, cite them like [1][2].
                 break
         search_query = question
 
+        if is_follow_up:
+            previous_user_questions = [
+                message["content"]
+                for message in st.session_state.messages[:-1]
+                if message["role"] == "user"
+            ]
+        
+            if previous_user_questions:
+                previous_question = previous_user_questions[-1]
+        
+                search_query = rewrite_follow_up_query(
+                    previous_question,
+                    question
+                )
+
         if matched_source:
             search_results = vector_store.similarity_search_with_score(
                 search_query,

@@ -511,7 +511,14 @@ def search_web_tavily(query):
             source_type
         )
     
-        result_text = f"{title} {url} {result.get('content', '')}".lower()
+        raw_content = result.get("raw_content", "") or ""
+
+        result_text = (
+            f"{title} "
+            f"{url} "
+            f"{result.get('content', '')} "
+            f"{raw_content}"
+        ).lower()
     
         for product_token in product_tokens:
             if product_token in result_text:

@@ -1839,7 +1839,44 @@ If multiple sources support the same claim, cite them like [1][2].
                 "",
                 answer
             )
+            # Enforce CTS prerequisite before recommending CTS-I or CTS-D
+            cts_preparation_match = re.search(
+                r"\[DOC (\d+)\][\s\S]{0,1500}?CTS Preparation",
+                context,
+                re.IGNORECASE
+            )
         
+            active_cts_confirmed = bool(
+                re.search(
+                    r"\b(?:holds?|earned|obtained|certified in|active)\s+(?:an?\s+)?(?:AVIXA\s+)?CTS\b",
+                    context,
+                    re.IGNORECASE
+                )
+            )
+        
+            advanced_cts_recommended = bool(
+                re.search(
+                    r"\bCTS-(?:I|D)\b",
+                    answer,
+                    re.IGNORECASE
+                )
+            )
+        
+            if (
+                cts_preparation_match
+                and not active_cts_confirmed
+                and advanced_cts_recommended
+            ):
+                doc_number = cts_preparation_match.group(1)
+        
+                answer = (
+                    "Based on the provided profile, the most appropriate next certification "
+                    "is the AVIXA CTS (Certified Technology Specialist) credential.\n\n"
+                    f"The profile lists AVIXA CTS Preparation, but does not confirm that an "
+                    f"active CTS credential has already been earned [DOC {doc_number}]. "
+                    "Therefore, CTS should be completed first before considering a specialized "
+                    "CTS-I or CTS-D path."
+                )
             # Clean extra blank lines created by removals
             answer = re.sub(r"\n{3,}", "\n\n", answer).strip()
         # Show only sources actually cited in the final verified answer

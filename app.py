@@ -1219,11 +1219,20 @@ If multiple sources support the same claim, cite them like [1][2].
 
                 if previous_user_questions:
                     previous_question = previous_user_questions[-1]
-
-                    web_search_query = rewrite_follow_up_query(
-                        previous_question,
-                        question
+                    previous_question_lower = previous_question.lower()
+                
+                    previous_was_document_focused = any(
+                        phrase in previous_question_lower
+                        for phrase in document_only_phrases
                     )
+                
+                    if previous_was_document_focused:
+                        web_search_query = None
+                    else:
+                        web_search_query = rewrite_follow_up_query(
+                            previous_question,
+                            question
+                        )
 
             # Search the web for BOTH new questions and follow-up questions
             def extract_relevant_web_evidence(raw_content, query, max_chars=3500):

@@ -403,13 +403,19 @@ def search_web_tavily(query):
         "zoom.us",
         "hp.com",
     ]
+    query_lower = query.lower()
+
+    targeted_domains = official_domains
+    
+    if "avixa" in query_lower or "cts" in query_lower:
+        targeted_domains = ["avixa.org"]
 
     # STEP 1: Search official AV manufacturer websites first
     official_payload = {
         "query": query,
         "search_depth": "advanced",
         "max_results": 5,
-        "include_domains": official_domains,
+        "include_domains": targeted_domains,
         "include_answer": False,
         "include_raw_content": True
     }

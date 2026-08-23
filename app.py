@@ -1442,6 +1442,37 @@ If multiple sources support the same claim, cite them like [1][2].
                         1 for term in query_terms
                         if term in block_lower
                     )
+
+                    fee_query_terms = (
+                        "fee",
+                        "fees",
+                        "cost",
+                        "price",
+                        "pricing",
+                    )
+                    
+                    asks_about_fees = any(
+                        term in query.lower()
+                        for term in fee_query_terms
+                    )
+                    
+                    if asks_about_fees:
+                        pricing_markers = (
+                            "$",
+                            "usd",
+                            "sar",
+                            "eur",
+                            "gbp",
+                            "aud",
+                            "fee",
+                            "fees",
+                            "cost",
+                            "price",
+                            "pricing",
+                        )
+                    
+                        if any(marker in block_lower for marker in pricing_markers):
+                            score += 5
             
                     if score > 0:
                         scored_blocks.append(

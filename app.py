@@ -1134,11 +1134,30 @@ If multiple sources support the same claim, cite them like [1][2].
                     else:
                         context = full_document_text[start:]
         if search_mode == "Documents + Web":
-            
+            document_only_phrases = (
+                "what does the document say",
+                "according to the document",
+                "in this document",
+                "in this pdf",
+                "based on the document",
+                "based only on the document",
+                "according to this document",
+                "what does this document say",
+            )
+        
+            is_document_focused_question = any(
+                phrase in question_lower
+                for phrase in document_only_phrases
+            )
+    
+        if is_document_focused_question:
+            web_search_query = None
+        else:
             web_search_query = build_document_aware_web_query(
                 question,
                 context
             )
+            
             # Detect whether this is a web follow-up question
             web_follow_up_starters = (
                 "what about",

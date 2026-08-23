@@ -1198,7 +1198,13 @@ If multiple sources support the same claim, cite them like [1][2].
                 for phrase in document_only_phrases
             )
     
+        if "document_scope_active" not in st.session_state:
+            st.session_state.document_scope_active = False
+        
         if is_document_focused_question:
+            st.session_state.document_scope_active = True
+            web_search_query = None
+        elif st.session_state.document_scope_active:
             web_search_query = None
         else:
             web_search_query = build_document_aware_web_query(
@@ -1256,7 +1262,18 @@ If multiple sources support the same claim, cite them like [1][2].
                     or bool(web_question_words & web_follow_up_references)
                 )
             )
+            # Reset document-only scope when the user clearly starts a new topic
+            if (
+                st.session_state.document_scope_active
+                and not is_document_focused_question
+                and not is_web_follow_up
+            ):
+                st.session_state.document_scope_active = False
             
+                web_search_query = build_document_aware_web_query(
+                    question,
+                    context
+                )
             # Rewrite the query only when this is a follow-up
             if is_web_follow_up:
                 previous_user_questions = [
@@ -1265,22 +1282,16 @@ If multiple sources support the same claim, cite them like [1][2].
                     if message["role"] == "user"
                 ]
 
-                if previous_user_questions:
-                    previous_question = previous_user_questions[-1]
-                    previous_question_lower = previous_question.lower()
-                
-                    previous_was_document_focused = any(
-                        phrase in previous_question_lower
-                        for phrase in document_only_phrases
-                    )
-                
-                    if previous_was_document_focused:
-                        web_search_query = None
-                    else:
-                        web_search_query = rewrite_follow_up_query(
-                            previous_question,
-                            question
-                        )
+                    if previous_user_questions:
+                        previous_question = previous_user_questions[-1]
+                    
+                        if st.session_state.document_scope_active:
+                            web_search_query = None
+                        else:
+                            web_search_query = rewrite_follow_up_query(
+                                previous_question,
+                                question
+                            )
 
             # Search the web for BOTH new questions and follow-up questions
             def extract_relevant_web_evidence(raw_content, query, max_chars=3500):

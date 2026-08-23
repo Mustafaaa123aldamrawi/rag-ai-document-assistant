@@ -1029,7 +1029,17 @@ If multiple sources support the same claim, cite them like [1][2].
         expanded_texts = []
         seen_chunks = set()
         used_sources = set()
+        # Build stable document citation numbers from the full uploaded document
         doc_source_numbers = {}
+        
+        for page in document_pages:
+            doc_key = (
+                page.get("source"),
+                page.get("page_number")
+            )
+        
+            if doc_key not in doc_source_numbers:
+                doc_source_numbers[doc_key] = len(doc_source_numbers) + 1
         
         for document in relevant_documents:
             source = document.metadata.get("source")
@@ -1059,10 +1069,11 @@ If multiple sources support the same claim, cite them like [1][2].
                                 chunk["page_number"]
                             )
                             
-                        if doc_key not in doc_source_numbers:
-                            doc_source_numbers[doc_key] = len(doc_source_numbers) + 1
-                        
-                        doc_number = doc_source_numbers[doc_key]
+                        doc_number = doc_source_numbers.get(doc_key)
+
+                        if doc_number is None:
+                            doc_number = len(doc_source_numbers) + 1
+                            doc_source_numbers[doc_key] = doc_number
                         
                         expanded_texts.append(
                             f"[DOC {doc_number}]\n"

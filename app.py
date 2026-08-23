@@ -430,6 +430,34 @@ def search_web_tavily(query):
     response.raise_for_status()
     data = response.json()
     results = data.get("results", [])
+    
+    query_lower = query.lower()
+
+    asks_base_cts = (
+        "cts" in query_lower
+        and "cts-i" not in query_lower
+        and "cts i" not in query_lower
+        and "cts-d" not in query_lower
+        and "cts d" not in query_lower
+    )
+
+    if asks_base_cts:
+        filtered_results = []
+
+        for result in results:
+            title_lower = result.get("title", "").lower()
+
+            if (
+                "cts-i" in title_lower
+                or "cts i certification" in title_lower
+                or "cts-d" in title_lower
+                or "cts d certification" in title_lower
+            ):
+                continue
+
+            filtered_results.append(result)
+
+        results = filtered_results
 
     # Validate source domains before marking results as official
     for result in results:

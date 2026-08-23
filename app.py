@@ -1282,9 +1282,12 @@ If multiple sources support the same claim, cite them like [1][2].
                         break
             
                 return "\n".join(selected_blocks)
+            web_results = []
+
             try:
-                with st.spinner("Searching the web..."):
-                    web_results = search_web_tavily(web_search_query)
+                if web_search_query:
+                    with st.spinner("Searching the web..."):
+                        web_results = search_web_tavily(web_search_query)
             
                 if web_results:
                     web_context_parts = []

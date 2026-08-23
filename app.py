@@ -1558,6 +1558,9 @@ If multiple sources support the same claim, cite them like [1][2].
         - If a logical progression is supported, explain it clearly, for example: current preparation → recommended credential → possible specialized next step.
         - Avoid repeating the recommendation or conclusion.
         - Prefer roughly 100–180 words for a straightforward recommendation unless the user asks for more detail.
+        - When describing a person's skills, experience, or capabilities, use document evidence about that person as the primary source.
+        - Do not infer that the person has a specific technical capability merely because a product or platform listed in their profile supports that capability.
+        - Web sources may explain a technology, but must not be used to upgrade or infer the user's personal skill level unless the document explicitly supports it.
         Use the recent conversation only to understand the user's follow-up question and conversational context.
         Do not treat the recent conversation as a factual source.
         All factual claims must still be supported by the Combined context and its citations.

@@ -264,6 +264,29 @@ def build_document_keyword_fallback(question, document_context, max_terms=8):
 
 
 def build_document_aware_web_query(question, document_context):
+    current_web_cues = (
+        "current",
+        "currently",
+        "latest",
+        "today",
+        "fee",
+        "fees",
+        "price",
+        "pricing",
+        "cost",
+        "requirements",
+        "requirement",
+        "eligibility",
+        "exam date",
+        "exam dates",
+        "registration",
+        "deadline",
+    )
+
+    question_lower = question.lower()
+
+    if any(cue in question_lower for cue in current_web_cues):
+        return normalize_search_query(question)
     query_prompt = f"""
 Create a concise and effective web search query using both the user's question
 and the relevant information extracted from the uploaded document.

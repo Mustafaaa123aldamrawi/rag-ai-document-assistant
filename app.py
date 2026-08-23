@@ -1740,6 +1740,12 @@ If multiple sources support the same claim, cite them like [1][2].
             verified_sentences.append(sentence)
         
         answer = " ".join(verified_sentences).strip()
+        # Restore bullet formatting after claim filtering
+        answer = re.sub(
+            r"\.\s+-\s+",
+            ".\n\n- ",
+            answer
+        )
         # Validate that citation labels reference real available sources
         import re
         

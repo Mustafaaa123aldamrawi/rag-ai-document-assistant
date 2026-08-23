@@ -1749,6 +1749,68 @@ If multiple sources support the same claim, cite them like [1][2].
             ".\n\n- ",
             answer
         )
+        # Prevent web sources from inventing or upgrading personal skills
+        profile_skill_cues = (
+            "skills",
+            "strongest technical",
+            "experience",
+            "capabilities",
+            "what can this person",
+        )
+        
+        is_profile_skill_question = any(
+            cue in question_lower
+            for cue in profile_skill_cues
+        )
+        
+        if is_profile_skill_question:
+            filtered_lines = []
+        
+            for line in answer.splitlines():
+                stripped = line.strip()
+        
+                if not stripped:
+                    filtered_lines.append(line)
+                    continue
+        
+                has_web_citation = bool(
+                    re.search(r"\[WEB \d+\]", line)
+                )
+        
+                has_doc_citation = bool(
+                    re.search(r"\[DOC \d+\]", line)
+                )
+        
+                personal_skill_language = bool(
+                    re.search(
+                        r"\b("
+                        r"working with|"
+                        r"managing|"
+                        r"skilled in|"
+                        r"experienced in|"
+                        r"expertise in|"
+                        r"strong in|"
+                        r"proficient in|"
+                        r"knowledge of|"
+                        r"familiar with|"
+                        r"hands-on with|"
+                        r"capable of"
+                        r")\b",
+                        line,
+                        re.IGNORECASE
+                    )
+                )
+        
+                if (
+                    personal_skill_language
+                    and has_web_citation
+                    and not has_doc_citation
+                ):
+                    continue
+        
+                filtered_lines.append(line)
+        
+            answer = "\n".join(filtered_lines).strip()
         # Validate that citation labels reference real available sources
         import re
         

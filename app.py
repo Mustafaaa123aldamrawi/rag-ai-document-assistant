@@ -286,21 +286,21 @@ def build_document_aware_web_query(question, document_context):
     question_lower = question.lower()
 
     fee_web_cues = (
-    "fee",
-    "fees",
-    "cost",
-    "price",
-    "pricing",
-)
-
-if any(cue in question_lower for cue in fee_web_cues):
-    base_query = normalize_search_query(question)
-
-    if "exam" in question_lower:
-        return f"{base_query} official exam fee pricing"
-
-    return f"{base_query} official pricing"
-
+        "fee",
+        "fees",
+        "cost",
+        "price",
+        "pricing",
+    )
+    
+    if any(cue in question_lower for cue in fee_web_cues):
+        base_query = normalize_search_query(question)
+    
+        if "exam" in question_lower:
+            return f"{base_query} official exam fee pricing"
+    
+        return f"{base_query} official pricing"
+    
     if any(cue in question_lower for cue in current_web_cues):
         return normalize_search_query(question)
     query_prompt = f"""

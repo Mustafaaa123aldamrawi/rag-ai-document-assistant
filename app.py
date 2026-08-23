@@ -1190,8 +1190,6 @@ If multiple sources support the same claim, cite them like [1][2].
                 )
             )
             
-            st.write("DEBUG is_web_follow_up:", is_web_follow_up)
-            
             # Rewrite the query only when this is a follow-up
             if is_web_follow_up:
                 previous_user_questions = [
@@ -1268,16 +1266,6 @@ If multiple sources support the same claim, cite them like [1][2].
             try:
                 with st.spinner("Searching the web..."):
                     web_results = search_web_tavily(web_search_query)
-
-                st.write(
-                    "DEBUG web query:",
-                    web_search_query
-                )
-
-                st.write(
-                    "DEBUG web results count:",
-                    len(web_results) if web_results else 0
-                )
             
                 if web_results:
                     web_context_parts = []

@@ -1766,7 +1766,7 @@ If multiple sources support the same claim, cite them like [1][2].
         prompt = f"""
         Recent conversation:
         {conversation_history}    
-        Question:
+        Question:- 
         {question}
         Follow-up question detected: {is_follow_up}
         If Follow-up question detected is False, treat the current question as a new topic and do not carry over entities or assumptions from previous conversation turns.
@@ -1776,6 +1776,7 @@ If multiple sources support the same claim, cite them like [1][2].
         
         Subject detected in document: {subject_found}
         Answer using only the information provided in the context above.
+        - For yes/no questions starting with Does, Is, Can, Are, Has, Have, Was, Were, or Will, begin the answer with "Yes" or "No" when the context supports a clear answer, then briefly explain why with citations.
         Current factual information questions:
         - If the user explicitly asks for current fees, prices, costs, requirements, eligibility, registration details, exam dates, or deadlines, answer those requested facts directly first.
         - Do not turn a factual current-information question into a career recommendation.

@@ -426,6 +426,28 @@ def search_web_tavily(query):
     if "avixa" in query_lower or "cts" in query_lower:
         targeted_domains = ["avixa.org"]
 
+    cts_exam_intent_terms = (
+        "exam",
+        "requirement",
+        "requirements",
+        "fee",
+        "fees",
+        "price",
+        "pricing",
+        "registration",
+        "register",
+        "eligibility",
+    )
+    
+    if (
+        ("avixa" in query_lower or "cts" in query_lower)
+        and any(term in query_lower for term in cts_exam_intent_terms)
+    ):
+        query = (
+            f"{query} official CTS exam requirements "
+            "registration eligibility fees site:avixa.org"
+        )
+
     # STEP 1: Search official AV manufacturer websites first
     official_payload = {
         "query": query,

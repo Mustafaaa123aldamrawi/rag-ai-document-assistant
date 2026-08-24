@@ -1258,6 +1258,54 @@ If multiple sources support the same claim, cite them like [1][2].
                         )
         
                         break
+        # Expand context with pages that explicitly contain the requested subject
+        if any(
+            phrase in question_lower
+            for phrase in (
+                "شو بحكي الدوكيومنت عن ",
+                "شو بحكي المستند عن ",
+                "شو مكتوب بالدوكيومنت عن ",
+                "شو مكتوب بالمستند عن ",
+            )
+        ):
+            requested_subject = question.split(" عن ", 1)[1].strip().rstrip("؟?")
+        
+            normalized_requested_subject = "".join(
+                char.lower()
+                for char in requested_subject
+                if char.isalnum()
+            )
+        
+            for page in document_pages:
+                page_text = page.get("text", "")
+        
+                normalized_page_text = "".join(
+                    char.lower()
+                    for char in page_text
+                    if char.isalnum()
+                )
+        
+                if (
+                    normalized_requested_subject
+                    and normalized_requested_subject in normalized_page_text
+                ):
+                    doc_key = (
+                        page.get("source"),
+                        page.get("page_number")
+                    )
+        
+                    doc_number = doc_source_numbers.get(doc_key)
+        
+                    if doc_number is not None:
+                        subject_page_text = (
+                            f"[DOC {doc_number}]\n"
+                            f"Source: {page.get('source')}\n"
+                            f"Page: {page.get('page_number')}\n"
+                            f"{page_text}"
+                        )
+        
+                        if subject_page_text not in expanded_texts:
+                            expanded_texts.append(subject_page_text)
         if expanded_texts:
             context = "\n\n".join(expanded_texts)
         else:

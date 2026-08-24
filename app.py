@@ -1749,6 +1749,13 @@ If multiple sources support the same claim, cite them like [1][2].
                 subject = question[8:].strip().rstrip("?")
             elif "features of the " in question_lower:
                 subject = question_lower.split("features of the ", 1)[1].strip().rstrip("?")
+            elif " عن " in question:
+                subject = question.split(" عن ", 1)[1].strip().rstrip("؟?")
+            elif question_lower.startswith("شو هو "):
+                subject = question[6:].strip().rstrip("؟?")
+            
+            elif question_lower.startswith("شو هي "):
+                subject = question[6:].strip().rstrip("؟?")
         
             normalized_subject = "".join(
                 char.lower() for char in subject

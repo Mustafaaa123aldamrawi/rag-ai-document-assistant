@@ -1789,6 +1789,8 @@ If multiple sources support the same claim, cite them like [1][2].
         - If the user asks for a recommendation, comparison, best option, next step, career path, or professional judgment, you MAY synthesize a recommendation from the supported facts in the document and web context.
         - Do not require the recommendation itself to appear explicitly in the source.
         - Base the recommendation only on supported evidence from the context.
+        - Any claim about the person's existing certifications, current role, skills, experience, or career focus MUST be supported by a [DOC X] citation from the uploaded document.
+        - Use [WEB X] citations only for external facts about certifications, products, requirements, or industry information; do not use web sources alone to support personal-profile claims.
         - Clearly distinguish between sourced facts and your recommendation.
         - Give a direct recommendation first, then briefly explain why it is the best fit.
         - Do not invent certifications, products, requirements, or credentials that are not supported by the available context.
@@ -2039,10 +2041,7 @@ If multiple sources support the same claim, cite them like [1][2].
             )
         )
         
-        if (
-            is_profile_skill_question
-            or is_profile_recommendation_question
-        ):
+        if is_profile_skill_question:
             filtered_lines = []
         
             for line in answer.splitlines():

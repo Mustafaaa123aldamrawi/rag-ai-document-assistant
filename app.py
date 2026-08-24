@@ -1862,9 +1862,7 @@ If multiple sources support the same claim, cite them like [1][2].
                 token in normalized_context
                 for token in subject_tokens
             )
-            st.write("DEBUG subject:", subject)
-            st.write("DEBUG subject tokens:", subject_tokens)
-            st.write("DEBUG subject found:", subject_found)
+            
         # Detect whether the current question is likely a conversational follow-up
         follow_up_starters = (
             "what about",
@@ -2559,10 +2557,8 @@ If multiple sources support the same claim, cite them like [1][2].
             # Clean extra blank lines created by removals
             answer = re.sub(r"\n{3,}", "\n\n", answer).strip()
             
-        st.write("DEBUG before normalization:", answer)
         answer = normalize_model_names(answer)  
-        st.write("DEBUG after normalization:", answer)
-
+       
         # Show only sources actually cited in the final verified answer
         final_cited_docs = {
             int(x) for x in re.findall(r"\[DOC (\d+)\]", answer)
@@ -2575,8 +2571,6 @@ If multiple sources support the same claim, cite them like [1][2].
             "role": "assistant",
             "content": answer
         })
-        
-        st.write("DEBUG reached final answer block")
         
         st.subheader("🤖 AI Answer")
         st.write(answer)

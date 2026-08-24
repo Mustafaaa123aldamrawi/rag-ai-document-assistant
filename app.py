@@ -1856,10 +1856,50 @@ If multiple sources support the same claim, cite them like [1][2].
                 and "[DOC " not in line
                 and "[WEB " not in line
             ]
-        
-            if uncited_bullets:
+
+            profile_reference_review_cues = (
+                "this person",
+                "this profile",
+                "this cv",
+                "this resume",
+            )
+            
+            profile_recommendation_review_cues = (
+                "certification",
+                "recommend",
+                "recommendation",
+                "pursue",
+                "career",
+                "next certification",
+            )
+            
+            is_profile_recommendation_review = (
+                any(
+                    cue in question_lower
+                    for cue in profile_reference_review_cues
+                )
+                and any(
+                    cue in question_lower
+                    for cue in profile_recommendation_review_cues
+                )
+            )
+            
+            needs_citation_review = (
+                bool(uncited_bullets)
+                or is_profile_recommendation_review
+            )
+            
+            if needs_citation_review:
                 citation_review_prompt = f"""
         Review the answer below using the provided context.
+        Citation separation rules:
+        - If one sentence mixes a personal-profile claim with an external certification, product, requirement, or industry claim, split it into separate sentences.
+        - Personal-profile claims about the person's certifications, role, skills, experience, or career focus must use [DOC X].
+        - External facts about certifications, products, requirements, or industry information must use [WEB X] when supported by web context.
+        - Never use [DOC X] alone to support a general external certification fact.
+        - Never use [WEB X] alone to support a claim about the person's own background.
+        - Preserve the original recommendation and meaning; only separate claims and correct their citations.
+        - Do not add new facts.
         
         CONTEXT:
         {context}

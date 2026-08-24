@@ -2558,7 +2558,6 @@ If multiple sources support the same claim, cite them like [1][2].
                 )
             # Clean extra blank lines created by removals
             answer = re.sub(r"\n{3,}", "\n\n", answer).strip()
-            answer = normalize_model_names(answer)
             
             st.write("DEBUG before normalization:", answer)
             

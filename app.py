@@ -1804,6 +1804,9 @@ If multiple sources support the same claim, cite them like [1][2].
                 token in normalized_context
                 for token in subject_tokens
             )
+            st.write("DEBUG subject:", subject)
+            st.write("DEBUG subject tokens:", subject_tokens)
+            st.write("DEBUG subject found:", subject_found)
         # Detect whether the current question is likely a conversational follow-up
         follow_up_starters = (
             "what about",

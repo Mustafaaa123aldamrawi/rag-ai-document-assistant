@@ -170,14 +170,14 @@ def normalize_model_names(text):
     if not text:
         return text
 
-       replacements = {
-            "Core 1 10 Series": "Core 110 Series",
-            "Core 1 10f v2": "Core 110f v2",
-            "Core 1 10F v2": "Core 110F v2",
-            "Core 1 10f": "Core 110f",
-            "Core 1 10F": "Core 110F",
-            "Core 1 10": "Core 110",
-        }
+    replacements = {
+        "Core 1 10 Series": "Core 110 Series",
+        "Core 1 10f v2": "Core 110f v2",
+        "Core 1 10F v2": "Core 110F v2",
+        "Core 1 10f": "Core 110f",
+        "Core 1 10F": "Core 110F",
+        "Core 1 10": "Core 110",
+    }
 
     normalized_text = text
 

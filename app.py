@@ -1900,6 +1900,8 @@ If multiple sources support the same claim, cite them like [1][2].
         - Never use [WEB X] alone to support a claim about the person's own background.
         - Preserve the original recommendation and meaning; only separate claims and correct their citations.
         - Do not add new facts.
+        - The opening recommendation sentence must contain only the recommendation itself and must not include uncited personal-profile facts as a preface.
+        - Every sentence that mentions the person's certifications, role, skills, experience, background, or career focus MUST include the appropriate [DOC X] citation, even when that sentence also contains a recommendation.
         
         CONTEXT:
         {context}

@@ -1782,6 +1782,12 @@ If multiple sources support the same claim, cite them like [1][2].
             "what else",
             "how many",
             "how much",
+        "طيب",
+        "طيب شو",
+        "وشو",
+        "شو كمان",
+        "وبعدين",
+        "وكمان",
         )
         
         follow_up_references = {
@@ -1792,6 +1798,14 @@ If multiple sources support the same claim, cite them like [1][2].
             "they",
             "their",
             "them",
+        "تبعتو",
+        "تبعو",
+        "تبعها",
+        "تبعهم",
+        "هاد",
+        "هاي",
+        "هيدا",
+        "هذي",
         }
         
         question_words = set(

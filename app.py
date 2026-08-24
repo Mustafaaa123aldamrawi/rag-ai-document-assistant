@@ -170,21 +170,22 @@ def normalize_model_names(text):
     if not text:
         return text
 
-    replacements = {
-        "Core 1 10 Series": "Core 110 Series",
-        "Core 1 10f v2": "Core 110f v2",
-        "Core 1 10F v2": "Core 110F v2",
-        "Core 1 10f": "Core 110f",
-        "Core 1 10F": "Core 110F",
-        "Core 1 10": "Core 110",
-    }
-
     normalized_text = text
 
-    for incorrect, correct in replacements.items():
-        normalized_text = normalized_text.replace(
-            incorrect,
-            correct
+    replacements = (
+        (r"Core\s+1\s+10f\s+v2", "Core 110f v2"),
+        (r"Core\s+1\s+10F\s+v2", "Core 110F v2"),
+        (r"Core\s+1\s+10\s+Series", "Core 110 Series"),
+        (r"Core\s+1\s+10f", "Core 110f"),
+        (r"Core\s+1\s+10F", "Core 110F"),
+        (r"Core\s+1\s+10", "Core 110"),
+    )
+
+    for pattern, correct in replacements:
+        normalized_text = re.sub(
+            pattern,
+            correct,
+            normalized_text
         )
 
     return normalized_text

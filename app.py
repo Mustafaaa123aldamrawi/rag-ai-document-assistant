@@ -2012,8 +2012,37 @@ If multiple sources support the same claim, cite them like [1][2].
             cue in question_lower
             for cue in profile_skill_cues
         )
+        profile_reference_cues = (
+            "this person",
+            "this profile",
+            "this cv",
+            "this resume",
+        )
         
-        if is_profile_skill_question:
+        profile_recommendation_cues = (
+            "certification",
+            "recommend",
+            "recommendation",
+            "pursue",
+            "career",
+            "next certification",
+        )
+        
+        is_profile_recommendation_question = (
+            any(
+                cue in question_lower
+                for cue in profile_reference_cues
+            )
+            and any(
+                cue in question_lower
+                for cue in profile_recommendation_cues
+            )
+        )
+        
+        if (
+            is_profile_skill_question
+            or is_profile_recommendation_question
+        ):
             filtered_lines = []
         
             for line in answer.splitlines():
@@ -2050,9 +2079,34 @@ If multiple sources support the same claim, cite them like [1][2].
                         re.IGNORECASE
                     )
                 )
+                personal_profile_language = bool(
+                    re.search(
+                        r"\b("
+                        r"existing certifications|"
+                        r"current role|"
+                        r"current job|"
+                        r"professional background|"
+                        r"career background|"
+                        r"his skills|"
+                        r"her skills|"
+                        r"their skills|"
+                        r"his experience|"
+                        r"her experience|"
+                        r"their experience|"
+                        r"his focus|"
+                        r"her focus|"
+                        r"their focus|"
+                        r"focus on|"
+                        r"works as|"
+                        r"working as"
+                        r")\b",
+                        line,
+                        re.IGNORECASE
+                    )
+                )
         
                 if (
-                    personal_skill_language
+                    (personal_skill_language or personal_profile_language)
                     and has_web_citation
                     and not has_doc_citation
                 ):

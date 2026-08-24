@@ -2577,6 +2577,9 @@ If multiple sources support the same claim, cite them like [1][2].
             "role": "assistant",
             "content": answer
         })
+        
+        st.write("DEBUG reached final answer block")
+        
         st.subheader("🤖 AI Answer")
         st.write(answer)
         

@@ -1793,6 +1793,8 @@ If multiple sources support the same claim, cite them like [1][2].
         - Use [WEB X] citations only for external facts about certifications, products, requirements, or industry information; do not use web sources alone to support personal-profile claims.
         - Keep personal-profile facts and external certification facts in separate sentences whenever they rely on different source types, so each sentence can carry the correct citation.
         - Do not use a [DOC X] citation to support general facts about a certification, and do not use a [WEB X] citation to support claims about the person's own background, role, skills, or credentials.
+        - Never combine a personal-profile claim and an external certification claim in the same sentence. Write them as separate sentences with separate citations.
+        - For profile-based certification recommendations, use this structure: first sentence = recommendation only; second sentence = personal evidence with [DOC X]; third sentence = external certification evidence with [WEB X].
         - Clearly distinguish between sourced facts and your recommendation.
         - Give a direct recommendation first, then briefly explain why it is the best fit.
         - Do not invent certifications, products, requirements, or credentials that are not supported by the available context.

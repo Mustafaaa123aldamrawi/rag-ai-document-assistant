@@ -166,6 +166,25 @@ Standalone search query:
 
     rewritten_query = call_qwen_llm(rewrite_prompt)
     return rewritten_query.strip().strip('"')
+def normalize_model_names(text):
+    if not text:
+        return text
+
+    replacements = {
+        "Core 1 10 Series": "Core 110 Series",
+        "Core 1 10f": "Core 110f",
+        "Core 1 10F": "Core 110F",
+    }
+
+    normalized_text = text
+
+    for incorrect, correct in replacements.items():
+        normalized_text = normalized_text.replace(
+            incorrect,
+            correct
+        )
+
+    return normalized_text
 def normalize_search_query(question):
     normalize_prompt = f"""
 Convert the user's question into one clean standalone English web search query.
@@ -2478,6 +2497,8 @@ If multiple sources support the same claim, cite them like [1][2].
                 )
             # Clean extra blank lines created by removals
             answer = re.sub(r"\n{3,}", "\n\n", answer).strip()
+            answer = normalize_model_names(answer)
+
         # Show only sources actually cited in the final verified answer
         final_cited_docs = {
             int(x) for x in re.findall(r"\[DOC (\d+)\]", answer)

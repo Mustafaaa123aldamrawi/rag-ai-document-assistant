@@ -1781,8 +1781,14 @@ If multiple sources support the same claim, cite them like [1][2].
                 if char.isalnum()
             )
         
+            subject_search_context = "\n".join(
+                page.get("text", "")
+                for page in document_pages
+            )
+            
             normalized_context = "".join(
-                char.lower() for char in context
+                char.lower()
+                for char in subject_search_context
                 if char.isalnum()
             )
         

@@ -1333,6 +1333,18 @@ If multiple sources support the same claim, cite them like [1][2].
                 "based only on the document",
                 "according to this document",
                 "what does this document say",
+            "شو بحكي الدوكيومنت",
+            "شو بحكي المستند",
+            "شو مكتوب بالدوكيومنت",
+            "شو مكتوب بالمستند",
+            "حسب الدوكيومنت",
+            "حسب المستند",
+            "بناء على الدوكيومنت",
+            "بناء على المستند",
+            "في هذا الدوكيومنت",
+            "في هذا المستند",
+            "بالدوكيومنت",
+            "بالمستند",
             )
         
             is_document_focused_question = any(
@@ -1363,6 +1375,12 @@ If multiple sources support the same claim, cite them like [1][2].
                 "and does",
                 "and is",
                 "and can",
+            "طيب",
+            "طيب شو",
+            "وشو",
+            "شو كمان",
+            "وبعدين",
+            "وكمان",
             )
 
             web_follow_up_references = {
@@ -1373,6 +1391,14 @@ If multiple sources support the same claim, cite them like [1][2].
                 "they",
                 "their",
                 "them",
+            "تبعتو",
+            "تبعو",
+            "تبعها",
+            "تبعهم",
+            "هاد",
+            "هاي",
+            "هيدا",
+            "هذي",
             }
 
             web_question_words = set(

@@ -1362,6 +1362,7 @@ If multiple sources support the same claim, cite them like [1][2].
             )
 
             document_reference_phrases = (
+                "this person",
                 "this profile",
                 "this document",
                 "this file",

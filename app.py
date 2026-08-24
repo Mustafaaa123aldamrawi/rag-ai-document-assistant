@@ -1799,6 +1799,11 @@ If multiple sources support the same claim, cite them like [1][2].
         
         Subject detected in document: {subject_found}
         Answer using only the information provided in the context above.
+        Language rules:
+        - Answer in the same primary language as the user's question.
+        - If the question mixes Arabic and English, answer in clear natural Arabic while preserving technical product names, certification names, acronyms, model numbers, and standard industry terms in English.
+        - Do not translate technical names such as AVIXA CTS, Q-SYS, Dante, AES67, HDMI, or model numbers.
+        - Avoid literal or awkward Arabic translations; use natural professional Arabic phrasing.
         - For yes/no questions starting with Does, Is, Can, Are, Has, Have, Was, Were, or Will, begin the answer with "Yes" or "No" when the context supports a clear answer, then briefly explain why with citations.
         Current factual information questions:
         - If the user explicitly asks for current fees, prices, costs, requirements, eligibility, registration details, exam dates, or deadlines, answer those requested facts directly first.

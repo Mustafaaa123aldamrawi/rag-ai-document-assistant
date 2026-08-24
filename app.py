@@ -1489,7 +1489,7 @@ If multiple sources support the same claim, cite them like [1][2].
             
                 selected_blocks = []
                 total_chars = 0
-            +
+                
                 for score, index, block in scored_blocks:
                     if total_chars + len(block) > max_chars:
                         continue

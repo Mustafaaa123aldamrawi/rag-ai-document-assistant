@@ -1030,6 +1030,14 @@ If multiple sources support the same claim, cite them like [1][2].
             "they",
             "their",
             "them",
+        "تبعتو",
+        "تبعو",
+        "تبعها",
+        "تبعهم",
+        "هاد",
+        "هاي",
+        "هيدا",
+        "هذي",
         }
         
         retrieval_question_words = set(

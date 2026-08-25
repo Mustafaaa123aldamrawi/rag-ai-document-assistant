@@ -1136,7 +1136,41 @@ If multiple sources support the same claim, cite them like [1][2].
                     previous_question,
                     question
                 )
-
+        # Prefer the document whose content explicitly matches the user's subject
+        if not matched_source:
+            normalized_question = "".join(
+                char.lower()
+                for char in question
+                if char.isalnum()
+            )
+        
+            best_source = None
+            best_source_score = 0
+        
+            for page in document_pages:
+                source_name = page.get("source")
+                page_text = page.get("text", "")
+        
+                normalized_page_text = "".join(
+                    char.lower()
+                    for char in page_text
+                    if char.isalnum()
+                )
+        
+                source_score = 0
+        
+                if "qsys" in normalized_question and "qsys" in normalized_page_text:
+                    source_score += 10
+        
+                if "core110" in normalized_question and "core110" in normalized_page_text:
+                    source_score += 10
+        
+                if source_score > best_source_score:
+                    best_source_score = source_score
+                    best_source = source_name
+        
+            if best_source_score > 0:
+                matched_source = best_source
         if matched_source:
             search_results = vector_store.similarity_search_with_score(
                 search_query,

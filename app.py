@@ -1668,134 +1668,134 @@ If multiple sources support the same claim, cite them like [1][2].
                 or bool(web_question_words & web_follow_up_references)
             )
             )
-            # Reset document-only scope when the user clearly starts a new topic
-            if (
-                st.session_state.document_scope_active
-                and not is_document_focused_question
-                and not is_web_follow_up
-            ):
-                st.session_state.document_scope_active = False
-            
-                web_search_query = build_document_aware_web_query(
-                    question,
-                    context
-                )
-            st.write(
-                "DEBUG BEFORE FOLLOW-UP:",
-                {
-                    "document_scope_active": st.session_state.document_scope_active,
-                    "is_document_focused_question": is_document_focused_question,
-                    "is_current_web_question": is_current_web_question,
-                    "web_search_query": web_search_query,
-                }
+        # Reset document-only scope when the user clearly starts a new topic
+        if (
+            st.session_state.document_scope_active
+            and not is_document_focused_question
+            and not is_web_follow_up
+        ):
+            st.session_state.document_scope_active = False
+        
+            web_search_query = build_document_aware_web_query(
+                question,
+                context
             )
-            # Rewrite the query only when this is a follow-up
-            if is_web_follow_up:
-                previous_user_questions = [
-                    message["content"]
-                    for message in st.session_state.messages[:-1]
-                    if message["role"] == "user"
-                ]
+        st.write(
+            "DEBUG BEFORE FOLLOW-UP:",
+            {
+                "document_scope_active": st.session_state.document_scope_active,
+                "is_document_focused_question": is_document_focused_question,
+                "is_current_web_question": is_current_web_question,
+                "web_search_query": web_search_query,
+            }
+        )
+        # Rewrite the query only when this is a follow-up
+        if is_web_follow_up:
+            previous_user_questions = [
+                message["content"]
+                for message in st.session_state.messages[:-1]
+                if message["role"] == "user"
+            ]
 
-                if previous_user_questions:
-                    previous_question = previous_user_questions[-1]
-                
-                    if st.session_state.document_scope_active:
-                        web_search_query = None
-                    else:
-                        web_search_query = rewrite_follow_up_query(
-                            previous_question,
-                            question
-                        )
-            st.write("DEBUG REACHED WEB EVIDENCE SECTION")
-            # Search the web for BOTH new questions and follow-up questions
-            def extract_relevant_web_evidence(raw_content, query, max_chars=3500):
-                if not raw_content:
-                    return ""
+            if previous_user_questions:
+                previous_question = previous_user_questions[-1]
             
-                # Normalize the query into useful search terms
-                query_terms = {
-                    word.lower().strip(".,!?()[]{}:;\"'")
-                    for word in query.split()
-                    if len(word) >= 3
-                }
-            
-                # Split the page into manageable text blocks
-                blocks = re.split(r"\n\s*\n|\n", raw_content)
-            
-                scored_blocks = []
-            
-                for index, block in enumerate(blocks):
-                    cleaned_block = " ".join(block.split())
-            
-                    if len(cleaned_block) < 30:
-                        continue
-            
-                    block_lower = cleaned_block.lower()
-            
-                    score = sum(
-                        1 for term in query_terms
-                        if term in block_lower
+                if st.session_state.document_scope_active:
+                    web_search_query = None
+                else:
+                    web_search_query = rewrite_follow_up_query(
+                        previous_question,
+                        question
                     )
+        st.write("DEBUG REACHED WEB EVIDENCE SECTION")
+        # Search the web for BOTH new questions and follow-up questions
+        def extract_relevant_web_evidence(raw_content, query, max_chars=3500):
+            if not raw_content:
+                return ""
+        
+            # Normalize the query into useful search terms
+            query_terms = {
+                word.lower().strip(".,!?()[]{}:;\"'")
+                for word in query.split()
+                if len(word) >= 3
+            }
+        
+            # Split the page into manageable text blocks
+            blocks = re.split(r"\n\s*\n|\n", raw_content)
+        
+            scored_blocks = []
+        
+            for index, block in enumerate(blocks):
+                cleaned_block = " ".join(block.split())
+        
+                if len(cleaned_block) < 30:
+                    continue
+        
+                block_lower = cleaned_block.lower()
+        
+                score = sum(
+                    1 for term in query_terms
+                    if term in block_lower
+                )
 
-                    fee_query_terms = (
+                fee_query_terms = (
+                    "fee",
+                    "fees",
+                    "cost",
+                    "price",
+                    "pricing",
+                )
+                
+                asks_about_fees = any(
+                    term in query.lower()
+                    for term in fee_query_terms
+                )
+                
+                if asks_about_fees:
+                    pricing_markers = (
+                        "$",
+                        "usd",
+                        "sar",
+                        "eur",
+                        "gbp",
+                        "aud",
                         "fee",
                         "fees",
                         "cost",
                         "price",
                         "pricing",
                     )
-                    
-                    asks_about_fees = any(
-                        term in query.lower()
-                        for term in fee_query_terms
-                    )
-                    
-                    if asks_about_fees:
-                        pricing_markers = (
-                            "$",
-                            "usd",
-                            "sar",
-                            "eur",
-                            "gbp",
-                            "aud",
-                            "fee",
-                            "fees",
-                            "cost",
-                            "price",
-                            "pricing",
-                        )
-                    
-                        if any(marker in block_lower for marker in pricing_markers):
-                            score += 5
-            
-                    if score > 0:
-                        scored_blocks.append(
-                            (score, index, cleaned_block)
-                        )
-            
-                if not scored_blocks:
-                    return raw_content[:max_chars]
-            
-                # Highest relevance first
-                scored_blocks.sort(
-                    key=lambda item: (-item[0], item[1])
-                )
-            
-                selected_blocks = []
-                total_chars = 0
                 
-                for score, index, block in scored_blocks:
-                    if total_chars + len(block) > max_chars:
-                        continue
+                    if any(marker in block_lower for marker in pricing_markers):
+                        score += 5
+        
+                if score > 0:
+                    scored_blocks.append(
+                        (score, index, cleaned_block)
+                    )
+        
+            if not scored_blocks:
+                return raw_content[:max_chars]
+        
+            # Highest relevance first
+            scored_blocks.sort(
+                key=lambda item: (-item[0], item[1])
+            )
+        
+            selected_blocks = []
+            total_chars = 0
             
-                    selected_blocks.append(block)
-                    total_chars += len(block)
-            
-                    if total_chars >= max_chars:
-                        break
-            
-                return "\n".join(selected_blocks)
+            for score, index, block in scored_blocks:
+                if total_chars + len(block) > max_chars:
+                    continue
+        
+                selected_blocks.append(block)
+                total_chars += len(block)
+        
+                if total_chars >= max_chars:
+                    break
+        
+            return "\n".join(selected_blocks)
             web_results = []
             st.write("DEBUG WEB SEARCH QUERY:", web_search_query)
             try:

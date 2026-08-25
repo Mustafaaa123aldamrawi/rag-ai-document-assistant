@@ -210,6 +210,11 @@ Rules:
 - Do not add, remove, infer, or change any facts.
 - Preserve every citation exactly as written, including all [DOC X] and [WEB X] labels.
 - Preserve all product names, model numbers, standards, acronyms, and technical terms exactly.
+- Preserve all numeric values exactly as written, including prices, quantities, dates, and percentages.
+- Preserve currency codes and symbols exactly and keep them attached to the correct numeric value.
+- Do not merge, reorder, duplicate, or split currency amounts.
+- Prefer clear price formatting such as "USD 390", "EUR 375", "GBP 315", and "AUD 620" when the source contains those exact values.
+- Never translate or transliterate certification and organization names such as AVIXA CTS.
 - Keep established AV/IT terms in English when that is more natural.
 - Do not translate "Core" as "النواة" when referring to Q-SYS Core.
 - Remove awkward literal translations, mixed-script artifacts, malformed words, and unnatural Arabic.

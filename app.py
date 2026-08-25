@@ -1297,7 +1297,10 @@ If multiple sources support the same claim, cite them like [1][2].
                 (
                     is_verification_question
                     and len(question_keywords) > 0
-                    and keyword_matches == len(evidence_keywords)
+                    and keyword_matches >= max(
+                        1,
+                        len(evidence_keywords) - 1
+                    )
                 )
                 or
                 (

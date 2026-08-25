@@ -2699,10 +2699,17 @@ WEB CONTEXT:
                 answer
             )
             # Enforce CTS prerequisite before recommending CTS-I or CTS-D
-            cts_preparation_match = re.search(
-                r"\[DOC (\d+)\][\s\S]{0,1500}?CTS Preparation",
-                context,
-                re.IGNORECASE
+            profile_document_text = "\n".join(
+                page.get("text", "")
+                for page in document_pages
+            )
+            
+            cts_preparation_present = bool(
+                re.search(
+                    r"\b(?:AVIXA\s+)?CTS\s+Preparation\b",
+                    profile_document_text,
+                    re.IGNORECASE
+                )
             )
         
             active_cts_confirmed = bool(
@@ -2720,14 +2727,34 @@ WEB CONTEXT:
                     re.IGNORECASE
                 )
             )
-        
+            cts_preparation_page = next(
+                (
+                    page
+                    for page in document_pages
+                    if re.search(
+                        r"\b(?:AVIXA\s+)?CTS\s+Preparation\b",
+                        page.get("text", ""),
+                        re.IGNORECASE
+                    )
+                ),
+                None
+            )
+            
+            doc_number = None
+            
+            if cts_preparation_page:
+                doc_key = (
+                    cts_preparation_page.get("source"),
+                    cts_preparation_page.get("page_number")
+                )
+                doc_number = doc_source_numbers.get(doc_key)
             if (
-                cts_preparation_match
+                cts_preparation_present
+                and doc_number is not None
                 and not active_cts_confirmed
                 and advanced_cts_recommended
             ):
-                doc_number = cts_preparation_match.group(1)
-        
+                        
                 answer = (
                     "Based on the provided profile, the most appropriate next certification "
                     "is the AVIXA CTS (Certified Technology Specialist) credential.\n\n"

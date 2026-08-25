@@ -1265,27 +1265,35 @@ If multiple sources support the same claim, cite them like [1][2].
             [round(score, 3) for _, score in search_results]
         )
         for document, score in search_results:
-            if score <= RELEVANCE_THRESHOLD:
-                document_text = document.page_content.lower()
-        
-                keyword_matches = sum(
-                    1
-                    for keyword in evidence_keywords
-                    if any(
-                        alias in document_text
-                        for alias in verification_keyword_aliases.get(
-                            keyword,
-                            (keyword,)
-                        )
-                    )
+        document_text = document.page_content.lower()
+    
+        keyword_matches = sum(
+            1
+            for keyword in evidence_keywords
+            if any(
+                alias in document_text
+                for alias in verification_keyword_aliases.get(
+                    keyword,
+                    (keyword,)
                 )
-                product_matches = sum(
-                    1 for keyword in product_keywords
-                    if keyword in document_text
-                )
-                evidence_documents.append(
-                    (document, score, keyword_matches, product_matches)
-                )
+            )
+        )
+    
+        product_matches = sum(
+            1 for keyword in product_keywords
+            if keyword in document_text
+        )
+    
+        if (
+            score <= RELEVANCE_THRESHOLD
+            or (
+                is_verification_question
+                and keyword_matches > 0
+            )
+        ):
+            evidence_documents.append(
+                (document, score, keyword_matches, product_matches)
+            )
         
         # Prefer chunks that contain question evidence,
         # then use semantic distance as the secondary ranking.

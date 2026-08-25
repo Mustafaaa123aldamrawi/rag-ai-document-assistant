@@ -2748,6 +2748,15 @@ WEB CONTEXT:
                     cts_preparation_page.get("page_number")
                 )
                 doc_number = doc_source_numbers.get(doc_key)
+            st.write(
+                "DEBUG CTS GUARD:",
+                {
+                    "cts_preparation_present": cts_preparation_present,
+                    "doc_number": doc_number,
+                    "active_cts_confirmed": active_cts_confirmed,
+                    "advanced_cts_recommended": advanced_cts_recommended,
+                }
+            )
             if (
                 cts_preparation_present
                 and doc_number is not None

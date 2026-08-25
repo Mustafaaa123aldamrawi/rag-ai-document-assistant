@@ -1938,6 +1938,14 @@ If multiple sources support the same claim, cite them like [1][2].
         - Do not translate technical names such as AVIXA CTS, Q-SYS, Dante, AES67, HDMI, or model numbers.
         - Avoid literal or awkward Arabic translations; use natural professional Arabic phrasing.
         - For yes/no questions starting with Does, Is, Can, Are, Has, Have, Was, Were, or Will, begin the answer with "Yes" or "No" when the context supports a clear answer, then briefly explain why with citations.
+        - When answering in Arabic, use fluent professional Arabic suitable for AV/IT engineers, not literal word-for-word translation.
+        - Keep established technical AV/IT terms in English when translating them would sound unnatural or inaccurate, including terms such as Core, I/O, Inputs, Outputs, GPIO, LAN A, LAN B, USB, OLED, firmware, fan speed, connector, port, codec, DSP, Dante, AES67, HDMI, and Q-SYS Designer.
+        - Do not translate the product term "Core" as "النواة" when referring to a Q-SYS Core processor. Keep "Core" in English.
+        - Prefer natural mixed technical phrasing such as "مداخل ومخارج الصوت (Audio Inputs/Outputs)" instead of awkward hybrid wording.
+        - Do not transliterate English technical words into Arabic letters when the standard English term is clearer. For example, use "connector" rather than "كونكتور" and "audio" rather than "أوديو" when needed.
+        - Preserve exact model names, standards, interfaces, connector names, and certification names exactly as supported by the context.
+        - Avoid awkward machine-translated Arabic, mixed-script words, or non-Arabic characters unless they are part of an official technical name.
+        - If a technical term has no clear natural Arabic equivalent, keep it in English and explain it briefly in Arabic if useful.
         Current factual information questions:
         - If the user explicitly asks for current fees, prices, costs, requirements, eligibility, registration details, exam dates, or deadlines, answer those requested facts directly first.
         - Do not turn a factual current-information question into a career recommendation.

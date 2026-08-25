@@ -1140,7 +1140,7 @@ If multiple sources support the same claim, cite them like [1][2].
         if not matched_source:
             normalized_question = "".join(
                 char.lower()
-                for char in question
+                for char in search_query
                 if char.isalnum()
             )
         

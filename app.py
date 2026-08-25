@@ -2003,7 +2003,10 @@ If multiple sources support the same claim, cite them like [1][2].
         if is_follow_up:
             for message in st.session_state.messages[:-1][-6:]:
                 role = "User" if message["role"] == "user" else "Assistant"
-                conversation_history += f"{role}: {message['content']}\n"    
+                conversation_history += f"{role}: {message['content']}\n"  
+                
+        st.write("DEBUG FINAL CONTEXT:", context)
+        
         prompt = f"""
         Recent conversation:
         {conversation_history}    

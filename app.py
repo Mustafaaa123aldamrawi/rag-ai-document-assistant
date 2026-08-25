@@ -2044,9 +2044,18 @@ If multiple sources support the same claim, cite them like [1][2].
                 )
             )
             
+            has_any_citation = (
+                "[DOC " in answer
+                or "[WEB " in answer
+            )
+            
             needs_citation_review = (
                 bool(uncited_bullets)
                 or is_profile_recommendation_review
+                or (
+                    bool(answer.strip())
+                    and not has_any_citation
+                )
             )
             
             if needs_citation_review:

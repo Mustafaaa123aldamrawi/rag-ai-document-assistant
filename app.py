@@ -1530,6 +1530,8 @@ If multiple sources support the same claim, cite them like [1][2].
                     else:
                         context = full_document_text[start:]
         if search_mode == "Documents + Web":
+            st.write("DEBUG ENTERED DOCUMENTS + WEB")
+            
             document_only_phrases = (
                 "what does the document say",
                 "according to the document",

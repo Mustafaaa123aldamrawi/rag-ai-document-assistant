@@ -1691,7 +1691,7 @@ If multiple sources support the same claim, cite them like [1][2].
                             previous_question,
                             question
                         )
-
+            st.write("DEBUG REACHED WEB EVIDENCE SECTION")
             # Search the web for BOTH new questions and follow-up questions
             def extract_relevant_web_evidence(raw_content, query, max_chars=3500):
                 if not raw_content:

@@ -1779,12 +1779,12 @@ If multiple sources support the same claim, cite them like [1][2].
             
                 return "\n".join(selected_blocks)
             web_results = []
-
+            st.write("DEBUG WEB SEARCH QUERY:", web_search_query)
             try:
                 if web_search_query:
                     with st.spinner("Searching the web..."):
                         web_results = search_web_tavily(web_search_query)
-                          
+                    st.write("DEBUG WEB RESULTS COUNT:", len(web_results))
                 if web_results:
                     web_context_parts = []
     

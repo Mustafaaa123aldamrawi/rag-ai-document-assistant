@@ -364,11 +364,8 @@ def build_document_aware_web_query(question, document_context):
     )
     
     if any(cue in question_lower for cue in fee_web_cues):
-        st.write("DEBUG ENTERED FEE WEB BRANCH")
-    
+        
         base_query = normalize_search_query(question)
-    
-        st.write("DEBUG NORMALIZED WEB QUERY:", base_query)
     
         if "exam" in question_lower:
             return f"{base_query} official exam fee pricing"
@@ -1534,7 +1531,6 @@ If multiple sources support the same claim, cite them like [1][2].
                     else:
                         context = full_document_text[start:]
         if search_mode == "Documents + Web":
-            st.write("DEBUG ENTERED DOCUMENTS + WEB")
             
             document_only_phrases = (
                 "what does the document say",
@@ -1599,10 +1595,7 @@ If multiple sources support the same claim, cite them like [1][2].
                 question,
                 context
             )
-        st.write(
-            "DEBUG AFTER INITIAL WEB QUERY:",
-            web_search_query
-        )
+       
         # Detect whether this is a web follow-up question
         web_follow_up_starters = (
             "what about",
@@ -1680,15 +1673,7 @@ If multiple sources support the same claim, cite them like [1][2].
                 question,
                 context
             )
-        st.write(
-            "DEBUG BEFORE FOLLOW-UP:",
-            {
-                "document_scope_active": st.session_state.document_scope_active,
-                "is_document_focused_question": is_document_focused_question,
-                "is_current_web_question": is_current_web_question,
-                "web_search_query": web_search_query,
-            }
-        )
+        
         # Rewrite the query only when this is a follow-up
         if is_web_follow_up:
             previous_user_questions = [
@@ -1707,7 +1692,7 @@ If multiple sources support the same claim, cite them like [1][2].
                         previous_question,
                         question
                     )
-        st.write("DEBUG REACHED WEB EVIDENCE SECTION")
+        
         # Search the web for BOTH new questions and follow-up questions
         def extract_relevant_web_evidence(raw_content, query, max_chars=3500):
             if not raw_content:
@@ -1797,12 +1782,12 @@ If multiple sources support the same claim, cite them like [1][2].
         
             return "\n".join(selected_blocks)
         web_results = []
-        st.write("DEBUG WEB SEARCH QUERY:", web_search_query)
+        
         try:
             if web_search_query:
                 with st.spinner("Searching the web..."):
                     web_results = search_web_tavily(web_search_query)
-                st.write("DEBUG WEB RESULTS COUNT:", len(web_results))
+               
             if web_results:
                 web_context_parts = []
 

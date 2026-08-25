@@ -1599,7 +1599,10 @@ If multiple sources support the same claim, cite them like [1][2].
                 question,
                 context
             )
-            
+        st.write(
+            "DEBUG AFTER INITIAL WEB QUERY:",
+            web_search_query
+        )
             # Detect whether this is a web follow-up question
             web_follow_up_starters = (
                 "what about",

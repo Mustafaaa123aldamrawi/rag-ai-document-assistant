@@ -2084,6 +2084,11 @@ If multiple sources support the same claim, cite them like [1][2].
         - Preserve exact model names, standards, interfaces, connector names, and certification names exactly as supported by the context.
         - Avoid awkward machine-translated Arabic, mixed-script words, or non-Arabic characters unless they are part of an official technical name.
         - If a technical term has no clear natural Arabic equivalent, keep it in English and explain it briefly in Arabic if useful.
+        - Distinguish network-interface redundancy from full Core/device redundancy.
+        - LAN A / LAN B redundancy means redundant network connectivity and must not be confused with full Core processor redundancy.
+        - If the context explicitly states "LAN-B - Redundancy", "redundant network", or that one LAN can remain operational when the other LAN is down, answer "Yes" to a question about redundant network connections.
+        - Do not use evidence about full Core redundancy, backup Cores, GPIO redundancy, or POTS redundancy to negate a claim specifically about LAN/network-interface redundancy.
+        - For yes/no technical questions, prioritize evidence that directly matches the exact feature being asked about over broader statements about the product.
         Current factual information questions:
         - If the user explicitly asks for current fees, prices, costs, requirements, eligibility, registration details, exam dates, or deadlines, answer those requested facts directly first.
         - Do not turn a factual current-information question into a career recommendation.

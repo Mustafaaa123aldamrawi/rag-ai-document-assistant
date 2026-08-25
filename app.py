@@ -1136,7 +1136,7 @@ If multiple sources support the same claim, cite them like [1][2].
                     previous_question,
                     question
                 )
-        # Prefer the document whose content explicitly matches the user's subject
+        # Prefer the document whose full content best matches the user's subject
         if not matched_source:
             normalized_question = "".join(
                 char.lower()
@@ -1144,8 +1144,7 @@ If multiple sources support the same claim, cite them like [1][2].
                 if char.isalnum()
             )
         
-            best_source = None
-            best_source_score = 0
+            source_scores = {}
         
             for page in document_pages:
                 source_name = page.get("source")
@@ -1157,20 +1156,25 @@ If multiple sources support the same claim, cite them like [1][2].
                     if char.isalnum()
                 )
         
-                source_score = 0
+                if source_name not in source_scores:
+                    source_scores[source_name] = 0
         
-                if "qsys" in normalized_question and "qsys" in normalized_page_text:
-                    source_score += 10
+                if "qsys" in normalized_question:
+                    source_scores[source_name] += normalized_page_text.count("qsys")
         
-                if "core110" in normalized_question and "core110" in normalized_page_text:
-                    source_score += 10
+                if "core110" in normalized_question:
+                    source_scores[source_name] += (
+                        normalized_page_text.count("core110") * 2
+                    )
         
-                if source_score > best_source_score:
-                    best_source_score = source_score
-                    best_source = source_name
+            if source_scores:
+                best_source = max(
+                    source_scores,
+                    key=source_scores.get
+                )
         
-            if best_source_score > 0:
-                matched_source = best_source
+                if source_scores[best_source] > 0:
+                    matched_source = best_source
         if matched_source:
             search_results = vector_store.similarity_search_with_score(
                 search_query,

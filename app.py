@@ -1260,7 +1260,10 @@ If multiple sources support the same claim, cite them like [1][2].
             "supports": ("support", "supports", "supported", "supporting"),
         }
         evidence_documents = []
-        
+        st.write(
+            "DEBUG search result scores:",
+            [round(score, 3) for _, score in search_results]
+        )
         for document, score in search_results:
             if score <= RELEVANCE_THRESHOLD:
                 document_text = document.page_content.lower()

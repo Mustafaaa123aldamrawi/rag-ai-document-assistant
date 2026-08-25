@@ -1673,6 +1673,15 @@ If multiple sources support the same claim, cite them like [1][2].
                     question,
                     context
                 )
+            st.write(
+                "DEBUG BEFORE FOLLOW-UP:",
+                {
+                    "document_scope_active": st.session_state.document_scope_active,
+                    "is_document_focused_question": is_document_focused_question,
+                    "is_current_web_question": is_current_web_question,
+                    "web_search_query": web_search_query,
+                }
+            )
             # Rewrite the query only when this is a follow-up
             if is_web_follow_up:
                 previous_user_questions = [

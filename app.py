@@ -1236,6 +1236,16 @@ If multiple sources support the same claim, cite them like [1][2].
             if is_verification_question
             else question_keywords
         )
+        verification_keyword_aliases = {
+            "redundant": ("redundant", "redundancy"),
+            "redundancy": ("redundant", "redundancy"),
+            "connection": ("connection", "connections"),
+            "connections": ("connection", "connections"),
+            "network": ("network", "networks"),
+            "networks": ("network", "networks"),
+            "support": ("support", "supports", "supported", "supporting"),
+            "supports": ("support", "supports", "supported", "supporting"),
+        }
         evidence_documents = []
         
         for document, score in search_results:
@@ -1243,8 +1253,15 @@ If multiple sources support the same claim, cite them like [1][2].
                 document_text = document.page_content.lower()
         
                 keyword_matches = sum(
-                    1 for keyword in evidence_keywords
-                    if keyword in document_text
+                    1
+                    for keyword in evidence_keywords
+                    if any(
+                        alias in document_text
+                        for alias in verification_keyword_aliases.get(
+                            keyword,
+                            (keyword,)
+                        )
+                    )
                 )
                 product_matches = sum(
                     1 for keyword in product_keywords

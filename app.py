@@ -1557,15 +1557,37 @@ If multiple sources support the same claim, cite them like [1][2].
                 phrase in question_lower
                 for phrase in document_only_phrases
             )
-    
+        current_web_signals = (
+            "current",
+            "currently",
+            "latest",
+            "today",
+            "updated",
+            "up-to-date",
+            "as of",
+        )
+        
+        is_current_web_question = any(
+            signal in question_lower
+            for signal in current_web_signals
+        )
         if "document_scope_active" not in st.session_state:
             st.session_state.document_scope_active = False
         
         if is_document_focused_question:
             st.session_state.document_scope_active = True
             web_search_query = None
+        
+        elif is_current_web_question:
+            st.session_state.document_scope_active = False
+            web_search_query = build_document_aware_web_query(
+                question,
+                context
+            )
+        
         elif st.session_state.document_scope_active:
             web_search_query = None
+        
         else:
             web_search_query = build_document_aware_web_query(
                 question,

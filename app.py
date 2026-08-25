@@ -1313,6 +1313,12 @@ If multiple sources support the same claim, cite them like [1][2].
                 )
             )
         ]
+        st.write("DEBUG evidence keywords:", evidence_keywords)
+        st.write("DEBUG evidence documents:", [
+            (round(score, 3), keyword_matches, product_matches)
+            for _, score, keyword_matches, product_matches in evidence_documents
+        ])
+        st.write("DEBUG relevant documents count:", len(relevant_documents))
         # Neighbor Expansion
         # Add the previous and next chunk from the same source/page
         # so information split across chunk boundaries is not lost.

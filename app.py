@@ -364,13 +364,17 @@ def build_document_aware_web_query(question, document_context):
     )
     
     if any(cue in question_lower for cue in fee_web_cues):
+        st.write("DEBUG ENTERED FEE WEB BRANCH")
+    
         base_query = normalize_search_query(question)
+    
+        st.write("DEBUG NORMALIZED WEB QUERY:", base_query)
     
         if "exam" in question_lower:
             return f"{base_query} official exam fee pricing"
     
         return f"{base_query} official pricing"
-    
+        
     if any(cue in question_lower for cue in current_web_cues):
         return normalize_search_query(question)
     query_prompt = f"""

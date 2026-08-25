@@ -189,6 +189,53 @@ def normalize_model_names(text):
         )
 
     return normalized_text
+def polish_arabic_answer(answer):
+    if not answer:
+        return answer
+
+    # Only polish answers that actually contain Arabic
+    if not re.search(r"[\u0600-\u06FF]", answer):
+        return answer
+
+    original_citations = re.findall(
+        r"\[(?:DOC|WEB) \d+\]",
+        answer
+    )
+
+    polish_prompt = f"""
+Improve the Arabic wording of the answer below.
+
+Rules:
+- Preserve the exact factual meaning.
+- Do not add, remove, infer, or change any facts.
+- Preserve every citation exactly as written, including all [DOC X] and [WEB X] labels.
+- Preserve all product names, model numbers, standards, acronyms, and technical terms exactly.
+- Keep established AV/IT terms in English when that is more natural.
+- Do not translate "Core" as "النواة" when referring to Q-SYS Core.
+- Remove awkward literal translations, mixed-script artifacts, malformed words, and unnatural Arabic.
+- Use clear, professional Arabic suitable for AV/IT engineers.
+- Preserve the original structure, bullets, and level of detail.
+- Return only the polished answer.
+
+ANSWER:
+{answer}
+"""
+
+    try:
+        polished_answer = call_qwen_llm(polish_prompt).strip()
+    except Exception:
+        return answer
+
+    polished_citations = re.findall(
+        r"\[(?:DOC|WEB) \d+\]",
+        polished_answer
+    )
+
+    # Safety guard: reject polishing if citations changed
+    if original_citations != polished_citations:
+        return answer
+
+    return polished_answer
 def normalize_search_query(question):
     normalize_prompt = f"""
 Convert the user's question into one clean standalone English web search query.
@@ -2575,6 +2622,8 @@ If multiple sources support the same claim, cite them like [1][2].
             answer = re.sub(r"\n{3,}", "\n\n", answer).strip()
             
         answer = normalize_model_names(answer)  
+
+        answer = polish_arabic_answer(answer)
        
         # Show only sources actually cited in the final verified answer
         final_cited_docs = {

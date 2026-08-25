@@ -1222,7 +1222,20 @@ If multiple sources support the same claim, cite them like [1][2].
             "certification",
             "certifications",
             "certificate",
-            "certificates"
+            "certificates",
+            "does",
+            "do",
+            "did",
+            "is",
+            "are",
+            "has",
+            "have",
+            "had",
+            "can",
+            "could",
+            "support",
+            "supports",
+            "supported",
         }
         
         verification_keywords = [

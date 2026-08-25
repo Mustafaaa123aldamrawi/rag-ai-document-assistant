@@ -219,7 +219,9 @@ Rules:
 - Do not translate "Core" as "النواة" when referring to Q-SYS Core.
 - Remove awkward literal translations, mixed-script artifacts, malformed words, and unnatural Arabic.
 - Use clear, professional Arabic suitable for AV/IT engineers.
-- Preserve the original structure, bullets, and level of detail.
+- When the answer contains multiple requirements, fees, steps, or categories, format them as clear bullet points instead of one dense paragraph.
+- For pricing, keep each membership category and its fees together on one bullet or one clearly separated line.
+- Preserve the original level of detail, but improve the structure when bullets make the answer clearer.
 - Return only the polished answer.
 
 ANSWER:

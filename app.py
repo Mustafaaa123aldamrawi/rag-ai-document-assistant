@@ -1603,70 +1603,70 @@ If multiple sources support the same claim, cite them like [1][2].
             "DEBUG AFTER INITIAL WEB QUERY:",
             web_search_query
         )
-            # Detect whether this is a web follow-up question
-            web_follow_up_starters = (
-                "what about",
-                "how about",
-                "and what",
-                "and how",
-                "and does",
-                "and is",
-                "and can",
-            "طيب",
-            "طيب شو",
-            "وشو",
-            "شو كمان",
-            "وبعدين",
-            "وكمان",
-            )
+        # Detect whether this is a web follow-up question
+        web_follow_up_starters = (
+            "what about",
+            "how about",
+            "and what",
+            "and how",
+            "and does",
+            "and is",
+            "and can",
+        "طيب",
+        "طيب شو",
+        "وشو",
+        "شو كمان",
+        "وبعدين",
+        "وكمان",
+        )
 
-            web_follow_up_references = {
-                "it",
-                "its",
-                "this",
-                "that",
-                "they",
-                "their",
-                "them",
-            "تبعتو",
-            "تبعو",
-            "تبعها",
-            "تبعهم",
-            "هاد",
-            "هاي",
-            "هيدا",
-            "هذي",
-            }
+        web_follow_up_references = {
+            "it",
+            "its",
+            "this",
+            "that",
+            "they",
+            "their",
+            "them",
+        "تبعتو",
+        "تبعو",
+        "تبعها",
+        "تبعهم",
+        "هاد",
+        "هاي",
+        "هيدا",
+        "هذي",
+        }
 
-            web_question_words = set(
-                question_lower
-                .replace("?", "")
-                .replace(",", "")
-                .replace(".", "")
-                .split()
-            )
+        web_question_words = set(
+            question_lower
+            .replace("?", "")
+            .replace(",", "")
+            .replace(".", "")
+            .split()
+        )
 
-            document_reference_phrases = (
-                "this person",
-                "this profile",
-                "this document",
-                "this file",
-                "this cv",
-                "this resume",
-                "this pdf",
+        document_reference_phrases = (
+            "this person",
+            "this profile",
+            "this document",
+            "this file",
+            "this cv",
+            "this resume",
+            "this pdf",
+        )
+        
+        is_document_reference = any(
+            phrase in question_lower
+            for phrase in document_reference_phrases
+        )
+        
+        is_web_follow_up = (
+            not is_document_reference
+            and (
+                question_lower.startswith(web_follow_up_starters)
+                or bool(web_question_words & web_follow_up_references)
             )
-            
-            is_document_reference = any(
-                phrase in question_lower
-                for phrase in document_reference_phrases
-            )
-            
-            is_web_follow_up = (
-                not is_document_reference
-                and (
-                    question_lower.startswith(web_follow_up_starters)
-                    or bool(web_question_words & web_follow_up_references)
-                )
             )
             # Reset document-only scope when the user clearly starts a new topic
             if (

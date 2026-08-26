@@ -2682,7 +2682,14 @@ WEB CONTEXT:
             cue in question_lower
             for cue in recommendation_cues
         )
-        
+        if (
+            "certification" in question_lower
+            and any(
+                cue in question_lower
+                for cue in ("should", "recommend", "next", "pursue")
+            )
+        ):
+            is_recommendation_question = True
         if is_recommendation_question:
             # Remove inaccurate "three levels" wording about CTS / CTS-D / CTS-I
             answer = re.sub(

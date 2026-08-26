@@ -922,13 +922,18 @@ with st.sidebar:
     st.header("🔎 Search Mode")
 
     search_mode = st.radio(
-        "Choose where the AI should search:",
+        "Choose your search mode:",
         [
             "Documents Only",
             "Documents + Web",
             "Web Only"
         ],
-        index=0
+        index=0,
+        captions=[
+            "Answer only from your uploaded PDF documents.",
+            "Combine uploaded documents with trusted web sources. Works without a PDF too.",
+            "Search the web only; no document upload required."
+        ]
     )
 # Process uploaded PDF
 document_pages = []
@@ -968,7 +973,7 @@ if uploaded_files:
     except Exception as error:
         st.error(f"Error processing PDF: {error}")
 # Main interface
-st.subheader("💬 Ask Your Document")
+st.subheader("💬 Ask Your AV Assistant")
 
 question = st.text_input(
     "Enter your question:",

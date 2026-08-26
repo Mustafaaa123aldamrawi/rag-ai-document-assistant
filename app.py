@@ -144,6 +144,29 @@ def get_source_trust_score(title, url, source_type):
 
     return 70
 def rewrite_follow_up_query(previous_question, current_question):
+current_lower = current_question.lower()
+
+broad_capability_cues = (
+    "capabilities",
+    "features",
+    "functions",
+    "specifications",
+    "overview",
+    "شو أهم capabilities",
+    "شو capabilities",
+    "شو اهم capabilities",
+)
+
+if any(cue in current_lower for cue in broad_capability_cues):
+    previous_product_terms = re.findall(
+        r"\b(?:Q-SYS|Core\s*\d+[A-Za-z0-9-]*|MXA\d+|NV-\d+[A-Za-z0-9-]*)\b",
+        previous_question,
+        re.IGNORECASE
+    )
+
+    if previous_product_terms:
+        product_name = " ".join(previous_product_terms)
+        return f"{product_name} main capabilities features specifications"
     rewrite_prompt = f"""
 Rewrite the current follow-up question as one standalone web search query.
 
@@ -1697,8 +1720,12 @@ If multiple sources support the same claim, cite them like [1][2].
                 if st.session_state.document_scope_active:
                     web_search_query = None
                 else:
+                    resolved_previous_question = previous_question
+
+                    if st.session_state.get("last_resolved_query"):
+                        resolved_previous_question = st.session_state.last_resolved_query
                     web_search_query = rewrite_follow_up_query(
-                        previous_question,
+                        resolved_previous_question,
                         question
                     )
         

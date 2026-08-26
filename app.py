@@ -2773,7 +2773,10 @@ WEB CONTEXT:
         user_used_arabic = bool(
             re.search(r"[\u0600-\u06FF]", question)
         )
-        
+        user_used_english = (
+            bool(re.search(r"[A-Za-z]", question))
+            and not user_used_arabic
+        )
         arabic_chars_in_answer = len(
             re.findall(r"[\u0600-\u06FF]", answer)
         )
@@ -2813,7 +2816,34 @@ WEB CONTEXT:
                 answer = call_qwen_llm(language_fix_prompt)
             except Exception as e:
                 st.warning(f"Answer language correction error: {e}")
+        # If an English question accidentally produced an Arabic answer,
+        # translate only the verified answer while preserving facts and citations.
+        if (
+            user_used_english
+            and arabic_chars_in_answer >= 10
+        ):
+            english_fix_prompt = f"""
+        Translate the VERIFIED ANSWER below into natural English.
         
+        VERIFIED ANSWER:
+        {answer}
+        
+        Rules:
+        - Translate only the wording.
+        - Do not add, remove, infer, or change any factual information.
+        - Preserve product names, model numbers, acronyms, numbers, and technical terms accurately.
+        - Preserve every citation exactly as [DOC X] or [WEB X].
+        - Do not create new citations.
+        - Do not use citation wrappers such as [CITE: ...].
+        - Return only the translated answer.
+        
+        English answer:
+        """
+        
+            try:
+                answer = call_qwen_llm(english_fix_prompt)
+            except Exception as e:
+                st.warning(f"Answer language correction error: {e}")
         # Run citation-wrapper cleanup again in case the language pass changed formatting
         answer = re.sub(
             r"\[CITE:\s*((?:\[(?:WEB|DOC) \d+\](?:\s*,\s*)?)+)\s*\]",

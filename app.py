@@ -7,7 +7,6 @@ from pypdf import PdfReader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 def call_qwen_llm(prompt):
     url = "https://router.huggingface.co/v1/chat/completions"
 

@@ -1970,6 +1970,9 @@ WEB CONTEXT:
                 ]
                 
                 direct_answer = ", ".join(technical_items)
+
+                if direct_answer:
+                    direct_answer += " [DOC 1]"
                 
                 # Direct extractive answer for professional experience
             if "professional experience" in question_lower:

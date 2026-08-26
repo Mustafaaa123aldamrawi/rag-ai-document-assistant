@@ -966,7 +966,7 @@ question = st.text_input(
     placeholder="Example: Ask about AV systems, uploaded documents, products, troubleshooting, or current web information."
 )
 
-if st.button("Ask AI"):
+if st.button("Ask AV Assistant", type="primary"):
     if question:
         st.session_state.messages.append({
             "role": "user",
@@ -977,7 +977,7 @@ if st.button("Ask AI"):
 
     elif search_mode == "Web Only":
         try:
-            with st.spinner("Searching the web..."):
+            with st.spinner("Searching trusted sources and preparing your answer..."):
                 web_results = search_web_tavily(question)
 
             if not web_results:
@@ -2229,7 +2229,7 @@ WEB CONTEXT:
         if direct_answer is not None:
             answer = direct_answer
         else:
-            with st.spinner("AI is analyzing the document..."):
+            with st.spinner("Analyzing sources and preparing your answer..."):
                 try:
                     answer = call_qwen_llm(prompt)
                 except Exception as e:

@@ -2185,6 +2185,10 @@ WEB CONTEXT:
         - When describing a person's skills, experience, or capabilities, use document evidence about that person as the primary source.
         - Do not infer that the person has a specific technical capability merely because a product or platform listed in their profile supports that capability.
         - Web sources may explain a technology, but must not be used to upgrade or infer the user's personal skill level unless the document explicitly supports it.
+        - For broad explanation questions, start with a short 1-2 sentence overview, then organize the main points into clear bullet points.
+        - Avoid large dense paragraphs when the answer contains multiple capabilities, features, components, or technical concepts.
+        - Use short descriptive headings when they improve readability, especially for overview, capabilities, components, use cases, or recommendations.
+        - Keep each bullet focused on one idea and avoid repeating the same fact in different wording.
         Use the recent conversation only to understand the user's follow-up question and conversational context.
         Do not treat the recent conversation as a factual source.
         All factual claims must still be supported by the Combined context and its citations.

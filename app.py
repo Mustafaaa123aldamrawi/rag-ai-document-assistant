@@ -1961,25 +1961,35 @@ WEB CONTEXT:
                     direct_answer = full_document_text[title_start:title_end].strip()
                 else:
                     direct_answer = "Project Manager"
+                if direct_answer:
+                    direct_answer += " [DOC 1]"
         if (
             search_mode == "Documents Only"
             and "certification" in question_lower
             and not is_verification_question
         ):
-            context_lower = context.lower()
-            start = context_lower.find("certifications & training")
-            end = context_lower.find("languages", start)
+            full_document_text = "\n".join(
+                page["text"] for page in document_pages
+            )
+            full_document_lower = full_document_text.lower()
+        
+            start = full_document_lower.find("certifications & training")
+            end = full_document_lower.find("languages", start)
         
             if start != -1:
                 if end != -1:
-                    context = context[start:end]
+                    certification_text = full_document_text[start:end]
                 else:
-                    context = context[start:]
-                direct_answer = context.replace("Certifications & Training", "").strip()
-
-                direct_answer = direct_answer.replace("Source: Mustafa_CV.pdf", "")
-                direct_answer = direct_answer.replace("Page: 1", "")
-                direct_answer = " ".join(direct_answer.split())
+                    certification_text = full_document_text[start:]
+        
+                direct_answer = (
+                    certification_text
+                    .replace("Certifications & Training", "")
+                    .strip()
+                )
+        
+                if direct_answer:
+                    direct_answer += " [DOC 1]"
                 # Direct extractive answer for technologies and technical skills
         if (
             "technolog" in question_lower

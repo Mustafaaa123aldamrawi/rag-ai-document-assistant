@@ -1872,7 +1872,25 @@ WEB CONTEXT:
             "what is mustafa’s job"
         ]
 
-        if any(phrase in question_lower for phrase in job_title_phrases):
+        job_title_only_question = (
+            any(phrase in question_lower for phrase in job_title_phrases)
+            and not any(
+                cue in question_lower
+                for cue in (
+                    "responsibilities",
+                    "responsibility",
+                    "duties",
+                    "skills",
+                    "experience",
+                    "technologies",
+                    "technical",
+                    "what does he do",
+                    "what does she do"
+                )
+            )
+        )
+        
+        if job_title_only_question:
             full_document_text = "\n".join(
                 page["text"] for page in document_pages
             )

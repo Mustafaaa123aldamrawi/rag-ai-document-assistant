@@ -2831,6 +2831,22 @@ WEB CONTEXT:
         answer = normalize_model_names(answer)  
 
         answer = polish_arabic_answer(answer)
+
+        # Keep currency values readable inside Arabic RTL text
+        currency_patterns = (
+            (r"\bUSD\s+(\d+(?:\.\d+)?)\b", r"`USD \1`"),
+            (r"\bEUR\s+(\d+(?:\.\d+)?)\b", r"`EUR \1`"),
+            (r"\bGBP\s+(\d+(?:\.\d+)?)\b", r"`GBP \1`"),
+            (r"\bAUD\s+(\d+(?:\.\d+)?)\b", r"`AUD \1`"),
+        )
+        
+        for pattern, replacement in currency_patterns:
+            answer = re.sub(
+                pattern,
+                replacement,
+                answer,
+                flags=re.IGNORECASE
+            )
        
         # Show only sources actually cited in the final verified answer
         final_cited_docs = {

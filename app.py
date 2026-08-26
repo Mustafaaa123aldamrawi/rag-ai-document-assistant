@@ -1726,12 +1726,12 @@ If multiple sources support the same claim, cite them like [1][2].
 
                     if st.session_state.get("last_resolved_query"):
                         resolved_previous_question = st.session_state.last_resolved_query
-                    st.write("DEBUG RESOLVED PREVIOUS:", resolved_previous_question)
+                    
                     web_search_query = rewrite_follow_up_query(
                         resolved_previous_question,
                         question
                     )
-                    st.write("DEBUG FOLLOW-UP QUERY:", web_search_query)
+
                     if (
                         web_search_query
                         and re.search(

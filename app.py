@@ -1728,6 +1728,8 @@ If multiple sources support the same claim, cite them like [1][2].
                         resolved_previous_question,
                         question
                     )
+                    if web_search_query:
+                        st.session_state.last_resolved_query = web_search_query
         
         # Search the web for BOTH new questions and follow-up questions
         def extract_relevant_web_evidence(raw_content, query, max_chars=3500):

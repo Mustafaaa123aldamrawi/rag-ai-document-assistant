@@ -949,21 +949,10 @@ if uploaded_files:
         if document_pages:
             text_chunks = split_text_into_chunks(document_pages)
 
-            st.success(
-                f"Document processed successfully - "
-                f"{sum(len(page['text']) for page in document_pages):,} characters extracted."
-            )
-
-            st.info(
-                f"Document divided into {len(text_chunks)} text chunks."
-            )
-
             vector_store = create_vector_store(text_chunks)
-
             st.success(
-                "Vector embeddings created successfully using Hugging Face."
+                f"✅ {len(uploaded_files)} document(s) ready for AI analysis."
             )
-
         else:
             st.warning(
                 "No readable text was found in this PDF."
@@ -976,7 +965,7 @@ st.subheader("💬 Ask Your AV Assistant")
 
 question = st.text_input(
     "Enter your question:",
-    placeholder="Example: What are the main topics discussed in this document?"
+    placeholder="Example: Ask about AV systems, uploaded documents, products, troubleshooting, or current web information."
 )
 
 if st.button("Ask AI"):

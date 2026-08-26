@@ -1554,6 +1554,8 @@ If multiple sources support the same claim, cite them like [1][2].
                         context = full_document_text[start:end]
                     else:
                         context = full_document_text[start:]
+        is_document_focused_question = False
+        
         if search_mode == "Documents + Web":
             
             document_only_phrases = (
@@ -1685,10 +1687,7 @@ If multiple sources support the same claim, cite them like [1][2].
                 or bool(web_question_words & web_follow_up_references)
             )
             )
-        is_document_focused_question = locals().get(
-            "is_document_focused_question",
-            False
-        )
+        
         # Reset document-only scope when the user clearly starts a new topic
         if (
             st.session_state.document_scope_active

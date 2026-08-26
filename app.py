@@ -1918,6 +1918,20 @@ WEB CONTEXT:
         except Exception as e:
             st.warning(f"Web search could not be completed: {e}")
         direct_answer = None
+        def get_doc_number_for_phrase(phrase):
+            phrase_lower = phrase.lower()
+        
+            for page in document_pages:
+                page_text = page.get("text", "").lower()
+        
+                if phrase_lower in page_text:
+                    doc_key = (
+                        page.get("source"),
+                        page.get("page_number")
+                    )
+                    return doc_source_numbers.get(doc_key)
+        
+            return None
         # Direct handling for job title questions
         job_title_phrases = [
             "job title",
@@ -1962,7 +1976,12 @@ WEB CONTEXT:
                 else:
                     direct_answer = "Project Manager"
                 if direct_answer:
-                    direct_answer += " [DOC 1]"
+                    job_title_doc_number = get_doc_number_for_phrase(
+                        "Project Manager | AV & Education Technology Professional"
+                    )
+                    
+                    if job_title_doc_number:
+                        direct_answer += f" [DOC {job_title_doc_number}]"
         if (
             search_mode == "Documents Only"
             and "certification" in question_lower
@@ -1989,7 +2008,12 @@ WEB CONTEXT:
                 )
         
                 if direct_answer:
-                    direct_answer += " [DOC 1]"
+                    certification_doc_number = get_doc_number_for_phrase(
+                        "Certifications & Training"
+                    )
+                    
+                    if certification_doc_number:
+                        direct_answer += f" [DOC {certification_doc_number}]"
                 # Direct extractive answer for technologies and technical skills
         if (
             "technolog" in question_lower
@@ -2038,7 +2062,12 @@ WEB CONTEXT:
                 direct_answer = ", ".join(technical_items)
 
                 if direct_answer:
-                    direct_answer += " [DOC 1]"
+                    technical_doc_number = get_doc_number_for_phrase(
+                        "Core Skills"
+                    )
+                    
+                    if technical_doc_number:
+                        direct_answer += f" [DOC {technical_doc_number}]"
                 
                 # Direct extractive answer for professional experience
             if "professional experience" in question_lower:

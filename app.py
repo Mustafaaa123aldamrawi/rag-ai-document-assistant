@@ -1524,7 +1524,8 @@ If multiple sources support the same claim, cite them like [1][2].
             st.subheader("🤖 AI Answer")
             st.write("The information was not found in the document.")
             st.stop()
-        
+        subject_found = False
+
         if is_summary_question:
             full_document_text = "\n".join(
                 page["text"] for page in document_pages

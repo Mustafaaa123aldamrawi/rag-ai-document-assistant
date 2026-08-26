@@ -1053,13 +1053,13 @@ If multiple sources support the same claim, cite them like [1][2].
         except Exception as e:
             st.error(f"Web search error: {e}")
 
-    elif not uploaded_files:
+    elif search_mode == "Documents Only" and not uploaded_files:
         st.warning("Please upload at least one PDF document first.")
 
-    elif not document_pages:
+    elif search_mode == "Documents Only" and not document_pages:
         st.warning("The uploaded PDF files do not contain readable text.")
 
-    elif vector_store is None:
+    elif search_mode == "Documents Only" and vector_store is None:
         st.warning("Vector database is not ready.")
 
     else:
@@ -1200,12 +1200,16 @@ If multiple sources support the same claim, cite them like [1][2].
         
                 if source_scores[best_source] > 0:
                     matched_source = best_source
-        if matched_source:
+        if vector_store is None:
+            search_results = []
+        
+        elif matched_source:
             search_results = vector_store.similarity_search_with_score(
                 search_query,
                 k=4,
                 filter={"source": matched_source}
             )
+        
         else:
             search_results = vector_store.similarity_search_with_score(
                 search_query,

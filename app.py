@@ -1093,6 +1093,19 @@ If multiple sources support the same claim, cite them like [1][2].
             or question_lower.startswith("summarize ")
             or question_lower.startswith("summarise ")
         )
+        is_profile_recommendation_question_early = (
+            any(
+                term in question_lower
+                for term in ("certification", "certifications")
+            )
+            and any(
+                cue in question_lower
+                for cue in ("should", "recommend", "next", "pursue")
+            )
+        )
+        
+        if is_profile_recommendation_question_early:
+            is_summary_question = True
         for uploaded_file in uploaded_files:
             source_name = uploaded_file.name
             source_words = (

@@ -914,8 +914,6 @@ with st.sidebar:
     accept_multiple_files=True
 )
 
-    if uploaded_files:
-        st.success(f"{len(uploaded_files)} PDF file(s) uploaded successfully!")
     st.divider()
     
     st.header("🔎 Search Mode")

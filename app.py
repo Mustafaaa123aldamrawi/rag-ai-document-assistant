@@ -884,7 +884,7 @@ def create_vector_store(text_chunks):
 
 # Page configuration
 st.set_page_config(
-    page_title="RAG AI Document Assistant",
+    page_title="AV Intelligence Assistant",
     page_icon="🤖",
     layout="wide"
 )
@@ -898,13 +898,12 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 # Application title
-st.title("🤖 RAG AI Document Assistant")
+st.title("🤖 AV Intelligence Assistant")
 
 st.write(
-    "Upload a PDF document and ask questions about its content "
-    "using Retrieval-Augmented Generation (RAG)."
+    "AI-powered AV & Unified Communications assistant for documents, "
+    "web research, technical guidance, and source-grounded answers."
 )
-
 # Sidebar
 with st.sidebar:
     st.header("📄 Document Upload")

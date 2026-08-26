@@ -157,6 +157,8 @@ Rules:
 - Resolve references such as it, its, this, that, they, and their using the previous question.
 - Preserve the exact product or model name from the previous question.
 - Preserve the exact topic requested in the current follow-up.
+- If the current follow-up asks broadly for capabilities, features, functions, specifications, or an overview, preserve only the product/model identity from the previous question and do not carry over the previous question's narrow feature or subtopic.
+- For broad follow-ups such as "what are its main capabilities?" rewrite the query as a broad product capabilities query, not as a continuation of the previous feature-specific question.
 - Do not answer the question.
 - Do not add facts.
 - Return only the standalone search query and nothing else.

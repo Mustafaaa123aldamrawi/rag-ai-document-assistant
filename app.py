@@ -1730,7 +1730,14 @@ If multiple sources support the same claim, cite them like [1][2].
                         question
                     )
                     st.write("DEBUG FOLLOW-UP QUERY:", web_search_query)
-                    if web_search_query:
+                    if (
+                        web_search_query
+                        and re.search(
+                            r"\b(?:Q-SYS|Core\s*\d+|MXA\d+|NV-\d+)\b",
+                            web_search_query,
+                            re.IGNORECASE
+                        )
+                    ):
                         st.session_state.last_resolved_query = web_search_query
         
         # Search the web for BOTH new questions and follow-up questions

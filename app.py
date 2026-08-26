@@ -146,27 +146,27 @@ def get_source_trust_score(title, url, source_type):
 def rewrite_follow_up_query(previous_question, current_question):
     current_lower = current_question.lower()
 
-broad_capability_cues = (
-    "capabilities",
-    "features",
-    "functions",
-    "specifications",
-    "overview",
-    "شو أهم capabilities",
-    "شو capabilities",
-    "شو اهم capabilities",
-)
-
-if any(cue in current_lower for cue in broad_capability_cues):
-    previous_product_terms = re.findall(
-        r"\b(?:Q-SYS|Core\s*\d+[A-Za-z0-9-]*|MXA\d+|NV-\d+[A-Za-z0-9-]*)\b",
-        previous_question,
-        re.IGNORECASE
+    broad_capability_cues = (
+        "capabilities",
+        "features",
+        "functions",
+        "specifications",
+        "overview",
+        "شو أهم capabilities",
+        "شو capabilities",
+        "شو اهم capabilities",
     )
-
-    if previous_product_terms:
-        product_name = " ".join(previous_product_terms)
-        return f"{product_name} main capabilities features specifications"
+    
+    if any(cue in current_lower for cue in broad_capability_cues):
+        previous_product_terms = re.findall(
+            r"\b(?:Q-SYS|Core\s*\d+[A-Za-z0-9-]*|MXA\d+|NV-\d+[A-Za-z0-9-]*)\b",
+            previous_question,
+            re.IGNORECASE
+        )
+    
+        if previous_product_terms:
+            product_name = " ".join(previous_product_terms)
+            return f"{product_name} main capabilities features specifications"
     rewrite_prompt = f"""
 Rewrite the current follow-up question as one standalone web search query.
 

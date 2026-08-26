@@ -144,7 +144,7 @@ def get_source_trust_score(title, url, source_type):
 
     return 70
 def rewrite_follow_up_query(previous_question, current_question):
-current_lower = current_question.lower()
+    current_lower = current_question.lower()
 
 broad_capability_cues = (
     "capabilities",

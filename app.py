@@ -2764,11 +2764,23 @@ WEB CONTEXT:
                     "advanced_cts_recommended": advanced_cts_recommended,
                 }
             )
+            generic_next_certification_question = (
+                "certification" in question_lower
+                and any(
+                    cue in question_lower
+                    for cue in ("next", "should", "recommend", "pursue")
+                )
+                and "cts-i" not in question_lower
+                and "cts-d" not in question_lower
+            )
             if (
                 cts_preparation_present
                 and doc_number is not None
                 and not active_cts_confirmed
-                and advanced_cts_recommended
+                and (
+                    advanced_cts_recommended
+                    or generic_next_certification_question
+                )
             ):
                         
                 answer = (

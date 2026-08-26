@@ -1079,6 +1079,10 @@ If multiple sources support the same claim, cite them like [1][2].
             "purpose of the file",
             "main purpose",
             "main topic"
+            "main responsibilities",
+            "responsibilities",
+            "career focus",
+            "professional focus",
         ]
         
         is_summary_question = (

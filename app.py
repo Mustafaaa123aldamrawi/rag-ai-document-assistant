@@ -1950,6 +1950,45 @@ WEB CONTEXT:
                     return doc_source_numbers.get(doc_key)
         
             return None
+        # Direct extractive handling for career focus questions
+        career_focus_question = any(
+            phrase in question_lower
+            for phrase in (
+                "career focus",
+                "professional focus",
+            )
+        )
+        
+        if career_focus_question and search_mode == "Documents Only":
+            full_document_text = "\n".join(
+                page["text"] for page in document_pages
+            )
+        
+            full_document_lower = full_document_text.lower()
+        
+            start = full_document_lower.find("professional summary")
+            end = full_document_lower.find("professional experience", start)
+        
+            if start != -1:
+                if end != -1:
+                    career_focus_text = full_document_text[start:end].strip()
+                else:
+                    career_focus_text = full_document_text[start:].strip()
+        
+                career_focus_text = career_focus_text.replace(
+                    "Professional Summary",
+                    ""
+                ).strip()
+        
+                if career_focus_text:
+                    career_focus_doc_number = get_doc_number_for_phrase(
+                        "professional summary"
+                    )
+        
+                    direct_answer = career_focus_text
+        
+                    if career_focus_doc_number:
+                        direct_answer += f" [DOC {career_focus_doc_number}]"
         # Direct handling for job title questions
         job_title_phrases = [
             "job title",

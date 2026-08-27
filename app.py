@@ -20,7 +20,7 @@ def call_qwen_llm(prompt):
         headers=headers,
         timeout=30
     )
-        
+         
     if not models_response.ok:
         raise Exception(
             f"Hugging Face models API error "

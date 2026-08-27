@@ -1081,6 +1081,10 @@ If multiple sources support the same claim, cite them like [1][2].
             "main topic"
             "main responsibilities",
             "responsibilities",
+            "مسؤولياته الرئيسية",
+            "المسؤوليات الرئيسية",
+            "مسؤولياته",
+            "واجباته",
             "career focus",
             "professional focus",
             "تركيزه المهني",

@@ -2811,6 +2811,12 @@ WEB CONTEXT:
         
                 try:
                     answer = call_qwen_llm(citation_review_prompt)
+                    answer = re.sub(
+                        r"^\s*Corrected\s+answer\s*:\s*",
+                        "",
+                        answer,
+                        flags=re.IGNORECASE
+                    ).strip()
                 except Exception:
                     pass
         # Deterministic guard for high-risk factual claims

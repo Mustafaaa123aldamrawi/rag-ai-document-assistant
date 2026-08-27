@@ -2689,35 +2689,35 @@ WEB CONTEXT:
             if len(profile_lines) > 1:
                 canonical_profile_title = profile_lines[1]
             if canonical_profile_name and canonical_profile_title:
-            identity_guard_prompt = f"""
-        Review the answer below and correct ONLY personal identity details.
-        
-        CANONICAL NAME:
-        {canonical_profile_name}
-        
-        CANONICAL JOB TITLE:
-        {canonical_profile_title}
-        
-        ANSWER:
-        {answer}
-        
-        Rules:
-        - If the answer mentions the person's name, it must match the canonical name exactly.
-        - If the answer mentions the person's job title or professional role, it must match the canonical job title exactly.
-        - Do not invent or infer any other name, title, employer, or role.
-        - Do not add new facts.
-        - Do not remove valid citations.
-        - Preserve every [DOC X] and [WEB X] citation exactly.
-        - Preserve the language of the answer.
-        - Return only the corrected answer.
-        
-        Corrected answer:
-        """
-        
-            try:
-                answer = call_qwen_llm(identity_guard_prompt)
-            except Exception as e:
-                st.warning(f"Profile identity correction error: {e}")
+                identity_guard_prompt = f"""
+            Review the answer below and correct ONLY personal identity details.
+            
+            CANONICAL NAME:
+            {canonical_profile_name}
+            
+            CANONICAL JOB TITLE:
+            {canonical_profile_title}
+            
+            ANSWER:
+            {answer}
+            
+            Rules:
+            - If the answer mentions the person's name, it must match the canonical name exactly.
+            - If the answer mentions the person's job title or professional role, it must match the canonical job title exactly.
+            - Do not invent or infer any other name, title, employer, or role.
+            - Do not add new facts.
+            - Do not remove valid citations.
+            - Preserve every [DOC X] and [WEB X] citation exactly.
+            - Preserve the language of the answer.
+            - Return only the corrected answer.
+            
+            Corrected answer:
+            """
+            
+                try:
+                    answer = call_qwen_llm(identity_guard_prompt)
+                except Exception as e:
+                    st.warning(f"Profile identity correction error: {e}")
         # Validate that citation labels reference real available sources
         import re
         

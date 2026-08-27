@@ -3488,7 +3488,19 @@ WEB CONTEXT:
         if claim_verification_passed and (final_cited_docs or final_cited_web):
             st.success("✅ Verified against cited sources")
         if final_cited_docs:
-            st.markdown("### 📄 Document Sources")
+            st.markdown(
+            """
+            <div style="padding:16px 18px; border-radius:14px; border:1px solid rgba(120,120,120,0.14); background:rgba(255,255,255,0.72); margin-top:18px; margin-bottom:10px;">
+            <div style="font-size:22px; font-weight:750;">
+            📄 Document Sources
+            </div>
+            <div style="font-size:13px; opacity:0.65; margin-top:4px;">
+            Document pages cited in the answer above.
+            </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+            )
         
             for (source_name, page_number), doc_number in sorted(
                 doc_source_numbers.items(),
@@ -3499,7 +3511,19 @@ WEB CONTEXT:
                         f"[DOC {doc_number}] {source_name} – Page {page_number}"
                     )
         if search_mode == "Documents + Web" and web_results and final_cited_web:
-            st.markdown("### 🌐 Web Sources")
+            st.markdown(
+            """
+            <div style="padding:16px 18px; border-radius:14px; border:1px solid rgba(120,120,120,0.14); background:rgba(255,255,255,0.72); margin-top:18px; margin-bottom:10px;">
+            <div style="font-size:22px; font-weight:750;">
+            🌐 Web Sources
+            </div>
+            <div style="font-size:13px; opacity:0.65; margin-top:4px;">
+            Web sources cited in the answer above.
+            </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+            )
         
             for web_number, result in enumerate(web_results, start=1):
                 if web_number not in final_cited_web:

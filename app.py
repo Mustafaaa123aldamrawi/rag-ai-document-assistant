@@ -2121,7 +2121,20 @@ WEB CONTEXT:
             
                     if experience_lines:
                         direct_answer = " ".join(experience_lines[:6])
-                        
+        if (
+            "career focus" in question_lower
+            or "professional focus" in question_lower
+        ):
+            summary_instruction = (
+                "Answer with 2-3 concise sentences describing the person's professional focus "
+                "using only the provided Professional Summary context. "
+                "Do not invent or infer names, employers, locations, roles, or technologies."
+            )
+        else:
+            summary_instruction = (
+                "Answer with 3 complete sentences describing the person's professional experience."
+            )
+                    
         if is_summary_question:
             prompt = f"""
         Context:
@@ -2131,7 +2144,7 @@ WEB CONTEXT:
         
         Question: {question}
         
-        Answer with 3 complete sentences describing Mustafa's professional experience.
+        {summary_instruction}
         Do not repeat or rephrase the question.
         Do not write a question.
         Do not include certifications or languages.

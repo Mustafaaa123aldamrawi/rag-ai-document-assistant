@@ -266,7 +266,12 @@ ANSWER:
         r"\[(?:DOC|WEB) \d+\]",
         polished_answer
     )
-
+    # Safety guard: reject malformed mixed-script output
+    if re.search(
+        r"[\u0400-\u052F\u3040-\u30FF\u4E00-\u9FFF\uAC00-\uD7AF]",
+        polished_answer
+    ):
+        return answer
     # Safety guard: reject polishing if citations changed
     if original_citations != polished_citations:
         return answer

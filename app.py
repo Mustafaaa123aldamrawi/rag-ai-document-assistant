@@ -1047,13 +1047,19 @@ if st.session_state.messages:
 # Main interface
 st.subheader("💬 Ask Your AV Assistant")
 
-question = st.text_input(
-    "Enter your question:",
-    placeholder="Example: Ask about AV systems, uploaded documents, products, troubleshooting, or current web information.",
-    key="question_input"
-)
+with st.form("question_form"):
+    question = st.text_input(
+        "Enter your question:",
+        placeholder="Example: Ask about AV systems, uploaded documents, products, troubleshooting, or current web information.",
+        key="question_input"
+    )
 
-if st.button("Ask AV Assistant", type="primary"):
+    submitted = st.form_submit_button(
+        "Ask AV Assistant",
+        type="primary"
+    )
+
+if submitted:
     if question:
         st.session_state.messages.append({
             "role": "user",

@@ -2029,6 +2029,13 @@ WEB CONTEXT:
             "professional title",
             "what is mustafa's job",
             "what is mustafa’s job"
+            "مسماه الوظيفي",
+            "المسمى الوظيفي",
+            "مسماه الوظيفي الحالي",
+            "المسمى الوظيفي الحالي",
+            "وظيفته الحالية",
+            "ما هي وظيفته",
+            "شو وظيفته",
         ]
 
         job_title_only_question = (

@@ -1005,6 +1005,13 @@ with st.sidebar:
             "Search the web only; no document upload required."
         ]
     )
+st.divider()
+
+if st.session_state.messages:
+    if st.button("🗑️ Clear Chat", use_container_width=True):
+        st.session_state.messages = []
+        st.session_state.last_resolved_query = None
+        st.rerun()
 # Process uploaded PDF
 document_pages = []
 text_chunks = []
@@ -1031,11 +1038,7 @@ if uploaded_files:
 
     except Exception as error:
         st.error(f"Error processing PDF: {error}")
-if st.session_state.messages:
-    if st.button("Clear Chat"):
-        st.session_state.messages = []
-        st.session_state.last_resolved_query = None
-        st.rerun()
+
 # Display conversation history
 if st.session_state.messages:
     for message in st.session_state.messages:

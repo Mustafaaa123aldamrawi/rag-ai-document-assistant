@@ -30,7 +30,6 @@ def call_qwen_llm(prompt):
     models_data = models_response.json().get("data", [])
     
     preferred_models = [
-        "Qwen/Qwen2.5-7B-Instruct",
         "Qwen/Qwen2.5-Coder-32B-Instruct",
         "openai/gpt-oss-20b",
         "google/gemma-2-2b-it",

@@ -3482,8 +3482,18 @@ WEB CONTEXT:
             "content": answer
         })
         
-        st.subheader("🤖 AI Answer")
-        st.write(answer)
+        st.markdown(
+        """
+        <div style="padding:18px 20px; border-radius:16px; border:1px solid rgba(120,120,120,0.16); background:rgba(255,255,255,0.78); margin-top:14px; margin-bottom:10px;">
+        <div style="font-size:24px; font-weight:750; margin-bottom:8px;">
+        🤖 AI Answer
+        </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+        )
+        
+        st.markdown(answer)
         
         if claim_verification_passed and (final_cited_docs or final_cited_web):
             st.success("✅ Verified against cited sources")

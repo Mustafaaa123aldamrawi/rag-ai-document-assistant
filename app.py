@@ -6,7 +6,7 @@ from pypdf import PdfReader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
-def call_qwen_llm(prompt):
+def call_qwen_llm(prompt, preferred_models_override=None):
     url = "https://router.huggingface.co/v1/chat/completions"
 
     headers = {
@@ -29,7 +29,7 @@ def call_qwen_llm(prompt):
     
     models_data = models_response.json().get("data", [])
     
-    preferred_models = [
+    preferred_models = preferred_models_override or [
         "Qwen/Qwen2.5-Coder-32B-Instruct",
         "openai/gpt-oss-20b",
         "google/gemma-2-2b-it",

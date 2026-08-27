@@ -1024,7 +1024,7 @@ with st.sidebar:
     )
 st.divider()
 
-if st.button("🗑️ Clear Chat", use_container_width=True):
+if st.button("🗑️ Clear Chat"):
     st.session_state.messages = []
     st.session_state.last_resolved_query = None
     st.session_state.question_input = ""

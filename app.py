@@ -1272,7 +1272,19 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
             
             st.markdown(answer)
     
-            st.markdown("### 🌐 Web Sources")
+            st.markdown(
+            """
+            <div style="padding:16px 18px; border-radius:14px; border:1px solid rgba(120,120,120,0.14); background:rgba(255,255,255,0.72); margin-top:18px; margin-bottom:10px;">
+            <div style="font-size:22px; font-weight:750;">
+            🌐 Web Sources
+            </div>
+            <div style="font-size:13px; opacity:0.65; margin-top:4px;">
+            Sources used to support the answer above.
+            </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+            )
     
             for source_number, result in enumerate(web_results, start=1):
                 title = result.get("title", "Web source")

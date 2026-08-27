@@ -1024,11 +1024,6 @@ with st.sidebar:
     )
 st.divider()
 
-if st.button("🗑️ Clear Chat"):
-    st.session_state.messages = []
-    st.session_state.last_resolved_query = None
-    st.session_state.question_input = ""
-    st.rerun()
 # Process uploaded PDF
 document_pages = []
 text_chunks = []
@@ -1075,7 +1070,11 @@ Ask about AV systems, products, troubleshooting, uploaded documents, or current 
 """,
 unsafe_allow_html=True
 )
-
+if st.button("🗑️ Clear Chat"):
+    st.session_state.messages = []
+    st.session_state.last_resolved_query = None
+    st.session_state.question_input = ""
+    st.rerun()
 with st.form("question_form"):
     question = st.text_input(
         "Enter your question:",

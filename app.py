@@ -1010,6 +1010,7 @@ st.divider()
 if st.button("🗑️ Clear Chat", use_container_width=True):
     st.session_state.messages = []
     st.session_state.last_resolved_query = None
+    st.session_state.question_input = ""
     st.rerun()
 # Process uploaded PDF
 document_pages = []
@@ -1048,7 +1049,8 @@ st.subheader("💬 Ask Your AV Assistant")
 
 question = st.text_input(
     "Enter your question:",
-    placeholder="Example: Ask about AV systems, uploaded documents, products, troubleshooting, or current web information."
+    placeholder="Example: Ask about AV systems, uploaded documents, products, troubleshooting, or current web information.",
+    key="question_input"
 )
 
 if st.button("Ask AV Assistant", type="primary"):

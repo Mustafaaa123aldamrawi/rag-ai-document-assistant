@@ -3150,6 +3150,10 @@ WEB CONTEXT:
                 cts_preparation_present
                 and doc_number is not None
                 and not active_cts_confirmed
+                and not (
+                    search_mode == "Documents + Web"
+                    and web_results
+                )
                 and (
                     advanced_cts_recommended
                     or generic_next_certification_question

@@ -226,9 +226,12 @@ def polish_arabic_answer(answer):
     )
 
     polish_prompt = f"""
-Improve the Arabic wording of the answer below.
+Perform minimal Arabic correction on the answer below. Do not rewrite the answer unless necessary to fix clear grammar, malformed wording, or unnatural literal translation.
 
 Rules:
+- Make the smallest possible changes needed to produce clear, natural Arabic.
+- Do not paraphrase sentences that are already understandable and technically correct.
+- Never replace a correct AV/IT term with a broader, different, or less precise meaning.
 - Preserve the exact factual meaning.
 - Do not add, remove, infer, or change any facts.
 - Preserve every citation exactly as written, including all [DOC X] and [WEB X] labels.

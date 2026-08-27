@@ -1035,11 +1035,11 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
                     if source_type == "Official":
                         manufacturer = get_manufacturer_name(url)
                         st.markdown(
-                            f"- **[{source_number}]** ✅ **{manufacturer} Official** — [{title}]({url})"
+                            f"- **[WEB {source_number}]** ✅ **{manufacturer} Official** - [{title}]({url})"
                         )
                     else:
                         st.markdown(
-                            f"- **[{source_number}]** 🌐 **External Source** — [{title}]({url})"
+                            f"- **[WEB {source_number}]** 🌐 **External Source** - [{title}]({url})"
                         )
         except Exception as e:
             st.error(f"Web search error: {e}")

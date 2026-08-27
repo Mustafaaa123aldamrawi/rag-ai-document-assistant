@@ -3074,7 +3074,25 @@ WEB CONTEXT:
             # Clean extra blank lines created by removals
             answer = re.sub(r"\n{3,}", "\n\n", answer).strip()
             
-        answer = normalize_model_names(answer)  
+        answer = normalize_model_names(answer)
+
+        if (
+            "career focus" in question_lower
+            or "professional focus" in question_lower
+        ):
+            answer = re.sub(
+                r"\b(?:strong|extensive|deep|specialized|advanced|expert|highly experienced)\s+experience\b",
+                "experience",
+                answer,
+                flags=re.IGNORECASE
+            )
+        
+            answer = re.sub(
+                r"\b(?:is|was)\s+(?:also\s+)?specialized\s+in\b",
+                "has experience in",
+                answer,
+                flags=re.IGNORECASE
+            )
 
         answer = polish_arabic_answer(answer)
 

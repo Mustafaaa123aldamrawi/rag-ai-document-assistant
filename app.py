@@ -1095,6 +1095,27 @@ if st.button("🗑️ Clear Chat"):
     st.session_state.last_resolved_query = None
     st.session_state.question_input = ""
     st.rerun()
+st.caption("⚡ Quick prompts")
+
+quick_col1, quick_col2 = st.columns(2)
+
+with quick_col1:
+    if st.button("🔧 Troubleshoot an AV issue", use_container_width=True):
+        st.session_state.question_input = "Help me troubleshoot an AV system issue."
+        st.rerun()
+
+    if st.button("📄 Search my documents", use_container_width=True):
+        st.session_state.question_input = "Search my uploaded documents and summarize the most relevant information."
+        st.rerun()
+
+with quick_col2:
+    if st.button("🎛️ Explain a product", use_container_width=True):
+        st.session_state.question_input = "Explain an AV product and its main capabilities."
+        st.rerun()
+
+    if st.button("⚖️ Compare technologies", use_container_width=True):
+        st.session_state.question_input = "Compare two AV technologies and explain their main differences."
+        st.rerun()
 with st.form("question_form"):
     question = st.text_input(
         "Enter your question:",

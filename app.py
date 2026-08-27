@@ -1972,6 +1972,10 @@ WEB CONTEXT:
             for phrase in (
                 "career focus",
                 "professional focus",
+            "تركيزه المهني",
+            "التركيز المهني",
+            "تركيز مهني",
+            "مجاله المهني",
             )
         )
         

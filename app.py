@@ -1007,11 +1007,10 @@ with st.sidebar:
     )
 st.divider()
 
-if st.session_state.messages:
-    if st.button("🗑️ Clear Chat", use_container_width=True):
-        st.session_state.messages = []
-        st.session_state.last_resolved_query = None
-        st.rerun()
+if st.button("🗑️ Clear Chat", use_container_width=True):
+    st.session_state.messages = []
+    st.session_state.last_resolved_query = None
+    st.rerun()
 # Process uploaded PDF
 document_pages = []
 text_chunks = []

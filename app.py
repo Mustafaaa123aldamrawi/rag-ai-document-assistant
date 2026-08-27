@@ -1044,6 +1044,9 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
 """
 
             answer = call_qwen_llm(prompt)
+
+            answer = normalize_model_names(answer)
+            answer = polish_arabic_answer(answer)
             
             st.subheader("🤖 AI Answer")
             st.write(answer)

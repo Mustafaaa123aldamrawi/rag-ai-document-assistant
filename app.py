@@ -1593,8 +1593,8 @@ If multiple sources support the same claim, cite them like [1][2].
                 
                 if experience_lines:
                     context = "\n".join(experience_lines)
-            else:
-                context = full_document_text
+                else:
+                    context = full_document_text
             elif (
                 "career focus" in question_lower
                 or "professional focus" in question_lower

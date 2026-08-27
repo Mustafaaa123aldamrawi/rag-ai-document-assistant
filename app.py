@@ -1092,6 +1092,10 @@ If multiple sources support the same claim, cite them like [1][2].
             "وظيفته الحالية",
             "ما هي وظيفته",
             "شو وظيفته",
+            "مهاراته التقنية",
+            "المهارات التقنية",
+            "مهارات تقنية",
+            "أقوى مهاراته التقنية",
             "career focus",
             "professional focus",
             "تركيزه المهني",
@@ -2124,6 +2128,10 @@ WEB CONTEXT:
             or "tools" in question_lower
             or "platforms" in question_lower
             or "systems" in question_lower
+            or "مهاراته التقنية" in question_lower
+            or "المهارات التقنية" in question_lower
+            or "مهارات تقنية" in question_lower
+            or "أقوى مهاراته التقنية" in question_lower
         ):
             full_document_text = "\n".join(
                 page["text"] for page in document_pages

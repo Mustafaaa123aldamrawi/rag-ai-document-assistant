@@ -1608,6 +1608,10 @@ If multiple sources support the same claim, cite them like [1][2].
                 or "responsibilities" in question_lower
                 or "responsibility" in question_lower
                 or "duties" in question_lower
+                or "مسؤولياته الرئيسية" in question_lower
+                or "المسؤوليات الرئيسية" in question_lower
+                or "مسؤولياته" in question_lower
+                or "واجباته" in question_lower
             ):
                 start = full_document_lower.find("professional summary")
                 end = full_document_lower.find("professional experience", start)

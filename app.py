@@ -1259,8 +1259,18 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
             answer = polish_arabic_answer(answer)
             answer = clean_arabic_av_phrasing(answer)
             
-            st.subheader("🤖 AI Answer")
-            st.write(answer)
+            st.markdown(
+            """
+            <div style="padding:18px 20px; border-radius:16px; border:1px solid rgba(120,120,120,0.16); background:rgba(255,255,255,0.78); margin-top:14px; margin-bottom:10px;">
+            <div style="font-size:24px; font-weight:750; margin-bottom:8px;">
+            🤖 AI Answer
+            </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+            )
+            
+            st.markdown(answer)
     
             st.markdown("### 🌐 Web Sources")
     

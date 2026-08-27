@@ -291,6 +291,18 @@ ANSWER:
     
     if polished_latin_words - original_latin_words:
         return answer
+    # Safety guard: reject critical AV meaning drift
+    semantic_drift_rules = (
+        (r"\bالصوت\w*", r"\bالموسيقى\w*"),
+        (r"\bصوتي\w*", r"\bموسيقي\w*"),
+    )
+    
+    for original_pattern, wrong_pattern in semantic_drift_rules:
+        if (
+            re.search(original_pattern, answer, re.IGNORECASE)
+            and re.search(wrong_pattern, polished_answer, re.IGNORECASE)
+        ):
+            return answer
     # Safety guard: reject polishing if citations changed
     if original_citations != polished_citations:
         return answer

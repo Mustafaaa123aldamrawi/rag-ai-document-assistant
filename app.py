@@ -1712,16 +1712,16 @@ If multiple sources support the same claim, cite them like [1][2].
         if "document_scope_active" not in st.session_state:
             st.session_state.document_scope_active = False
         
-        if is_document_focused_question:
-            st.session_state.document_scope_active = True
-            web_search_query = None
-        
-        elif is_current_web_question:
+        if is_current_web_question:
             st.session_state.document_scope_active = False
             web_search_query = build_document_aware_web_query(
                 question,
                 context
             )
+        
+        elif is_document_focused_question:
+            st.session_state.document_scope_active = True
+            web_search_query = None
         
         elif st.session_state.document_scope_active:
             web_search_query = None

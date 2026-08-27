@@ -969,10 +969,7 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 if "last_resolved_query" not in st.session_state:
     st.session_state.last_resolved_query = None
-# Display conversation history
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+
 # Application title
 st.title("🤖 AV Intelligence Assistant")
 
@@ -1034,6 +1031,16 @@ if uploaded_files:
 
     except Exception as error:
         st.error(f"Error processing PDF: {error}")
+if st.session_state.messages:
+    if st.button("Clear Chat"):
+        st.session_state.messages = []
+        st.session_state.last_resolved_query = None
+        st.rerun()
+# Display conversation history
+if st.session_state.messages:
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
 # Main interface
 st.subheader("💬 Ask Your AV Assistant")
 

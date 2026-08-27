@@ -1596,6 +1596,22 @@ If multiple sources support the same claim, cite them like [1][2].
                 else:
                     context = full_document_text
             elif (
+                "main responsibilities" in question_lower
+                or "responsibilities" in question_lower
+                or "responsibility" in question_lower
+                or "duties" in question_lower
+            ):
+                start = full_document_lower.find("professional summary")
+                end = full_document_lower.find("professional experience", start)
+            
+                if start != -1:
+                    if end != -1:
+                        context = full_document_text[start:end].strip()
+                    else:
+                        context = full_document_text[start:].strip()
+                else:
+                    context = full_document_text
+            elif (
                 "career focus" in question_lower
                 or "professional focus" in question_lower
             ):

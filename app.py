@@ -251,6 +251,8 @@ Rules:
 - Prefer simple, commonly understood technical Arabic over literal translations of marketing or architectural terminology.
 - Do not use a more senior, stronger, or broader experience description than the source explicitly supports.
 - Use clear, professional Arabic suitable for AV/IT engineers.
+- Correct obvious Arabic grammar, agreement, and sentence-structure errors while preserving the exact meaning.
+- Prefer natural Arabic phrasing such as "لتطبيقات مختلفة" instead of malformed constructions like "لأ التطبيقات المختلفة".
 - When the answer contains multiple requirements, fees, steps, or categories, format them as clear bullet points instead of one dense paragraph.
 - For pricing, keep each membership category and its fees together on one bullet or one clearly separated line.
 - Preserve the original level of detail, but improve the structure when bullets make the answer clearer.
@@ -1090,13 +1092,7 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
             answer = call_qwen_llm(prompt)
 
             answer = normalize_model_names(answer)
-            
-            st.caption("Debug: before Arabic polish")
-            st.write(answer)
-            
             answer = polish_arabic_answer(answer)
-            
-            st.caption("Debug: after Arabic polish")
             
             st.subheader("🤖 AI Answer")
             st.write(answer)

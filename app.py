@@ -2127,8 +2127,12 @@ WEB CONTEXT:
         ):
             summary_instruction = (
                 "Answer with 2-3 concise sentences describing the person's professional focus "
-                "using only the provided Professional Summary context. "
-                "Do not invent or infer names, employers, locations, roles, or technologies."
+                "using ONLY facts explicitly stated in the provided Professional Summary context. "
+                "Prefer the wording and terminology used in the source. "
+                "Do not mention the person's name unless necessary. "
+                "Do not invent, infer, broaden, or add employers, locations, sectors, roles, "
+                "technologies, responsibilities, or experience that are not explicitly stated in the context. "
+                "If a detail is not explicitly stated, omit it."
             )
         else:
             summary_instruction = (

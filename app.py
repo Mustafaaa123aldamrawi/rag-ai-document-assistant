@@ -1011,12 +1011,12 @@ Web search context:
 Answer using only the web search context above.
 Do not invent information that is not supported by the web results.
 
-For every factual claim, cite the supporting source using its number in square brackets,
-for example [1] or [2].
+For every factual claim, cite the supporting source using the exact format [WEB X],
+for example [WEB 1] or [WEB 2].
 
-Use only source numbers that actually appear in the Web search context.
+Use only source numbers that actually appear in the Web Search context.
 Do not create or guess source numbers.
-If multiple sources support the same claim, cite them like [1][2].
+If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
 """
 
             answer = call_qwen_llm(prompt)

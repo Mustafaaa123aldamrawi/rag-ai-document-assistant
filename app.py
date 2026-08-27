@@ -2132,6 +2132,7 @@ WEB CONTEXT:
                 "Do not mention the person's name unless necessary. "
                 "Do not invent, infer, broaden, or add employers, locations, sectors, roles, "
                 "technologies, responsibilities, or experience that are not explicitly stated in the context. "
+                "Do not use evaluative terms such as strong, extensive, deep, specialized, advanced, expert, or highly experienced unless those exact terms are explicitly supported by the context. "
                 "If a detail is not explicitly stated, omit it."
             )
         else:

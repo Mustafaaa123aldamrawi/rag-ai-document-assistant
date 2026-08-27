@@ -266,7 +266,13 @@ ANSWER:
 """
 
     try:
-        polished_answer = call_qwen_llm(polish_prompt).strip()
+        polished_answer = call_qwen_llm(
+            polish_prompt,
+            preferred_models_override=[
+                "openai/gpt-oss-20b",
+                "Qwen/Qwen2.5-Coder-32B-Instruct",
+            ]
+        ).strip()
         
     except Exception:
         return answer

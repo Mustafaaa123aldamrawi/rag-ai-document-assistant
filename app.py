@@ -258,15 +258,8 @@ ANSWER:
 """
 
     try:
-        polished_answer = call_qwen_llm(
-            polish_prompt,
-            preferred_models_override=[
-                "Qwen/Qwen2.5-7B-Instruct",
-                "Qwen/Qwen2.5-Coder-32B-Instruct",
-                "openai/gpt-oss-20b",
-                "google/gemma-2-2b-it",
-            ]
-        ).strip()
+        polished_answer = call_qwen_llm(polish_prompt).strip()
+        
     except Exception:
         return answer
 

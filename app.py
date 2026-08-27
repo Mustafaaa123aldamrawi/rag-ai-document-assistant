@@ -2744,12 +2744,14 @@ WEB CONTEXT:
         - A [WEB X] claim must be directly supported by the matching [WEB X] content.
         - Do not assume that a citation supports a claim merely because the citation exists.
         - If a claim is not supported by its cited source, DELETE that claim silently.
-        - Do not upgrade a listed skill, platform, technology, or training item into claims such as trained, specialized, expert, advanced, designed, created, or implemented unless the cited source explicitly states that level of experience.
+        - Do not upgrade a listed skill, platform, technology, or training item into claims such as trained, specialized, expert or expertise, advanced, designed, created, or implemented unless the cited source explicitly states that level of experience.
         - Do not invent, alter, or infer a person's name, job title, employer, certification status, or professional role. Preserve those details exactly as stated in the cited source.
         - If the source only lists a technology under skills or training, describe it only as a listed skill or training item unless stronger experience is explicitly supported.
         - Do NOT explain that information was missing, unsupported, unavailable, or not found.
         - Do NOT add notes, warnings, explanations, verification comments, or summaries.
         - Preserve only supported claims and their correct citations.
+        - Every factual claim that remains in the verified answer MUST retain its supporting [DOC X] or [WEB X] citation immediately after that claim.
+        - Never return a factual sentence or bullet without its citation when that claim originally had a valid supporting citation.
         - Never invent, change, renumber, or guess citation numbers.
         - Preserve the original answer format whenever possible.
         - Preserve the language of the ANSWER exactly. Do not translate the answer into the language of the source content.

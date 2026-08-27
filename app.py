@@ -1090,7 +1090,13 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
             answer = call_qwen_llm(prompt)
 
             answer = normalize_model_names(answer)
+            
+            st.caption("Debug: before Arabic polish")
+            st.write(answer)
+            
             answer = polish_arabic_answer(answer)
+            
+            st.caption("Debug: after Arabic polish")
             
             st.subheader("🤖 AI Answer")
             st.write(answer)

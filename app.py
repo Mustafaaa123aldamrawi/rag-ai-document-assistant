@@ -971,57 +971,28 @@ if "last_resolved_query" not in st.session_state:
     st.session_state.last_resolved_query = None
 
 st.markdown(
-    """
-    <div style="
-        padding: 28px 30px;
-        border-radius: 20px;
-        border: 1px solid rgba(120,120,120,0.18);
-        background: linear-gradient(135deg, rgba(255,255,255,0.96), rgba(245,247,250,0.96));
-        box-shadow: 0 8px 30px rgba(0,0,0,0.05);
-        margin-bottom: 24px;
-    ">
-        <div style="
-            font-size: 14px;
-            font-weight: 600;
-            letter-spacing: 0.08em;
-            opacity: 0.65;
-            margin-bottom: 8px;
-        ">
-            AV • UC • DOCUMENT INTELLIGENCE
-        </div>
+"""
+<div style="padding:28px 30px; border-radius:20px; border:1px solid rgba(120,120,120,0.18); background:linear-gradient(135deg, rgba(255,255,255,0.96), rgba(245,247,250,0.96)); box-shadow:0 8px 30px rgba(0,0,0,0.05); margin-bottom:24px;">
 
-        <div style="
-            font-size: 38px;
-            font-weight: 800;
-            line-height: 1.15;
-            margin-bottom: 10px;
-        ">
-            🤖 AV Intelligence Assistant
-        </div>
+<div style="font-size:14px; font-weight:600; letter-spacing:0.08em; opacity:0.65; margin-bottom:8px;">
+AV • UC • DOCUMENT INTELLIGENCE
+</div>
 
-        <div style="
-            font-size: 17px;
-            line-height: 1.6;
-            opacity: 0.78;
-            max-width: 850px;
-        ">
-            AI-powered assistant for AV & Unified Communications,
-            technical documents, trusted web research,
-            troubleshooting, and source-grounded answers.
-        </div>
+<div style="font-size:38px; font-weight:800; line-height:1.15; margin-bottom:10px;">
+🤖 AV Intelligence Assistant
+</div>
 
-        <div style="
-            margin-top: 18px;
-            font-size: 14px;
-            opacity: 0.65;
-        ">
-            📄 Documents &nbsp;&nbsp; • &nbsp;&nbsp;
-            🌐 Trusted Web &nbsp;&nbsp; • &nbsp;&nbsp;
-            🛠 Technical Guidance
-        </div>
-    </div>
-    """,
-    unsafe_allow_html=True
+<div style="font-size:17px; line-height:1.6; opacity:0.78; max-width:850px;">
+AI-powered assistant for AV & Unified Communications, technical documents, trusted web research, troubleshooting, and source-grounded answers.
+</div>
+
+<div style="margin-top:18px; font-size:14px; opacity:0.65;">
+📄 Documents &nbsp;&nbsp; • &nbsp;&nbsp; 🌐 Trusted Web &nbsp;&nbsp; • &nbsp;&nbsp; 🛠 Technical Guidance
+</div>
+
+</div>
+""",
+unsafe_allow_html=True
 )
 # Sidebar
 with st.sidebar:

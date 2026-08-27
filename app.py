@@ -1062,7 +1062,19 @@ if st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 # Main interface
-st.subheader("💬 Ask Your AV Assistant")
+st.markdown(
+"""
+<div style="padding:20px 22px; border-radius:16px; border:1px solid rgba(120,120,120,0.16); background:rgba(255,255,255,0.72); margin-bottom:12px;">
+<div style="font-size:26px; font-weight:750; margin-bottom:6px;">
+💬 Ask Your AV Assistant
+</div>
+<div style="font-size:14px; opacity:0.68;">
+Ask about AV systems, products, troubleshooting, uploaded documents, or current technical information.
+</div>
+</div>
+""",
+unsafe_allow_html=True
+)
 
 with st.form("question_form"):
     question = st.text_input(

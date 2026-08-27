@@ -49,7 +49,7 @@ def call_qwen_llm(prompt):
         ),
         None
     )
-    
+    st.caption(f"Debug model: {selected_model}")
     if selected_model is None:
         raise Exception(
             "No compatible non-thinking chat model is currently available."

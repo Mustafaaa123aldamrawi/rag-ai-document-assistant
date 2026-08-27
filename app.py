@@ -317,6 +317,24 @@ ANSWER:
         return answer
 
     return polished_answer
+def clean_arabic_av_phrasing(text):
+    if not text:
+        return text
+
+    replacements = {
+        "إفروزتها بواسطة QSC": "تقديمها بواسطة QSC",
+        "تجربة تحكم مستخدمية": "تجربة تحكم للمستخدم",
+        "تمكين آلية": "الأتمتة",
+        "يتضمن الحلول الخاصة بـ Q-SYS": "تتضمن حلول Q-SYS",
+        "الاستاديات": "الملاعب",
+    }
+
+    cleaned_text = text
+
+    for wrong, correct in replacements.items():
+        cleaned_text = cleaned_text.replace(wrong, correct)
+
+    return cleaned_text
 def normalize_search_query(question):
     normalize_prompt = f"""
 Convert the user's question into one clean standalone English web search query.
@@ -1146,6 +1164,7 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
 
             answer = normalize_model_names(answer)
             answer = polish_arabic_answer(answer)
+            answer = clean_arabic_av_phrasing(answer)
             
             st.subheader("🤖 AI Answer")
             st.write(answer)

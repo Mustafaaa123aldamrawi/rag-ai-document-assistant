@@ -1112,6 +1112,38 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
 
             answer = call_qwen_llm(prompt)
 
+            if re.search(r"[\u0400-\u052F\u3040-\u30FF\u4E00-\u9FFF\uAC00-\uD7AF]", answer):
+                repair_prompt = f"""
+            Repair only the malformed mixed-script words in the Arabic answer below.
+            
+            Rules:
+            - Preserve the exact factual meaning.
+            - Preserve every [WEB X] citation exactly as written.
+            - Preserve product names, model numbers, acronyms, and technical terms.
+            - Replace only malformed words containing Cyrillic, Japanese, Korean, or Chinese characters.
+            - Do not rewrite correct sentences.
+            - Do not add or remove facts.
+            - Return only the repaired answer.
+            
+            ANSWER:
+            {answer}
+            """
+            
+                try:
+                    repaired_answer = call_qwen_llm(
+                        repair_prompt,
+                        preferred_models_override=[
+                            "openai/gpt-oss-20b",
+                            "Qwen/Qwen2.5-Coder-32B-Instruct",
+                        ]
+                    ).strip()
+            
+                    if repaired_answer:
+                        answer = repaired_answer
+            
+                except Exception:
+                    pass
+
             answer = normalize_model_names(answer)
             answer = polish_arabic_answer(answer)
             

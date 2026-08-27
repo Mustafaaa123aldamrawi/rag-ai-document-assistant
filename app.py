@@ -272,6 +272,19 @@ ANSWER:
         polished_answer
     ):
         return answer
+    # Safety guard: reject newly introduced Latin words
+    original_latin_words = {
+        word.lower()
+        for word in re.findall(r"[A-Za-z][A-Za-z0-9_-]*", answer)
+    }
+    
+    polished_latin_words = {
+        word.lower()
+        for word in re.findall(r"[A-Za-z][A-Za-z0-9_-]*", polished_answer)
+    }
+    
+    if polished_latin_words - original_latin_words:
+        return answer
     # Safety guard: reject polishing if citations changed
     if original_citations != polished_citations:
         return answer

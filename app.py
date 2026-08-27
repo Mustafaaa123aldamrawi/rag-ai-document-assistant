@@ -1003,7 +1003,8 @@ if st.button("Ask AV Assistant", type="primary"):
     elif search_mode == "Web Only":
         try:
             with st.spinner("Searching trusted sources and preparing your answer..."):
-                web_results = search_web_tavily(question)
+                web_search_query = normalize_search_query(question)
+                web_results = search_web_tavily(web_search_query)
 
             if not web_results:
                 st.warning("No relevant web results were found.")

@@ -1003,7 +1003,30 @@ if st.button("Ask AV Assistant", type="primary"):
     elif search_mode == "Web Only":
         try:
             with st.spinner("Searching trusted sources and preparing your answer..."):
-                web_search_query = normalize_search_query(question)
+                qsys_overview_question = (
+                    "q-sys" in question.lower()
+                    and any(
+                        phrase in question.lower()
+                        for phrase in (
+                            "what is",
+                            "explain",
+                            "overview",
+                            "about q-sys",
+                            "ما هو",
+                            "ما هي",
+                            "اشرح",
+                            "شرح",
+                            "شو هو",
+                            "شو هي",
+                        )
+                    )
+                )
+                
+                if qsys_overview_question:
+                    web_search_query = "Q-SYS platform system overview integrated audio video control"
+                else:
+                    web_search_query = normalize_search_query(question)
+                
                 web_results = search_web_tavily(web_search_query)
 
             if not web_results:

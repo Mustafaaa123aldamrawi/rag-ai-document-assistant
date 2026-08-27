@@ -241,6 +241,12 @@ Rules:
 - Keep established AV/IT terms in English when that is more natural.
 - Do not translate "Core" as "النواة" when referring to Q-SYS Core.
 - Remove awkward literal translations, mixed-script artifacts, malformed words, and unnatural Arabic.
+- Rewrite awkward literal translations into natural professional Arabic while preserving the exact factual meaning.
+- Prefer standard AV/IT terminology commonly used by Arabic-speaking engineers.
+- Keep established technical terms such as Q-SYS, Core, SIP, SNMP, AV, DSP, Dante, AES67, API, UI, and scripting in English when translating them would sound unnatural or inaccurate.
+- Do not translate product architecture terms into invented Arabic expressions; preserve the original English technical term when necessary.
+- Avoid unnatural phrases produced by literal machine translation. Use fluent Modern Standard Arabic suitable for technical documentation.
+- Do not use a more senior, stronger, or broader experience description than the source explicitly supports.
 - Use clear, professional Arabic suitable for AV/IT engineers.
 - When the answer contains multiple requirements, fees, steps, or categories, format them as clear bullet points instead of one dense paragraph.
 - For pricing, keep each membership category and its fees together on one bullet or one clearly separated line.

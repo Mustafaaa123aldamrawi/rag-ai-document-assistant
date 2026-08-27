@@ -996,7 +996,17 @@ unsafe_allow_html=True
 )
 # Sidebar
 with st.sidebar:
-    st.header("📄 Document Upload")
+    st.markdown(
+    """
+    <div style="font-size:20px; font-weight:750; margin-bottom:6px;">
+    📄 Document Upload
+    </div>
+    <div style="font-size:13px; opacity:0.65; margin-bottom:10px;">
+    Upload one or more PDF documents for AI analysis.
+    </div>
+    """,
+    unsafe_allow_html=True
+    )
 
     uploaded_files = st.file_uploader(
     "Upload PDF files",
@@ -1006,7 +1016,17 @@ with st.sidebar:
 
     st.divider()
     
-    st.header("🔎 Search Mode")
+    st.markdown(
+    """
+    <div style="font-size:20px; font-weight:750; margin-bottom:6px;">
+    🔎 Search Mode
+    </div>
+    <div style="font-size:13px; opacity:0.65; margin-bottom:10px;">
+    Choose where the assistant should look for information.
+    </div>
+    """,
+    unsafe_allow_html=True
+    )
 
     search_mode = st.radio(
         "Choose your search mode:",

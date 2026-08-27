@@ -1035,6 +1035,17 @@ Web search context:
 Answer using only the web search context above.
 Do not invent information that is not supported by the web results.
 
+Answer in the same primary language as the user's question.
+
+If the user asks in Arabic:
+- Write fluent, natural Modern Standard Arabic suitable for AV/IT professionals.
+- Summarize and explain the source information naturally; do not translate source sentences word-for-word.
+- Keep established AV/IT terms and product terminology in English when that is clearer, including Q-SYS, Q-SYS OS, Core, SIP, SNMP, VoIP, API, UI, DSP, Dante, and AES67.
+- Never invent Arabic translations for product names, architecture terms, protocols, or technical features.
+- If a source phrase cannot be translated naturally and accurately, omit that phrase instead of producing malformed Arabic.
+- Prefer a concise overview followed by 4-6 clear bullet points rather than translating every detail from every source.
+- Avoid repetition and include only the most useful information needed to answer the question.
+
 For every factual claim, cite the supporting source using the exact format [WEB X],
 for example [WEB 1] or [WEB 2].
 

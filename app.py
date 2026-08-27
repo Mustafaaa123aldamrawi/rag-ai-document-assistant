@@ -1083,6 +1083,10 @@ If multiple sources support the same claim, cite them like [1][2].
             "responsibilities",
             "career focus",
             "professional focus",
+            "خبراته المهنية",
+            "خبرته المهنية",
+            "الخبرات المهنية",
+            "الخبرة المهنية",
         ]
         
         is_summary_question = (

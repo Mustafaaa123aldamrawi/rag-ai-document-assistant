@@ -1916,13 +1916,13 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
             )
         st.write("DEBUG FINAL CONTEXT:")
         st.text(context)
-            for document in relevant_documents:
-                used_sources.add(
-                    (
-                        document.metadata.get("source"),
-                        document.metadata.get("page_number")
-                    )
+        for document in relevant_documents:
+            used_sources.add(
+                (
+                    document.metadata.get("source"),
+                    document.metadata.get("page_number")
                 )
+            )
         
         if (
             not relevant_documents

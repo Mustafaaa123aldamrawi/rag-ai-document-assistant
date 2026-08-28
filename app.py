@@ -1602,7 +1602,18 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
                 search_query,
                 k=4
             )
-        
+        st.write("DEBUG matched_source:", matched_source)
+
+        for i, (doc, score) in enumerate(search_results, start=1):
+            st.write(
+                f"DEBUG result {i}:",
+                {
+                    "source": doc.metadata.get("source"),
+                    "page": doc.metadata.get("page_number"),
+                    "score": score,
+                    "text": doc.page_content[:500],
+                }
+            )
         # Evidence Filtering v2
         # FAISS distance: lower score = better semantic match.
         RELEVANCE_THRESHOLD = 1.20

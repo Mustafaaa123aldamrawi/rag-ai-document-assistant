@@ -1547,7 +1547,7 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
                     previous_question,
                     question
                 )
-                
+                search_query = f"{previous_question} {search_query} {question}".strip()
         # Prefer the document whose full content best matches the user's subject
         if not matched_source:
             normalized_question = "".join(

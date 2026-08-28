@@ -2383,15 +2383,18 @@ WEB CONTEXT:
                         direct_answer += f" [DOC {certification_doc_number}]"
                 # Direct extractive answer for technologies and technical skills
         if (
-            "technolog" in question_lower
-            or "technical skill" in question_lower
-            or "tools" in question_lower
-            or "platforms" in question_lower
-            or "systems" in question_lower
-            or "مهاراته التقنية" in question_lower
-            or "المهارات التقنية" in question_lower
-            or "مهارات تقنية" in question_lower
-            or "أقوى مهاراته التقنية" in question_lower
+            search_mode == "Documents Only"
+            and (
+                "technolog" in question_lower
+                or "technical skill" in question_lower
+                or "tools" in question_lower
+                or "platforms" in question_lower
+                or "systems" in question_lower
+                or "مهاراته التقنية" in question_lower
+                or "المهارات التقنية" in question_lower
+                or "مهارات تقنية" in question_lower
+                or "أقوى مهاراته التقنية" in question_lower
+            )
         ):
             full_document_text = "\n".join(
                 page["text"] for page in document_pages

@@ -1626,10 +1626,10 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
             "on", "for", "to", "with", "from", "about",
             "mustafa"
         }
-        
+        keyword_source_text = search_query if retrieval_is_follow_up else question
         question_keywords = [
             word.lower().strip(".,?!:;()[]{}\"'")
-            for word in question.split()
+            for word in keyword_source_text.split()
             if len(word.strip(".,?!:;()[]{}\"'")) >= 3
             and word.lower().strip(".,?!:;()[]{}\"'") not in STOP_WORDS
         ]
@@ -1753,6 +1753,10 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
                 or (
                     is_verification_question
                     and keyword_matches > 0
+                )
+                or (
+                    retrieval_is_follow_up
+                    and keyword_matches >= 2
                 )
             ):
                 evidence_documents.append(

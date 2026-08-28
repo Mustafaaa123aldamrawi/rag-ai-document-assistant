@@ -3187,16 +3187,16 @@ WEB CONTEXT:
             Corrected answer:
             """
 
-        import re
-        try:
-            answer = call_qwen_llm(identity_guard_prompt)
-        except Exception as e:
-            st.warning(f"Profile identity correction error: {e}")
-        answer = re.sub(
-            r"\b(?:Mahmoud|Mohammad|Mohammed|Mustafa)\s+[A-Za-z'-]+\b",
-            canonical_profile_name,
-            answer
-        )
+            import re
+            try:
+                answer = call_qwen_llm(identity_guard_prompt)
+            except Exception as e:
+                st.warning(f"Profile identity correction error: {e}")
+            answer = re.sub(
+                r"\b(?:Mahmoud|Mohammad|Mohammed|Mustafa)\s+[A-Za-z'-]+\b",
+                canonical_profile_name,
+                answer
+            )
         # Validate that citation labels reference real available sources
                
         if direct_answer is None and not answer.startswith("AI model error:"):

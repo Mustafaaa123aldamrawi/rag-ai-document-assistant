@@ -1914,8 +1914,8 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
             context = "\n\n".join(
                 document.page_content for document in relevant_documents
             )
-        st.write("DEBUG FINAL CONTEXT:")
-        st.text(context)
+            st.write("DEBUG FINAL CONTEXT:")
+            st.text(context)
             for document in relevant_documents:
                 used_sources.add(
                     (

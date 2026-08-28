@@ -1258,6 +1258,44 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
             answer = normalize_model_names(answer)
             answer = polish_arabic_answer(answer)
             answer = clean_arabic_av_phrasing(answer)
+
+            # Keep Web Only answers in the same language as the user's question
+            web_only_user_used_arabic = bool(
+                re.search(r"[\u0600-\u06FF]", question)
+            )
+            
+            web_only_user_used_english = (
+                bool(re.search(r"[A-Za-z]", question))
+                and not web_only_user_used_arabic
+            )
+            
+            web_only_arabic_chars = len(
+                re.findall(r"[\u0600-\u06FF]", answer)
+            )
+            
+            if (
+                web_only_user_used_english
+                and web_only_arabic_chars >= 10
+            ):
+                english_fix_prompt = f"""
+            Translate the VERIFIED ANSWER below into clear, natural English.
+            
+            VERIFIED ANSWER:
+            {answer}
+            
+            Rules:
+            - Translate only the wording.
+            - Do not add, remove, infer, or change any factual information.
+            - Preserve product names, model numbers, acronyms, numbers, and technical terms accurately.
+            - Preserve every citation exactly as written, including all [WEB X] labels.
+            - Do not create new citations.
+            - Return only the translated answer.
+            """
+            
+                try:
+                    answer = call_qwen_llm(english_fix_prompt).strip()
+                except Exception:
+                    pass
             
             st.markdown(
             """

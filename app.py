@@ -1547,7 +1547,7 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
                     previous_question,
                     question
                 )
-                st.write("DEBUG search_query:", search_query)
+                
         # Prefer the document whose full content best matches the user's subject
         if not matched_source:
             normalized_question = "".join(

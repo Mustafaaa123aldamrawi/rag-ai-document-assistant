@@ -1293,7 +1293,13 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
             """
             
                 try:
-                    answer = call_qwen_llm(english_fix_prompt).strip()
+                    answer = call_qwen_llm(
+                        english_fix_prompt,
+                        preferred_models_override=[
+                            "openai/gpt-oss-20b",
+                            "Qwen/Qwen2.5-Coder-32B-Instruct",
+                        ]
+                    ).strip()
                 except Exception:
                     pass
             

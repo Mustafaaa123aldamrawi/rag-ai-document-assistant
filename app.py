@@ -1140,10 +1140,45 @@ if submitted:
     elif search_mode == "Web Only":
         try:
             with st.spinner("Searching trusted sources and preparing your answer..."):
+# Preserve conversation context for Web Only follow-up questions
+web_only_question = question
+
+web_only_follow_up_starters = (
+    "what about",
+    "how about",
+    "and what",
+    "and how",
+    "and does",
+    "and is",
+    "and can",
+    "طيب",
+    "طيب شو",
+    "وشو",
+    "وماذا",
+)
+
+is_web_only_follow_up = question.lower().strip().startswith(
+    web_only_follow_up_starters
+)
+
+if is_web_only_follow_up:
+    previous_user_questions = [
+        message["content"]
+        for message in st.session_state.messages[:-1]
+        if message["role"] == "user"
+    ]
+
+    if previous_user_questions:
+        previous_question = previous_user_questions[-1]
+
+        web_only_question = rewrite_follow_up_query(
+            previous_question,
+            question
+        )
                 qsys_overview_question = (
-                    "q-sys" in question.lower()
+                    "q-sys" in web_only_question.lower()
                     and any(
-                        phrase in question.lower()
+                        phrase in web_only_question.lower()
                         for phrase in (
                             "what is",
                             "explain",
@@ -1162,7 +1197,7 @@ if submitted:
                 if qsys_overview_question:
                     web_search_query = "Q-SYS platform system overview integrated audio video control"
                 else:
-                    web_search_query = normalize_search_query(question)
+                    web_search_query = normalize_search_query(web_only_question)
                 
                 web_results = search_web_tavily(web_search_query)
 
@@ -1189,7 +1224,7 @@ if submitted:
 
                 prompt = f"""
 Question:
-{question}
+{web_only_question}
 
 Web search context:
 {web_context}

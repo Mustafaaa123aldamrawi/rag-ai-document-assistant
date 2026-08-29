@@ -3308,6 +3308,8 @@ WEB CONTEXT:
         - If the source only lists a technology under skills or training, describe it only as a listed skill or training item unless stronger experience is explicitly supported.
         - Do NOT explain that information was missing, unsupported, unavailable, or not found.
         - Do NOT add notes, warnings, explanations, verification comments, or summaries.
+        - Keep the verified answer tightly focused on the user's exact question. Remove tangential troubleshooting, causes, restart steps, software/power speculation, or unrelated failure scenarios unless the user explicitly asked for them.
+        - For failure or redundancy questions, keep the most direct documented operational consequence and do not add broader failure possibilities unless they are necessary to answer the question.
         - Preserve only supported claims and their correct citations.
         - Every factual claim that remains in the verified answer MUST retain its supporting [DOC X] or [WEB X] citation immediately after that claim.
         - Never return a factual sentence or bullet without its citation when that claim originally had a valid supporting citation.

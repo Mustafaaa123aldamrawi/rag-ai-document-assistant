@@ -3053,7 +3053,45 @@ WEB CONTEXT:
         Use the related facts in the context to answer the question.
         Do not say the information was not found when the subject is detected.
         """
+        # Casual conversation path
+        if is_casual_chat:
+            casual_history = ""
         
+            for message in st.session_state.messages[-7:-1]:
+                role = "User" if message["role"] == "user" else "Assistant"
+                casual_history += f"{role}: {message['content']}\n"
+        
+            casual_prompt = f"""
+        You are AV Intelligence Assistant.
+        
+        For casual conversation, behave like a natural, friendly AI chat assistant.
+        
+        Recent conversation:
+        {casual_history}
+        
+        User:
+        {question}
+        
+        Rules:
+        - Reply naturally and conversationally.
+        - Use the same primary language as the user.
+        - If the user speaks Arabic, respond in natural conversational Arabic.
+        - If the user speaks English, respond in English.
+        - You may greet, joke, chat, and have normal everyday conversation.
+        - Maintain conversational context when relevant.
+        - Do not search documents or the web for casual conversation.
+        - Do not add citations.
+        - Do not mention RAG, documents, web search, sources, or internal routing.
+        - Do not pretend to have personal experiences or real-world feelings.
+        - Keep simple casual replies reasonably concise unless the user asks for more.
+        
+        Answer:
+        """
+        
+            try:
+                direct_answer = call_qwen_llm(casual_prompt)
+            except Exception as e:
+                direct_answer = f"AI model error: {e}"
         if direct_answer is not None:
             answer = direct_answer
         else:

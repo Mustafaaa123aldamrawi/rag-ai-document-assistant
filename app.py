@@ -1116,6 +1116,12 @@ with quick_col2:
     if st.button("⚖️ Compare technologies", use_container_width=True):
         st.session_state.question_input = "Compare two AV technologies and explain their main differences."
         st.rerun()
+def submit_question():
+    current_question = st.session_state.get("question_input", "").strip()
+
+    if current_question:
+        st.session_state.pending_question = current_question
+        st.session_state.question_input = ""
 question = st.text_area(
     "Message AV Intelligence Assistant",
     placeholder="Ask about AV systems, uploaded documents, products, troubleshooting, or current technical information...",
@@ -1129,16 +1135,18 @@ with send_col2:
     submitted = st.button(
         "↑",
         type="primary",
-        use_container_width=True
+        use_container_width=True,
+        on_click=submit_question
     )
 
 if submitted:
+    question = st.session_state.pop("pending_question", "")
     if question:
         st.session_state.messages.append({
             "role": "user",
             "content": question
         })
-        st.session_state.question_input = ""
+        
     if not question:
         st.warning("Please enter a question.")
 

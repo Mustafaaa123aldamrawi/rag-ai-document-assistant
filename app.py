@@ -3564,26 +3564,7 @@ WEB CONTEXT:
                     answer,
                     flags=re.IGNORECASE,
                 )
-        # Preserve the exact name from the CV when available
-        cv_lines = [
-            line.strip()
-            for line in cv_text.splitlines()
-            if line.strip()
-        ]
-    
-        if cv_lines:
-            canonical_cv_name = cv_lines[0]
-    
-            if canonical_cv_name:
-                name_candidates = re.findall(
-                    r"\bMustafa\s+[A-Za-z][A-Za-z'-]+\b",
-                    answer,
-                    flags=re.IGNORECASE,
-                )
-    
-                for candidate in name_candidates:
-                    if candidate.lower() != canonical_cv_name.lower():
-                        answer = answer.replace(candidate, canonical_cv_name)
+        
         # Detect whether the user asked in Arabic
         user_used_arabic = bool(
             re.search(r"[\u0600-\u06FF]", question)

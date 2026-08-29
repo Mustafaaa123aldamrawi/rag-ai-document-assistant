@@ -2657,7 +2657,14 @@ WEB CONTEXT:
             )
         
             if is_cv_summary_request:
-                cv_full_text = context
+                cv_full_text = "\n".join(
+                    page.get("text", "")
+                    for page in document_pages
+                    if (
+                        "cv" in page.get("source", "").lower()
+                        or "resume" in page.get("source", "").lower()
+                    )
+                )
             
                 def extract_cv_section(text, start_heading, end_headings):
                     text_lower = text.lower()
@@ -2736,8 +2743,23 @@ WEB CONTEXT:
                     ],
                 )
             
+                languages_page_text = next(
+                    (
+                        page.get("text", "")
+                        for page in document_pages
+                        if (
+                            (
+                                "cv" in page.get("source", "").lower()
+                                or "resume" in page.get("source", "").lower()
+                            )
+                            and "languages" in page.get("text", "").lower()
+                        )
+                    ),
+                    "",
+                )
+                
                 languages = extract_cv_section(
-                    cv_full_text,
+                    languages_page_text,
                     "Languages",
                     [],
                 )

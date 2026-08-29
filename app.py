@@ -2005,6 +2005,7 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
             not relevant_documents
             and not is_summary_question
             and search_mode == "Documents Only"
+            and not is_casual_chat
         ):
             st.subheader("🤖 AI Answer")
             st.write("The information was not found in the document.")

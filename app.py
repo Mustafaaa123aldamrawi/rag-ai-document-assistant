@@ -3313,7 +3313,8 @@ WEB CONTEXT:
         - Preserve only supported claims and their correct citations.
         - Every factual claim that remains in the verified answer MUST retain its supporting [DOC X] or [WEB X] citation immediately after that claim.
         - Never return a factual sentence or bullet without its citation when that claim originally had a valid supporting citation.
-        - Never invent, change, renumber, or guess citation numbers.
+        - Never invent or guess citation numbers that do not exist in SOURCE CONTENT.
+        - If a claim is supported by a different existing [DOC X] or [WEB X] source than the citation currently attached to it, correct the citation to the exact supporting source.
         - Preserve the original answer format whenever possible.
         - Preserve the language of the ANSWER exactly. Do not translate the answer into the language of the source content.
         - If the ANSWER is Arabic, return Arabic. If the ANSWER is English, return English.

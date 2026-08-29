@@ -1146,11 +1146,47 @@ if submitted:
             "role": "user",
             "content": question
         })
-        
+    question_lower = question.lower() if question else ""
+
+    casual_chat_phrases = (
+        "hi",
+        "hello",
+        "hey",
+        "how are you",
+        "how are you doing",
+        "good morning",
+        "good afternoon",
+        "good evening",
+        "tell me a joke",
+        "tell me something funny",
+        "مرحبا",
+        "مرحباً",
+        "هلا",
+        "اهلا",
+        "أهلا",
+        "كيفك",
+        "كيف حالك",
+        "شو اخبارك",
+        "شو أخبارك",
+        "احكيلي نكتة",
+        "قلي نكتة",
+        "نكتة",
+    )
+    
+    is_casual_chat = (
+        question_lower.strip() in casual_chat_phrases
+        or question_lower.strip().startswith(
+            (
+                "tell me a joke",
+                "احكيلي نكتة",
+                "قلي نكتة",
+            )
+        )
+    )    
     if not question:
         st.warning("Please enter a question.")
 
-    elif search_mode == "Web Only":
+    elif search_mode == "Web Only" and not is_casual_chat:
         try:
             with st.spinner("Searching trusted sources and preparing your answer..."):
                 # Preserve conversation context for Web Only follow-up questions
@@ -1397,53 +1433,30 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
         except Exception as e:
             st.error(f"Web search error: {e}")
 
-    elif search_mode == "Documents Only" and not uploaded_files:
+    elif (
+        search_mode == "Documents Only"
+        and not uploaded_files
+        and not is_casual_chat
+    ):
         st.warning("Please upload at least one PDF document first.")
-
-    elif search_mode == "Documents Only" and not document_pages:
+    
+    elif (
+        search_mode == "Documents Only"
+        and not document_pages
+        and not is_casual_chat
+    ):
         st.warning("The uploaded PDF files do not contain readable text.")
-
-    elif search_mode == "Documents Only" and vector_store is None:
+    
+    elif (
+        search_mode == "Documents Only"
+        and vector_store is None
+        and not is_casual_chat
+    ):
         st.warning("Vector database is not ready.")
-
+    
     else:
         question_lower = question.lower()
-        # Detect conversational / casual chat messages
-        casual_chat_phrases = (
-            "hi",
-            "hello",
-            "hey",
-            "how are you",
-            "how are you doing",
-            "good morning",
-            "good afternoon",
-            "good evening",
-            "tell me a joke",
-            "tell me something funny",
-            "مرحبا",
-            "مرحباً",
-            "هلا",
-            "اهلا",
-            "أهلا",
-            "كيفك",
-            "كيف حالك",
-            "شو اخبارك",
-            "شو أخبارك",
-            "احكيلي نكتة",
-            "قلي نكتة",
-            "نكتة",
-        )
         
-        is_casual_chat = (
-            question_lower.strip() in casual_chat_phrases
-            or question_lower.strip().startswith(
-                (
-                    "tell me a joke",
-                    "احكيلي نكتة",
-                    "قلي نكتة",
-                )
-            )
-        )
         matched_source = None
         # Detect questions that require understanding the whole document
         summary_phrases = [

@@ -1408,6 +1408,42 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
 
     else:
         question_lower = question.lower()
+        # Detect conversational / casual chat messages
+        casual_chat_phrases = (
+            "hi",
+            "hello",
+            "hey",
+            "how are you",
+            "how are you doing",
+            "good morning",
+            "good afternoon",
+            "good evening",
+            "tell me a joke",
+            "tell me something funny",
+            "مرحبا",
+            "مرحباً",
+            "هلا",
+            "اهلا",
+            "أهلا",
+            "كيفك",
+            "كيف حالك",
+            "شو اخبارك",
+            "شو أخبارك",
+            "احكيلي نكتة",
+            "قلي نكتة",
+            "نكتة",
+        )
+        
+        is_casual_chat = (
+            question_lower.strip() in casual_chat_phrases
+            or question_lower.strip().startswith(
+                (
+                    "tell me a joke",
+                    "احكيلي نكتة",
+                    "قلي نكتة",
+                )
+            )
+        )
         matched_source = None
         # Detect questions that require understanding the whole document
         summary_phrases = [
@@ -1586,7 +1622,7 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
                 )
                 search_query = f"{previous_question} {search_query} {question}".strip()
         # Prefer the document whose full content best matches the user's subject
-        if not matched_source:
+        if not matched_source and not is_casual_chat:
             normalized_question = "".join(
                 char.lower()
                 for char in search_query
@@ -1624,7 +1660,10 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
         
                 if source_scores[best_source] > 0:
                     matched_source = best_source
-        if vector_store is None:
+        if is_casual_chat:
+            search_results = []
+        
+        elif vector_store is None:
             search_results = []
         
         elif matched_source:

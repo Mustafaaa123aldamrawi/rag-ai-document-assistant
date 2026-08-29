@@ -1116,16 +1116,20 @@ with quick_col2:
     if st.button("⚖️ Compare technologies", use_container_width=True):
         st.session_state.question_input = "Compare two AV technologies and explain their main differences."
         st.rerun()
-with st.form("question_form"):
-    question = st.text_input(
-        "Enter your question:",
-        placeholder="Example: Ask about AV systems, uploaded documents, products, troubleshooting, or current web information.",
-        key="question_input"
-    )
+question = st.text_area(
+    "Message AV Intelligence Assistant",
+    placeholder="Ask about AV systems, uploaded documents, products, troubleshooting, or current technical information...",
+    key="question_input",
+    height=90
+)
 
-    submitted = st.form_submit_button(
-        "Ask AV Assistant",
-        type="primary"
+send_col1, send_col2 = st.columns([12, 1])
+
+with send_col2:
+    submitted = st.button(
+        "↑",
+        type="primary",
+        use_container_width=True
     )
 
 if submitted:
@@ -1134,6 +1138,7 @@ if submitted:
             "role": "user",
             "content": question
         })
+        st.session_state.question_input = ""
     if not question:
         st.warning("Please enter a question.")
 

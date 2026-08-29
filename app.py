@@ -1459,20 +1459,38 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
             "الخبرات المهنية",
             "الخبرة المهنية",
         ]
-        
+        cv_summary_phrases = (
+            "what in the cv",
+            "what is in the cv",
+            "what's in the cv",
+            "what is inside the cv",
+            "what does the cv contain",
+            "summarize the cv",
+            "summarise the cv",
+            "summary of the cv",
+            "tell me about the cv",
+            "what is in the resume",
+            "what's in the resume",
+            "summarize the resume",
+            "tell me about the resume",
+            "شو في بال cv",
+            "شو في بالسيرة الذاتية",
+            "شو موجود بالسيرة الذاتية",
+            "لخص ال cv",
+            "لخص السيرة الذاتية",
+        )
         is_summary_question = (
             any(
                 phrase in question_lower
                 for phrase in summary_phrases
             )
+            or any(
+                phrase in question_lower
+                for phrase in cv_summary_phrases
+            )
             or question_lower.startswith("summarize ")
             or question_lower.startswith("summarise ")
         )
-        is_profile_recommendation_question_early = (
-            any(
-                term in question_lower
-                for term in ("certification", "certifications")
-            )
             and any(
                 cue in question_lower
                 for cue in ("should", "recommend", "next", "pursue")
@@ -1936,8 +1954,25 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
         subject_found = False
 
         if is_summary_question:
+            summary_pages = document_pages
+            
+            if any(
+                phrase in question_lower
+                for phrase in cv_summary_phrases
+            ):
+                cv_pages = [
+                    page
+                    for page in document_pages
+                    if (
+                        "cv" in page.get("source", "").lower()
+                        or "resume" in page.get("source", "").lower()
+                    )
+                ]
+            
+                if cv_pages:
+                    summary_pages = cv_pages
             full_document_text = "\n".join(
-                page["text"] for page in document_pages
+                page["text"] for page in summary_pages
             )
         
             full_document_lower = full_document_text.lower()
@@ -2615,13 +2650,20 @@ WEB CONTEXT:
         {context}
         
         Based only on the context above, answer the following question.
+        For CV or resume summaries:
+        - Use only facts explicitly stated in the provided CV/resume context.
+        - Preserve the person's name, job title, employer, certification status, and training names exactly as stated in the source.
+        - Never convert training, preparation, coursework, or exam preparation into an earned certification.
+        - Do not infer seniority, expertise level, employer, job title, sectors, responsibilities, or achievements unless explicitly stated.
+        - If multiple documents are uploaded, summarize only the CV/resume content relevant to the user's request and do not mix in unrelated document content.
+        - Keep the summary concise and factual.
         
         Question: {question}
         
         {summary_instruction}
         Do not repeat or rephrase the question.
         Do not write a question.
-        Do not include certifications or languages.
+        If the question specifically asks about professional experience, do not include certifications or languages. For a general CV/resume summary, certifications and training may be included only when explicitly stated in the source.
         
         Answer:
         """

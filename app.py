@@ -2651,7 +2651,37 @@ WEB CONTEXT:
             )
                     
         if is_summary_question:
-            prompt = f"""
+            is_cv_summary_request = any(
+                phrase in question_lower
+                for phrase in cv_summary_phrases
+            )
+        
+            if is_cv_summary_request:
+                prompt = f"""
+        You are summarizing a CV/resume.
+        
+        CV CONTENT:
+        {context}
+        
+        USER QUESTION:
+        {question}
+        
+        STRICT RULES:
+        - Use ONLY information explicitly present in CV CONTENT.
+        - Do not infer or invent facts.
+        - Preserve the person's exact name exactly as written in the CV.
+        - Preserve job titles and employer names exactly as written.
+        - Preserve certification and training names exactly as written.
+        - "AVIXA CTS Preparation" must remain exactly "AVIXA CTS Preparation".
+        - Never convert preparation, training, courses, or levels into earned certifications.
+        - Do not mention ELV, immersive AV, AR, VR, or user training unless those facts appear explicitly in the CV.
+        - Keep the answer concise and professional.
+        - Return only the CV summary.
+        
+        Answer:
+        """
+            else:
+                prompt = f"""
         Context:
         {context}
         

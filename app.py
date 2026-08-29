@@ -3545,7 +3545,7 @@ WEB CONTEXT:
             for phrase in cv_summary_phrases
         )
         
-        if is_cv_summary_request:
+        if is_cv_summary_request and direct_answer is None:
             cv_text = "\n".join(
                 page.get("text", "")
                 for page in document_pages

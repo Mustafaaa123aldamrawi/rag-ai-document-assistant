@@ -1306,6 +1306,7 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
             answer = normalize_model_names(answer)
             answer = polish_arabic_answer(answer)
             answer = clean_arabic_av_phrasing(answer)
+            
 
             # Keep Web Only answers in the same language as the user's question
             web_only_user_used_arabic = bool(
@@ -3402,7 +3403,30 @@ WEB CONTEXT:
             lambda match: match.group(1).replace(", ", ""),
             answer
         )
+        # Deterministic CV summary guard
+        is_cv_summary_request = any(
+            phrase in question_lower
+            for phrase in cv_summary_phrases
+        )
         
+        if is_cv_summary_request:
+            cv_text = "\n".join(
+                page.get("text", "")
+                for page in document_pages
+                if (
+                    "cv" in page.get("source", "").lower()
+                    or "resume" in page.get("source", "").lower()
+                )
+            )
+        
+            # Preserve AVIXA CTS Preparation status exactly
+            if "avixa cts preparation" in cv_text.lower():
+                answer = re.sub(
+                    r"AVIXA\s+CTS(?:\s+certification)?(?:\s+in\s+preparation)?",
+                    "AVIXA CTS Preparation",
+                    answer,
+                    flags=re.IGNORECASE,
+                )
         # Detect whether the user asked in Arabic
         user_used_arabic = bool(
             re.search(r"[\u0600-\u06FF]", question)

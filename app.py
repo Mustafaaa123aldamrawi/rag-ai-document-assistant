@@ -2119,7 +2119,7 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
                         context = full_document_text[start:]
         is_document_focused_question = False
         
-        if search_mode == "Documents + Web":
+        if search_mode == "Documents + Web" and not is_casual_chat:
             
             document_only_phrases = (
                 "what does the document say",

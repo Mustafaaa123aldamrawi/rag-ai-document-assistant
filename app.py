@@ -2662,6 +2662,9 @@ WEB CONTEXT:
         - Do not infer seniority, expertise level, employer, job title, sectors, responsibilities, or achievements unless explicitly stated.
         - If multiple documents are uploaded, summarize only the CV/resume content relevant to the user's request and do not mix in unrelated document content.
         - Keep the summary concise and factual.
+        - Use the person's exact name as written in the CV/resume. Never rewrite, normalize, translate, or guess the name.
+        - When mentioning certifications, training, preparation, courses, or badges, preserve the exact status and wording from the source. Do not shorten or upgrade them into an earned certification.
+        - Never rewrite "Preparation", "Training", "Course", "Level", or similar learning status as a completed certification unless the source explicitly states it was earned.
         
         Question: {question}
         

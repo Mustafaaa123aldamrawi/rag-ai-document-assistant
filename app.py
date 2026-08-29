@@ -3421,12 +3421,33 @@ WEB CONTEXT:
         
             # Preserve AVIXA CTS Preparation status exactly
             if "avixa cts preparation" in cv_text.lower():
-                answer = re.sub(
-                    r"AVIXA\s+CTS(?:\s+certification)?(?:\s+in\s+preparation)?",
+               answer = re.sub(
+                    r"(?:AVIXA\s+CTS(?:\s+certification)?(?:\s+in\s+preparation)?|"
+                    r"preparation\s+for\s+AVIXA\s+CTS)",
                     "AVIXA CTS Preparation",
                     answer,
                     flags=re.IGNORECASE,
                 )
+        # Preserve the exact name from the CV when available
+        cv_lines = [
+            line.strip()
+            for line in cv_text.splitlines()
+            if line.strip()
+        ]
+    
+        if cv_lines:
+            canonical_cv_name = cv_lines[0]
+    
+            if canonical_cv_name:
+                name_candidates = re.findall(
+                    r"\bMustafa\s+[A-Za-z][A-Za-z'-]+\b",
+                    answer,
+                    flags=re.IGNORECASE,
+                )
+    
+                for candidate in name_candidates:
+                    if candidate.lower() != canonical_cv_name.lower():
+                        answer = answer.replace(candidate, canonical_cv_name)
         # Detect whether the user asked in Arabic
         user_used_arabic = bool(
             re.search(r"[\u0600-\u06FF]", question)

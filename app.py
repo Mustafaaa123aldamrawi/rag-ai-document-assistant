@@ -2657,29 +2657,113 @@ WEB CONTEXT:
             )
         
             if is_cv_summary_request:
-                prompt = f"""
-        You are summarizing a CV/resume.
-        
-        CV CONTENT:
-        {context}
-        
-        USER QUESTION:
-        {question}
-        
-        STRICT RULES:
-        - Use ONLY information explicitly present in CV CONTENT.
-        - Do not infer or invent facts.
-        - Preserve the person's exact name exactly as written in the CV.
-        - Preserve job titles and employer names exactly as written.
-        - Preserve certification and training names exactly as written.
-        - "AVIXA CTS Preparation" must remain exactly "AVIXA CTS Preparation".
-        - Never convert preparation, training, courses, or levels into earned certifications.
-        - Do not mention ELV, immersive AV, AR, VR, or user training unless those facts appear explicitly in the CV.
-        - Keep the answer concise and professional.
-        - Return only the CV summary.
-        
-        Answer:
-        """
+                cv_full_text = context
+            
+                def extract_cv_section(text, start_heading, end_headings):
+                    text_lower = text.lower()
+                    start = text_lower.find(start_heading.lower())
+            
+                    if start == -1:
+                        return ""
+            
+                    start += len(start_heading)
+            
+                    end_positions = [
+                        text_lower.find(heading.lower(), start)
+                        for heading in end_headings
+                        if text_lower.find(heading.lower(), start) != -1
+                    ]
+            
+                    if end_positions:
+                        end = min(end_positions)
+                        return text[start:end].strip()
+            
+                    return text[start:].strip()
+            
+                cv_lines = [
+                    line.strip()
+                    for line in cv_full_text.splitlines()
+                    if line.strip()
+                ]
+            
+                cv_name = ""
+
+                for line in cv_lines:
+                    if (
+                        not line.startswith("[DOC ")
+                        and not line.lower().startswith("source:")
+                        and not line.lower().startswith("page:")
+                        and not line.isdigit()
+                    ):
+                        cv_name = line
+                        break
+            
+                professional_summary = extract_cv_section(
+                    cv_full_text,
+                    "Professional Summary",
+                    [
+                        "Professional Experience",
+                        "Core Skills",
+                        "Certifications & Training",
+                        "Languages",
+                    ],
+                )
+            
+                professional_experience = extract_cv_section(
+                    cv_full_text,
+                    "Professional Experience",
+                    [
+                        "Core Skills",
+                        "Certifications & Training",
+                        "Languages",
+                    ],
+                )
+            
+                core_skills = extract_cv_section(
+                    cv_full_text,
+                    "Core Skills",
+                    [
+                        "Certifications & Training",
+                        "Languages",
+                    ],
+                )
+            
+                certifications_training = extract_cv_section(
+                    cv_full_text,
+                    "Certifications & Training",
+                    [
+                        "Languages",
+                    ],
+                )
+            
+                languages = extract_cv_section(
+                    cv_full_text,
+                    "Languages",
+                    [],
+                )
+            
+                direct_answer = f"""
+            **{cv_name}**
+            
+            **Professional Summary**
+            {professional_summary}
+            
+            **Professional Experience**
+            {professional_experience}
+            
+            **Core Skills**
+            {core_skills}
+            
+            **Certifications & Training**
+            {certifications_training}
+            
+            **Languages**
+            {languages}
+            """.strip()
+            cv_doc_number = get_doc_number_for_phrase(cv_name)
+
+            if cv_doc_number and f"[DOC {cv_doc_number}]" not in direct_answer:
+                direct_answer += f"\n\n[DOC {cv_doc_number}]"
             else:
                 prompt = f"""
         Context:

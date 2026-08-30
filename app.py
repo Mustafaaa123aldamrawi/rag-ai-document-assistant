@@ -162,7 +162,7 @@ def call_conversation_llm(prompt):
         raise Exception(
             "No compatible conversation model is currently available."
         )
-    
+    st.write("DEBUG conversation model:", selected_model)
     payload = {
         "model": selected_model,
         "messages": [

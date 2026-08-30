@@ -3604,7 +3604,44 @@ WEB CONTEXT:
                         "Qwen/Qwen2.5-Coder-32B-Instruct",
                     ]
                 ).strip().upper()
+                if dialect_quality_result.startswith("FAIL"):
+                    final_dialect_fix_prompt = f"""
+        Rewrite the answer below into genuinely natural Jordanian/Levantine spoken Arabic.
         
+        ORIGINAL USER MESSAGE:
+        {question}
+        
+        ANSWER TO FIX:
+        {direct_answer}
+        
+        The previous quality review marked this answer as FAIL.
+        
+        STRICT REQUIREMENTS:
+        - Use natural Jordanian/Levantine colloquial Arabic only.
+        - Remove formal Modern Standard Arabic wording.
+        - Do NOT use Egyptian, Iraqi, Gulf, or Maghrebi expressions.
+        - Do not translate literally from English.
+        - Use short, natural sentences a Jordanian speaker would actually say.
+        - Preserve the original meaning and advice.
+        - Do not add new facts.
+        - Match the user's casual tone and emojis.
+        - Avoid awkward phrases or unnatural grammar.
+        - Return ONLY the corrected answer.
+        
+        STYLE EXAMPLES:
+        "ممكن تطلع تتمشى شوي وتغير جو."
+        "إذا مش طايق تعمل إشي، اقعد وروّق واحضرلك فيلم."
+        "خدلك بريك من الشغل اليوم، شكلك شبعت منه 😂."
+        """
+        
+                    direct_answer = call_conversation_llm(
+                        final_dialect_fix_prompt,
+                        temperature=0.2,
+                        preferred_models_override=[
+                            "openai/gpt-oss-20b",
+                            "Qwen/Qwen2.5-Coder-32B-Instruct",
+                        ]
+                    ).strip()
                 st.write(
                     "DEBUG dialect quality:",
                     dialect_quality_result

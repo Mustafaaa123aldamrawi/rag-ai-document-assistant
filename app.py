@@ -3559,6 +3559,48 @@ WEB CONTEXT:
                             corrective_dialect_prompt,
                             temperature=0.2
                         ).strip()
+                        dialect_quality_prompt = f"""
+            Evaluate whether the following answer sounds genuinely natural in spoken Jordanian/Levantine Arabic.
+            
+            ORIGINAL USER MESSAGE:
+            {question}
+            
+            ANSWER:
+            {direct_answer}
+            
+            Check for:
+            - unnatural or broken Arabic
+            - translated-sounding sentences
+            - Modern Standard Arabic wording
+            - Egyptian, Iraqi, Gulf, or Maghrebi expressions
+            - phrases a Jordanian/Levantine speaker would normally not say
+            - grammar or word choices that sound strange in casual conversation
+            
+            Examples of FAIL:
+            - "ما قدرت تنطح من الشغل"
+            - "اليوم ما بيخلص بكيفية"
+            - "يمكنك الذهاب والاسترخاء قليلاً"
+            - "بجد لا تفتكر"
+            - "شكو ماكو"
+            - "بزاف"
+            
+            Return exactly:
+            PASS
+            
+            or:
+            
+            FAIL
+            """
+            
+                    dialect_quality_result = call_conversation_llm(
+                        dialect_quality_prompt,
+                        temperature=0.1
+                    ).strip().upper()
+            
+                    st.write(
+                        "DEBUG dialect quality:",
+                        dialect_quality_result
+                    )
             except Exception as e:
                 direct_answer = f"AI model error: {e}"
             

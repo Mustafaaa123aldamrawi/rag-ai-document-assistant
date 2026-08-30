@@ -1195,14 +1195,85 @@ if submitted:
     - Return ONLY one word: CASUAL or TASK.
     """
     detected_conversation_style = "NEUTRAL"
-
+    # Strong dialect hints before LLM classification
+    dialect_hint = None
+    
+    levantine_cues = (
+        "شو",
+        "ليش",
+        "كيفك",
+        "وين",
+        "هيك",
+        "هلق",
+        "هلأ",
+        "بدي",
+        "بدك",
+        "بدنا",
+        "بزبط",
+        "زهقت",
+        "بتنصحني",
+        "احكيلي",
+        "قلي",
+        "عندي",
+        "معي",
+        "مو",
+        "مش",
+    )
+    
+    egyptian_cues = (
+        "ازيك",
+        "إزيك",
+        "عايز",
+        "عاوز",
+        "ليه",
+        "كده",
+        "إيه",
+        "ايه",
+        "مش عارف",
+    )
+    
+    iraqi_cues = (
+        "شلون",
+        "شكو",
+        "اكو",
+        "أكو",
+        "شنو",
+        "هواية",
+        "ليش هيج",
+    )
+    
+    gulf_cues = (
+        "وش",
+        "وشو",
+        "شلونك",
+        "أبي",
+        "ابغى",
+        "أبغى",
+        "وشلون",
+    )
+    
+    if any(cue in question_lower for cue in levantine_cues):
+        dialect_hint = "LEVANTINE"
+    
+    elif any(cue in question_lower for cue in egyptian_cues):
+        dialect_hint = "EGYPTIAN"
+    
+    elif any(cue in question_lower for cue in iraqi_cues):
+        dialect_hint = "IRAQI"
+    
+    elif any(cue in question_lower for cue in gulf_cues):
+        dialect_hint = "GULF"
     if question:
         try:
             router_result = call_qwen_llm(router_prompt).strip().upper()
             is_casual_chat = router_result.startswith("CASUAL")
 
             if is_casual_chat and question:
-                dialect_prompt = f"""
+                if dialect_hint:
+                    detected_conversation_style = dialect_hint
+            
+                else:
+                    dialect_prompt = f"""
             Detect the user's language and speaking style from the CURRENT MESSAGE and recent conversation.
             
             Recent conversation:

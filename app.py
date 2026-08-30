@@ -1148,41 +1148,61 @@ if submitted:
         })
     question_lower = question.lower() if question else ""
 
-    casual_chat_phrases = (
-        "hi",
-        "hello",
-        "hey",
-        "how are you",
-        "how are you doing",
-        "good morning",
-        "good afternoon",
-        "good evening",
-        "tell me a joke",
-        "tell me something funny",
-        "مرحبا",
-        "مرحباً",
-        "هلا",
-        "اهلا",
-        "أهلا",
-        "كيفك",
-        "كيف حالك",
-        "شو اخبارك",
-        "شو أخبارك",
-        "احكيلي نكتة",
-        "قلي نكتة",
-        "نكتة",
-    )
+    # Intelligent conversation router
+    router_history = ""
     
-    is_casual_chat = (
-        question_lower.strip() in casual_chat_phrases
-        or question_lower.strip().startswith(
-            (
-                "tell me a joke",
-                "احكيلي نكتة",
-                "قلي نكتة",
-            )
-        )
-    )    
+    for message in st.session_state.messages[-5:-1]:
+        role = "User" if message["role"] == "user" else "Assistant"
+        router_history += f"{role}: {message['content']}\n"
+    
+    router_prompt = f"""
+    Classify the user's CURRENT MESSAGE into exactly one category:
+    
+    CASUAL
+    or
+    TASK
+    
+    CASUAL means:
+    - normal conversation
+    - greetings
+    - jokes
+    - opinions
+    - everyday questions
+    - personal discussion
+    - emotional/supportive conversation
+    - general chatting
+    - anything that can be answered naturally without document retrieval or web research
+    
+    TASK means:
+    - AV/UC technical questions
+    - troubleshooting
+    - product specifications
+    - project management work
+    - questions about uploaded documents
+    - questions requiring current/latest web information
+    - research
+    - comparisons that require factual research
+    - professional work requests
+    
+    Recent conversation:
+    {router_history}
+    
+    Current message:
+    {question}
+    
+    Important:
+    - Use recent conversation to understand short follow-ups such as "why?", "what about that?", "ليش؟", or "طيب وبعدين؟"
+    - Return ONLY one word: CASUAL or TASK.
+    """
+    
+    if question:
+        try:
+            router_result = call_qwen_llm(router_prompt).strip().upper()
+            is_casual_chat = router_result.startswith("CASUAL")
+        except Exception:
+            is_casual_chat = False
+    else:
+        is_casual_chat = False   
     if not question:
         st.warning("Please enter a question.")
 

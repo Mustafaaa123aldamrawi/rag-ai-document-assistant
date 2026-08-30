@@ -1320,7 +1320,7 @@ if submitted:
         is_casual_chat = False 
     # Deterministic dialect hints always take priority
     if dialect_hint:
-    detected_conversation_style = dialect_hint
+        detected_conversation_style = dialect_hint
     if is_casual_chat:
         st.write("DEBUG dialect:", detected_conversation_style)
     if not question:

@@ -3601,8 +3601,8 @@ WEB CONTEXT:
                     "DEBUG dialect quality:",
                     dialect_quality_result
                 )
-        except Exception as e:
-            direct_answer = f"AI model error: {e}"
+            except Exception as e:
+                direct_answer = f"AI model error: {e}"
             
             if direct_answer is not None:
                 answer = direct_answer

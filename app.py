@@ -3556,6 +3556,9 @@ WEB CONTEXT:
             - Do not add new advice or facts.
             - Match the user's casual wording, tone, and emoji style.
             - Make the result sound like a real casual conversation.
+            - Always finish the response with complete, grammatically finished sentences.
+            - Prefer native Jordanian forms such as "خدلك", "اطلع تمشى", "روق شوي" when they fit naturally.
+            - Never end the answer with an incomplete phrase or unfinished sentence.
             - Return ONLY the corrected answer.
             """
             
@@ -3626,6 +3629,9 @@ WEB CONTEXT:
         - Do not add new facts.
         - Match the user's casual tone and emojis.
         - Avoid awkward phrases or unnatural grammar.
+        - Always finish the response with complete, grammatically finished sentences.
+        - Prefer native Jordanian forms such as "خدلك", "اطلع تمشى", "روق شوي" when they fit naturally.
+        - Never end the answer with an incomplete phrase or unfinished sentence.
         - Return ONLY the corrected answer.
         
         STYLE EXAMPLES:

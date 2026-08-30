@@ -3453,7 +3453,7 @@ WEB CONTEXT:
             """
         
             try:
-                direct_answer = call_qwen_llm(casual_prompt)
+                direct_answer = call_conversation_llm(casual_prompt)
             
                 if (
                     direct_answer
@@ -3481,12 +3481,8 @@ WEB CONTEXT:
             - Return ONLY the rewritten answer.
             """
             
-                    direct_answer = call_qwen_llm(
-                        dialect_rewrite_prompt,
-                        preferred_models_override=[
-                            "openai/gpt-oss-20b",
-                            "Qwen/Qwen2.5-Coder-32B-Instruct",
-                        ],
+                    direct_answer = call_conversation_llm(
+                        dialect_rewrite_prompt
                     ).strip()
             
             except Exception as e:

@@ -3353,10 +3353,42 @@ WEB CONTEXT:
         
             try:
                 direct_answer = call_qwen_llm(casual_prompt)
+            
+                if (
+                    direct_answer
+                    and detected_conversation_style == "LEVANTINE"
+                ):
+                    dialect_rewrite_prompt = f"""
+            Rewrite the answer below into natural Jordanian/Levantine colloquial Arabic.
+            
+            ORIGINAL USER MESSAGE:
+            {question}
+            
+            ANSWER TO REWRITE:
+            {direct_answer}
+            
+            STRICT RULES:
+            - Preserve the meaning exactly.
+            - Do not add new facts or advice.
+            - Use natural spoken Jordanian/Levantine Arabic only.
+            - Do NOT use Modern Standard Arabic.
+            - Do NOT use Egyptian, Iraqi, Gulf, or Maghrebi expressions.
+            - Match the user's casual wording and energy.
+            - Sound spontaneous and human-like, not translated or formal.
+            - Keep appropriate emojis naturally.
+            - Do not add a generic closing question unless it genuinely fits.
+            - Return ONLY the rewritten answer.
+            """
+            
+                    direct_answer = call_qwen_llm(
+                        dialect_rewrite_prompt
+                    ).strip()
+            
             except Exception as e:
                 direct_answer = f"AI model error: {e}"
-        if direct_answer is not None:
-            answer = direct_answer
+            
+            if direct_answer is not None:
+                answer = direct_answer
         else:
             with st.spinner("Analyzing sources and preparing your answer..."):
                 try:

@@ -1263,6 +1263,12 @@ if submitted:
     
     elif any(cue in question_lower for cue in gulf_cues):
         dialect_hint = "GULF"
+    st.write("DEBUG question_lower:", repr(question_lower))
+    st.write("DEBUG شو match:", "شو" in question_lower)
+    st.write(
+        "DEBUG Levantine matches:",
+        [cue for cue in levantine_cues if cue in question_lower]
+    )
     if question:
         try:
             router_result = call_qwen_llm(router_prompt).strip().upper()

@@ -109,7 +109,7 @@ def call_qwen_llm(prompt, preferred_models_override=None):
     data = response.json()
    
     return data["choices"][0]["message"].get("content", "")
-def call_conversation_llm(prompt):
+def call_conversation_llm(prompt, temperature=0.85):
     url = "https://router.huggingface.co/v1/chat/completions"
     
     headers = {
@@ -189,7 +189,7 @@ def call_conversation_llm(prompt):
                 "content": prompt
             }
         ],
-        "temperature": 0.85,
+        "temperature": temperature,
         "top_p": 0.9,
         "max_tokens": 1200,
     }

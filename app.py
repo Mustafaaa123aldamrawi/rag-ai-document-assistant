@@ -3506,7 +3506,59 @@ WEB CONTEXT:
                         dialect_rewrite_prompt,
                         temperature=0.3
                     ).strip()
+                    forbidden_dialect_terms = (
+                        "إيه",
+                        "ايه",
+                        "عايز",
+                        "عاوز",
+                        "كده",
+                        "بجد",
+                        "تفتكر",
+                        "شكو",
+                        "شنو",
+                        "هواية",
+                        "هيج",
+                        "بزاف",
+                        "واش",
+                    )
             
+                    found_wrong_terms = [
+                        term
+                        for term in forbidden_dialect_terms
+                        if term in direct_answer
+                    ]
+            
+                    if found_wrong_terms:
+                        corrective_dialect_prompt = f"""
+            The answer below is supposed to be natural Jordanian/Levantine Arabic, but it contains expressions from other Arabic dialects.
+            
+            ORIGINAL USER MESSAGE:
+            {question}
+            
+            CURRENT ANSWER:
+            {direct_answer}
+            
+            WRONG DIALECT EXPRESSIONS DETECTED:
+            {", ".join(found_wrong_terms)}
+            
+            Rewrite the answer again.
+            
+            STRICT RULES:
+            - Remove or naturally replace every detected wrong-dialect expression.
+            - Use ONLY natural Jordanian/Levantine colloquial Arabic.
+            - Do NOT use Egyptian, Iraqi, Gulf, or Maghrebi expressions.
+            - Do NOT use Modern Standard Arabic unless a word has no natural colloquial alternative.
+            - Keep the same meaning.
+            - Do not add new advice or facts.
+            - Match the user's casual wording, tone, and emoji style.
+            - Make the result sound like a real casual conversation.
+            - Return ONLY the corrected answer.
+            """
+            
+                        direct_answer = call_conversation_llm(
+                            corrective_dialect_prompt,
+                            temperature=0.2
+                        ).strip()
             except Exception as e:
                 direct_answer = f"AI model error: {e}"
             

@@ -3381,7 +3381,11 @@ WEB CONTEXT:
             """
             
                     direct_answer = call_qwen_llm(
-                        dialect_rewrite_prompt
+                        dialect_rewrite_prompt,
+                        preferred_models_override=[
+                            "openai/gpt-oss-20b",
+                            "Qwen/Qwen2.5-Coder-32B-Instruct",
+                        ],
                     ).strip()
             
             except Exception as e:

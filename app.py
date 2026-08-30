@@ -3609,35 +3609,39 @@ WEB CONTEXT:
                 ).strip().upper()
                 if dialect_quality_result.startswith("FAIL"):
                     final_dialect_fix_prompt = f"""
-        Rewrite the answer below into genuinely natural Jordanian/Levantine spoken Arabic.
+        Generate a completely new response from scratch.
         
         ORIGINAL USER MESSAGE:
         {question}
         
-        ANSWER TO FIX:
-        {direct_answer}
+        The previous response failed the dialect and naturalness quality review.
         
-        The previous quality review marked this answer as FAIL.
+        IMPORTANT:
+        - Do NOT repair, paraphrase, continue, or imitate the previous failed answer.
+        - Ignore the previous answer completely.
+        - Respond to the user's original message as if you are answering it for the first time.
         
-        STRICT REQUIREMENTS:
+        STYLE:
         - Use natural Jordanian/Levantine colloquial Arabic only.
-        - Remove formal Modern Standard Arabic wording.
+        - Do NOT use Modern Standard Arabic unless absolutely unavoidable.
         - Do NOT use Egyptian, Iraqi, Gulf, or Maghrebi expressions.
-        - Do not translate literally from English.
-        - Use short, natural sentences a Jordanian speaker would actually say.
-        - Preserve the original meaning and advice.
-        - Do not add new facts.
-        - Match the user's casual tone and emojis.
-        - Avoid awkward phrases or unnatural grammar.
-        - Always finish the response with complete, grammatically finished sentences.
-        - Prefer native Jordanian forms such as "خدلك", "اطلع تمشى", "روق شوي" when they fit naturally.
-        - Never end the answer with an incomplete phrase or unfinished sentence.
-        - Return ONLY the corrected answer.
+        - Match the user's wording, energy, and emoji style.
+        - Sound relaxed, spontaneous, warm, and conversational.
+        - Use short, natural sentences that a Jordanian/Levantine speaker would actually say.
+        - Do not sound translated from English.
+        - Do not use awkward or invented expressions.
+        - Do not over-explain simple casual messages.
+        - If the user asks for a joke, give a simple, clear, genuinely understandable joke.
+        - If the user asks for an opinion, give a real concise opinion.
+        - If the user is tired, annoyed, happy, or joking, respond naturally to that mood.
+        - Use emojis naturally when they fit.
+        - Always finish the response with complete sentences.
+        - Return ONLY the new final response.
         
-        STYLE EXAMPLES:
-        "ممكن تطلع تتمشى شوي وتغير جو."
-        "إذا مش طايق تعمل إشي، اقعد وروّق واحضرلك فيلم."
-        "خدلك بريك من الشغل اليوم، شكلك شبعت منه 😂."
+        NATURAL STYLE EXAMPLES:
+        "خدلك بريك وروّق شوي، شكلك شبعت من الشغل اليوم 😂."
+        "شو رأيك تطلع تتمشى شوي أو تشربلك قهوة وتغير جو؟"
+        "ولك حاضر 😂 اسمع هاي..."
         """
         
                     direct_answer = call_conversation_llm(

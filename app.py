@@ -110,106 +110,106 @@ def call_qwen_llm(prompt, preferred_models_override=None):
    
     return data["choices"][0]["message"].get("content", "")
 def call_conversation_llm(prompt):
-url = "https://router.huggingface.co/v1/chat/completions"
-
-headers = {
-    "Authorization": f"Bearer {st.secrets['HF_TOKEN']}",
-    "Content-Type": "application/json"
-}
-
-models_url = "https://router.huggingface.co/v1/models"
-
-models_response = requests.get(
-    models_url,
-    headers=headers,
-    timeout=30
-)
-
-if not models_response.ok:
-    raise Exception(
-        f"Hugging Face models API error "
-        f"{models_response.status_code}: {models_response.text}"
+    url = "https://router.huggingface.co/v1/chat/completions"
+    
+    headers = {
+        "Authorization": f"Bearer {st.secrets['HF_TOKEN']}",
+        "Content-Type": "application/json"
+    }
+    
+    models_url = "https://router.huggingface.co/v1/models"
+    
+    models_response = requests.get(
+        models_url,
+        headers=headers,
+        timeout=30
     )
-
-models_data = models_response.json().get("data", [])
-
-conversation_models = [
-    "Qwen/Qwen2.5-72B-Instruct",
-    "Qwen/Qwen2.5-32B-Instruct",
-    "Qwen/Qwen2.5-14B-Instruct",
-    "openai/gpt-oss-20b",
-    "Qwen/Qwen2.5-Coder-32B-Instruct",
-    "google/gemma-2-9b-it",
-    "google/gemma-2-2b-it",
-]
-
-available_model_ids = {
-    model.get("id")
-    for model in models_data
-    if model.get("id")
-}
-
-selected_model = next(
-    (
-        model_id
-        for model_id in conversation_models
-        if model_id in available_model_ids
-    ),
-    None
-)
-
-if selected_model is None:
-    raise Exception(
-        "No compatible conversation model is currently available."
+    
+    if not models_response.ok:
+        raise Exception(
+            f"Hugging Face models API error "
+            f"{models_response.status_code}: {models_response.text}"
+        )
+    
+    models_data = models_response.json().get("data", [])
+    
+    conversation_models = [
+        "Qwen/Qwen2.5-72B-Instruct",
+        "Qwen/Qwen2.5-32B-Instruct",
+        "Qwen/Qwen2.5-14B-Instruct",
+        "openai/gpt-oss-20b",
+        "Qwen/Qwen2.5-Coder-32B-Instruct",
+        "google/gemma-2-9b-it",
+        "google/gemma-2-2b-it",
+    ]
+    
+    available_model_ids = {
+        model.get("id")
+        for model in models_data
+        if model.get("id")
+    }
+    
+    selected_model = next(
+        (
+            model_id
+            for model_id in conversation_models
+            if model_id in available_model_ids
+        ),
+        None
     )
-
-payload = {
-    "model": selected_model,
-    "messages": [
-        {
-            "role": "system",
-            "content": (
-                "You are AV Intelligence Assistant. "
-                "For normal conversation, behave as a warm, natural, "
-                "context-aware conversational assistant. "
-                "Follow the user's language, dialect, tone, and level of formality. "
-                "When the user speaks colloquial Arabic, reply in the same detected "
-                "Arabic dialect naturally and consistently. "
-                "Do not mix Arabic dialects. "
-                "Do not default to Modern Standard Arabic when the user is speaking colloquially. "
-                "Be relaxed, expressive, and conversational rather than formal or robotic. "
-                "Use emojis naturally when appropriate. "
-                "Maintain conversation context. "
-                "Do not search documents or invent technical grounding for casual conversation. "
-                "If directly asked whether you are human, answer truthfully that you are an AI assistant."
-            )
-        },
-        {
-            "role": "user",
-            "content": prompt
-        }
-    ],
-    "temperature": 0.85,
-    "top_p": 0.9,
-    "max_tokens": 1200,
-}
-
-response = requests.post(
-    url,
-    headers=headers,
-    json=payload,
-    timeout=60
-)
-
-if not response.ok:
-    raise Exception(
-        f"Hugging Face conversation API error "
-        f"{response.status_code}: {response.text}"
+    
+    if selected_model is None:
+        raise Exception(
+            "No compatible conversation model is currently available."
+        )
+    
+    payload = {
+        "model": selected_model,
+        "messages": [
+            {
+                "role": "system",
+                "content": (
+                    "You are AV Intelligence Assistant. "
+                    "For normal conversation, behave as a warm, natural, "
+                    "context-aware conversational assistant. "
+                    "Follow the user's language, dialect, tone, and level of formality. "
+                    "When the user speaks colloquial Arabic, reply in the same detected "
+                    "Arabic dialect naturally and consistently. "
+                    "Do not mix Arabic dialects. "
+                    "Do not default to Modern Standard Arabic when the user is speaking colloquially. "
+                    "Be relaxed, expressive, and conversational rather than formal or robotic. "
+                    "Use emojis naturally when appropriate. "
+                    "Maintain conversation context. "
+                    "Do not search documents or invent technical grounding for casual conversation. "
+                    "If directly asked whether you are human, answer truthfully that you are an AI assistant."
+                )
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        "temperature": 0.85,
+        "top_p": 0.9,
+        "max_tokens": 1200,
+    }
+    
+    response = requests.post(
+        url,
+        headers=headers,
+        json=payload,
+        timeout=60
     )
-
-data = response.json()
-
-return data["choices"][0]["message"].get("content", "")
+    
+    if not response.ok:
+        raise Exception(
+            f"Hugging Face conversation API error "
+            f"{response.status_code}: {response.text}"
+        )
+    
+    data = response.json()
+    
+    return data["choices"][0]["message"].get("content", "")
 def get_source_trust_score(title, url, source_type):
     title_lower = title.lower()
     url_lower = url.lower()

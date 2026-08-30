@@ -109,7 +109,11 @@ def call_qwen_llm(prompt, preferred_models_override=None):
     data = response.json()
    
     return data["choices"][0]["message"].get("content", "")
-def call_conversation_llm(prompt, temperature=0.85):
+def call_conversation_llm(
+    prompt,
+    temperature=0.85,
+    preferred_models_override=None
+):
     url = "https://router.huggingface.co/v1/chat/completions"
     
     headers = {
@@ -133,7 +137,7 @@ def call_conversation_llm(prompt, temperature=0.85):
     
     models_data = models_response.json().get("data", [])
     
-    conversation_models = [
+    conversation_models = preferred_models_override or [
         "Qwen/Qwen2.5-72B-Instruct",
         "Qwen/Qwen2.5-32B-Instruct",
         "Qwen/Qwen2.5-14B-Instruct",
@@ -3594,7 +3598,11 @@ WEB CONTEXT:
         
                 dialect_quality_result = call_conversation_llm(
                     dialect_quality_prompt,
-                    temperature=0.1
+                    temperature=0.1,
+                    preferred_models_override=[
+                        "openai/gpt-oss-20b",
+                        "Qwen/Qwen2.5-Coder-32B-Instruct",
+                    ]
                 ).strip().upper()
         
                 st.write(

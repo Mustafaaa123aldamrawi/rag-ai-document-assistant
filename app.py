@@ -1194,15 +1194,55 @@ if submitted:
     - Use recent conversation to understand short follow-ups such as "why?", "what about that?", "ليش؟", or "طيب وبعدين؟"
     - Return ONLY one word: CASUAL or TASK.
     """
-    
+    detected_conversation_style = "NEUTRAL"
+
     if question:
         try:
             router_result = call_qwen_llm(router_prompt).strip().upper()
             is_casual_chat = router_result.startswith("CASUAL")
+
+            if is_casual_chat and question:
+                dialect_prompt = f"""
+            Detect the user's language and speaking style from the CURRENT MESSAGE and recent conversation.
+            
+            Recent conversation:
+            {router_history}
+            
+            Current message:
+            {question}
+            
+            Return exactly ONE label:
+            
+            LEVANTINE
+            EGYPTIAN
+            IRAQI
+            GULF
+            MAGHREBI
+            FORMAL_ARABIC
+            ENGLISH
+            OTHER
+            
+            Rules:
+            - Base the decision mainly on the user's own wording.
+            - Do not guess a regional dialect if the evidence is weak.
+            - Jordanian, Palestinian, Lebanese, and Syrian conversational Arabic should return LEVANTINE.
+            - Saudi, Emirati, Kuwaiti, Qatari, Bahraini, and Omani conversational Arabic should return GULF.
+            - If Arabic is colloquial but the exact dialect is uncertain, return OTHER.
+            - Return only the label and nothing else.
+            """
+            
+                try:
+                    detected_conversation_style = call_qwen_llm(
+                        dialect_prompt
+                    ).strip().upper()
+                except Exception:
+                    detected_conversation_style = "OTHER"
         except Exception:
             is_casual_chat = False
     else:
-        is_casual_chat = False   
+        is_casual_chat = False 
+    if is_casual_chat:
+        st.write("DEBUG dialect:", detected_conversation_style)
     if not question:
         st.warning("Please enter a question.")
 

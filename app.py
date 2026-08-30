@@ -3482,7 +3482,8 @@ WEB CONTEXT:
             """
             
                     direct_answer = call_conversation_llm(
-                        dialect_rewrite_prompt
+                        dialect_rewrite_prompt,
+                        temperature=0.3
                     ).strip()
             
             except Exception as e:

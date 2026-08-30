@@ -3214,7 +3214,54 @@ WEB CONTEXT:
             for message in st.session_state.messages[-7:-1]:
                 role = "User" if message["role"] == "user" else "Assistant"
                 casual_history += f"{role}: {message['content']}\n"
+        conversation_style_instruction = {
+            "LEVANTINE": """
+        Reply ONLY in natural Levantine/Jordanian-style colloquial Arabic.
         
+        Strict rules:
+        - Use spoken Levantine Arabic, not Modern Standard Arabic.
+        - Do not use Egyptian, Iraqi, Gulf, or Maghrebi expressions.
+        - Avoid formal wording and formal sentence structure.
+        - Match the user's own wording and rhythm as much as possible.
+        - Sound relaxed, spontaneous, and conversational.
+        """,
+        
+            "EGYPTIAN": """
+        Reply ONLY in natural Egyptian colloquial Arabic.
+        Do not mix Egyptian Arabic with other Arabic dialects or formal Arabic.
+        """,
+        
+            "IRAQI": """
+        Reply ONLY in natural Iraqi colloquial Arabic.
+        Do not mix Iraqi Arabic with other Arabic dialects or formal Arabic.
+        """,
+        
+            "GULF": """
+        Reply ONLY in natural Gulf colloquial Arabic matching the user's style.
+        Do not mix Gulf Arabic with other Arabic dialects or formal Arabic.
+        """,
+        
+            "MAGHREBI": """
+        Reply in the user's Maghrebi conversational Arabic style when confidently understood.
+        Do not mix it with unrelated Arabic dialects.
+        """,
+        
+            "FORMAL_ARABIC": """
+        Reply in clear Modern Standard Arabic because the user is speaking formally.
+        """,
+        
+            "ENGLISH": """
+        Reply naturally in English and match the user's conversational tone.
+        """,
+        
+            "OTHER": """
+        Reply in simple neutral conversational language.
+        For Arabic, avoid strongly regional expressions and avoid stiff formal Arabic.
+        """,
+        }.get(
+            detected_conversation_style,
+            "Match the user's natural conversational language and tone."
+        )
             casual_prompt = f"""
             You are AV Intelligence Assistant.
             
@@ -3225,6 +3272,11 @@ WEB CONTEXT:
             
             CURRENT USER MESSAGE:
             {question}
+            DETECTED CONVERSATION STYLE:
+            {detected_conversation_style}
+            
+            MANDATORY STYLE INSTRUCTION:
+            {conversation_style_instruction}
             
             LANGUAGE AND DIALECT RULES:
             

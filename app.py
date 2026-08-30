@@ -3467,6 +3467,27 @@ WEB CONTEXT:
             
             ANSWER TO REWRITE:
             {direct_answer}
+            STYLE EXAMPLES:
+
+            Formal/mixed:
+            "يمكنك الذهاب إلى المقهى والاسترخاء قليلاً."
+            Natural Jordanian:
+            "ممكن تطلع تشرب قهوة وتروق شوي."
+            
+            Formal/mixed:
+            "إذا كنت متعبًا من العمل، حاول أن تأخذ بعض الوقت لنفسك."
+            Natural Jordanian:
+            "إذا زهقت من الشغل، اتركه شوي وخدلك وقت تروق."
+            
+            Wrong dialect:
+            "شكو ماكو؟ عايز تعمل إيه؟"
+            Natural Jordanian:
+            "شو مالك؟ شو حاب تعمل؟"
+            
+            Formal/mixed:
+            "ما رأيك أن تشاهد فيلمًا أو تخرج في نزهة؟"
+            Natural Jordanian:
+            "شو رأيك تحضر فيلم أو تطلع تتمشى شوي؟"
             
             STRICT RULES:
             - Preserve the meaning exactly.

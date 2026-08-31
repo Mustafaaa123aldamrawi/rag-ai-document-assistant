@@ -3424,7 +3424,7 @@ WEB CONTEXT:
                     messages=casual_messages,
                     temperature=0.8,
                     preferred_models_override=[
-                        "CohereLabs/c4ai-command-r7b-arabic-02-2025"
+                        "CohereLabs/aya-expanse-32b"
                     ]
                 ).strip()
             

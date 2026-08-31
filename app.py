@@ -3458,11 +3458,18 @@ WEB CONTEXT:
             ANSWER:
             {direct_answer}
             
+            DETECTED STYLE:
+            {detected_conversation_style}
+            
             Rules:
             - Keep the same meaning.
             - Reply in the same language and dialect as the user.
-            - For Levantine/Jordanian Arabic, use natural spoken wording.
-            - Use only 1-3 short sentences.
+            - If detected style is LEVANTINE, write specifically in natural Jordanian/Levantine spoken Arabic.
+            - Do not repeat or restate the user's message.
+            - Avoid formal Arabic such as "يمكن", "استمع", "تواصل", "مارس", or textbook-style phrasing.
+            - Prefer natural Jordanian wording such as "خدلك بريك", "اطلع تمشى شوي", "روق", "احضرلك فيلم", "اشربلك قهوة" when appropriate.
+            - Do not force dialect expressions that do not fit naturally.
+            - Use only 1-3 short conversational sentences.
             - No lists.
             - No headings.
             - No step-by-step advice.

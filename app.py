@@ -3423,34 +3423,34 @@ WEB CONTEXT:
                 
                 if casual_needs_compaction:
                     compact_prompt = f"""
-            Rewrite the answer below as a short natural chat reply.
-            
-            ORIGINAL USER MESSAGE:
-            {question}
-            
-            ANSWER:
-            {direct_answer}
-            
-            DETECTED STYLE:
-            {detected_conversation_style}
-            
-            Rules:
-            - Keep the same meaning.
-            - Reply in the same language and dialect as the user.
-            - If detected style is LEVANTINE, write specifically in natural Jordanian/Levantine spoken Arabic.
-            - Do not repeat or restate the user's message.
-            - Avoid formal Arabic such as "يمكن", "استمع", "تواصل", "مارس", or textbook-style phrasing.
-            - Prefer natural Jordanian wording such as "خدلك بريك", "اطلع تمشى شوي", "روق", "احضرلك فيلم", "اشربلك قهوة" when appropriate.
-            - Do not force dialect expressions that do not fit naturally.
-            - Use only 1-3 short conversational sentences.
-            - No lists.
-            - No headings.
-            - No step-by-step advice.
-            - Remove repetition and unnecessary explanation.
-            - Do not add new advice or facts.
-            - Keep emojis only if they fit naturally.
-            - Return only the compact final reply.
-            """
+                Rewrite the answer below as a short natural chat reply.
+                
+                ORIGINAL USER MESSAGE:
+                {question}
+                
+                ANSWER:
+                {direct_answer}
+                
+                DETECTED STYLE:
+                {detected_conversation_style}
+                
+                Rules:
+                - Keep the same meaning.
+                - Reply in the same language and dialect as the user.
+                - If detected style is LEVANTINE, write specifically in natural Jordanian/Levantine spoken Arabic.
+                - Do not repeat or restate the user's message.
+                - Avoid formal Arabic such as "يمكن", "استمع", "تواصل", "مارس", or textbook-style phrasing.
+                - Prefer natural Jordanian wording such as "خدلك بريك", "اطلع تمشى شوي", "روق", "احضرلك فيلم", "اشربلك قهوة" when appropriate.
+                - Do not force dialect expressions that do not fit naturally.
+                - Use only 1-3 short conversational sentences.
+                - No lists.
+                - No headings.
+                - No step-by-step advice.
+                - Remove repetition and unnecessary explanation.
+                - Do not add new advice or facts.
+                - Keep emojis only if they fit naturally.
+                - Return only the compact final reply.
+                """
             
                 direct_answer = call_conversation_llm(
                     prompt=compact_prompt,

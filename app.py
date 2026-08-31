@@ -3660,7 +3660,29 @@ WEB CONTEXT:
                 direct_answer = f"AI model error: {e}"
             
             if direct_answer is not None:
-                answer = direct_answer
+                answer = direct_answer.strip()
+            
+                st.session_state.messages.append({
+                    "role": "assistant",
+                    "content": answer
+                })
+            
+                st.markdown(
+                    """
+                    <div style="padding:18px 20px; border-radius:16px; border:1px solid rgba(120,120,120,0.16); background:rgba(255,255,255,0.78); margin-top:14px; margin-bottom:10px;">
+                    <div style="font-size:24px; font-weight:750; margin-bottom:8px;">
+                    🤖 AI Answer
+                    </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+            
+                st.markdown(answer)
+            
+                # Casual conversation ends here.
+                # Never send casual answers through RAG/citation/technical post-processing.
+                st.stop()
         else:
             with st.spinner("Analyzing sources and preparing your answer..."):
                 try:

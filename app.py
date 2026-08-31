@@ -154,7 +154,24 @@ def call_conversation_llm(
         for model in models_data
         if model.get("id")
     }
-    
+    st.write(
+        "DEBUG available conversation models:",
+        sorted(
+            model_id
+            for model_id in available_model_ids
+            if any(
+                keyword in model_id.lower()
+                for keyword in (
+                    "qwen",
+                    "llama",
+                    "aya",
+                    "mistral",
+                    "gemma",
+                    "command",
+                )
+            )
+        )
+    )
     selected_model = next(
         (
             model_id

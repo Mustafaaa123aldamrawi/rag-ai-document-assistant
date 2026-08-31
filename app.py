@@ -3448,6 +3448,37 @@ WEB CONTEXT:
                     "DEBUG casual needs compaction:",
                     casual_needs_compaction
                 )
+            if casual_needs_compaction:
+                compact_prompt = f"""
+            Rewrite the answer below as a short natural chat reply.
+            
+            ORIGINAL USER MESSAGE:
+            {question}
+            
+            ANSWER:
+            {direct_answer}
+            
+            Rules:
+            - Keep the same meaning.
+            - Reply in the same language and dialect as the user.
+            - For Levantine/Jordanian Arabic, use natural spoken wording.
+            - Use only 1-3 short sentences.
+            - No lists.
+            - No headings.
+            - No step-by-step advice.
+            - Remove repetition and unnecessary explanation.
+            - Do not add new advice or facts.
+            - Keep emojis only if they fit naturally.
+            - Return only the compact final reply.
+            """
+            
+                direct_answer = call_conversation_llm(
+                    prompt=compact_prompt,
+                    temperature=0.2,
+                    preferred_models_override=[
+                        "CohereLabs/aya-expanse-32b"
+                    ]
+                ).strip()
             except Exception as e:
                 direct_answer = f"AI model error: {e}"
             

@@ -3350,6 +3350,9 @@ WEB CONTEXT:
             - Avoid formal wording and formal sentence structure.
             - Match the user's own wording and rhythm as much as possible.
             - Sound relaxed, spontaneous, and conversational.
+            - Prefer everyday Jordanian wording such as "اطلع", "احضر", "اسمع", "خدلك", "روق شوي", "شو رأيك".
+            - Avoid formal imperative words such as "اخرج", "استمع", "تواصل", "مارس", "خذ قيلولة" when a natural colloquial alternative exists.
+            - For simple casual questions, answer in 1-3 short conversational sentences unless the user asks for detailed advice.
             """,
             
                 "EGYPTIAN": """

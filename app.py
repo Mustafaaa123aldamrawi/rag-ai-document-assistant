@@ -3424,7 +3424,7 @@ WEB CONTEXT:
                     messages=casual_messages,
                     temperature=0.8,
                     preferred_models_override=[
-                        "meta-llama/Llama-3.3-70B-Instruct"
+                        "CohereLabs/aya-expanse-32b"
                     ]
                 ).strip()
             

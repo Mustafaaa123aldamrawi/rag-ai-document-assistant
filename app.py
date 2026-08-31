@@ -154,24 +154,7 @@ def call_conversation_llm(
         for model in models_data
         if model.get("id")
     }
-    st.write(
-        "DEBUG available conversation models:",
-        sorted(
-            model_id
-            for model_id in available_model_ids
-            if any(
-                keyword in model_id.lower()
-                for keyword in (
-                    "qwen",
-                    "llama",
-                    "aya",
-                    "mistral",
-                    "gemma",
-                    "command",
-                )
-            )
-        )
-    )
+    
     selected_model = next(
         (
             model_id
@@ -185,7 +168,7 @@ def call_conversation_llm(
         raise Exception(
             "No compatible conversation model is currently available."
         )
-    st.write("DEBUG conversation model:", selected_model)
+    
     if messages is None:
         conversation_messages = [
             {
@@ -1389,12 +1372,7 @@ if submitted:
     
     elif any(cue in question_lower for cue in gulf_cues):
         dialect_hint = "GULF"
-    st.write("DEBUG question_lower:", repr(question_lower))
-    st.write("DEBUG شو match:", "شو" in question_lower)
-    st.write(
-        "DEBUG Levantine matches:",
-        [cue for cue in levantine_cues if cue in question_lower]
-    )
+    
     if question:
         try:
             router_result = call_qwen_llm(router_prompt).strip().upper()
@@ -1447,8 +1425,7 @@ if submitted:
     # Deterministic dialect hints always take priority
     if dialect_hint:
         detected_conversation_style = dialect_hint
-    if is_casual_chat:
-        st.write("DEBUG dialect:", detected_conversation_style)
+    
     if not question:
         st.warning("Please enter a question.")
 
@@ -3444,10 +3421,6 @@ WEB CONTEXT:
                     )
                 )
                 
-                st.write(
-                    "DEBUG casual needs compaction:",
-                    casual_needs_compaction
-                )
                 if casual_needs_compaction:
                     compact_prompt = f"""
             Rewrite the answer below as a short natural chat reply.

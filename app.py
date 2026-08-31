@@ -3422,19 +3422,19 @@ WEB CONTEXT:
                 "role": "user",
                 "content": question
             })
-                try:
-                    direct_answer = call_conversation_llm(
-                        messages=casual_messages,
-                        temperature=0.4,
-                        preferred_models_override=[
-                            "CohereLabs/aya-expanse-32b"
-                        ]
-                    ).strip()
-                    casual_answer_lines = [
-                        line.strip()
-                        for line in direct_answer.splitlines()
-                        if line.strip()
+            try:
+                direct_answer = call_conversation_llm(
+                    messages=casual_messages,
+                    temperature=0.4,
+                    preferred_models_override=[
+                        "CohereLabs/aya-expanse-32b"
                     ]
+                ).strip()
+                casual_answer_lines = [
+                    line.strip()
+                    for line in direct_answer.splitlines()
+                    if line.strip()
+                ]
                 
                 casual_needs_compaction = (
                     len(casual_answer_lines) > 4

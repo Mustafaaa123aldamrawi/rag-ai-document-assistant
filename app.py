@@ -3420,10 +3420,10 @@ WEB CONTEXT:
                         for line in casual_answer_lines
                     )
                 )
-                
-                if casual_needs_compaction:
-                    compact_prompt = f"""
-                Rewrite the answer below as a short natural chat reply.
+            
+            if casual_needs_compaction:
+                compact_prompt = f"""
+            Rewrite the answer below as a short natural chat reply.
                 
                 ORIGINAL USER MESSAGE:
                 {question}
@@ -3452,15 +3452,15 @@ WEB CONTEXT:
                 - Return only the compact final reply.
                 """
             
-                    direct_answer = call_conversation_llm(
-                        prompt=compact_prompt,
-                        temperature=0.2,
-                        preferred_models_override=[
-                            "CohereLabs/aya-expanse-32b"
-                        ]
-                    ).strip()
-                except Exception as e:
-                    direct_answer = f"AI model error: {e}"
+                direct_answer = call_conversation_llm(
+                    prompt=compact_prompt,
+                    temperature=0.2,
+                    preferred_models_override=[
+                        "CohereLabs/aya-expanse-32b"
+                    ]
+                ).strip()
+            except Exception as e:
+                direct_answer = f"AI model error: {e}"
             
             if direct_answer is not None:
                 answer = direct_answer.strip()

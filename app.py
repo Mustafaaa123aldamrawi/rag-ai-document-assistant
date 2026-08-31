@@ -3448,8 +3448,8 @@ WEB CONTEXT:
                     "DEBUG casual needs compaction:",
                     casual_needs_compaction
                 )
-            if casual_needs_compaction:
-                compact_prompt = f"""
+                if casual_needs_compaction:
+                    compact_prompt = f"""
             Rewrite the answer below as a short natural chat reply.
             
             ORIGINAL USER MESSAGE:

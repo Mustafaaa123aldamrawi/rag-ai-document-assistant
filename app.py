@@ -3452,15 +3452,15 @@ WEB CONTEXT:
                 - Return only the compact final reply.
                 """
             
-                direct_answer = call_conversation_llm(
-                    prompt=compact_prompt,
-                    temperature=0.2,
-                    preferred_models_override=[
-                        "CohereLabs/aya-expanse-32b"
-                    ]
-                ).strip()
-            except Exception as e:
-                direct_answer = f"AI model error: {e}"
+                    direct_answer = call_conversation_llm(
+                        prompt=compact_prompt,
+                        temperature=0.2,
+                        preferred_models_override=[
+                            "CohereLabs/aya-expanse-32b"
+                        ]
+                    ).strip()
+                except Exception as e:
+                    direct_answer = f"AI model error: {e}"
             
             if direct_answer is not None:
                 answer = direct_answer.strip()

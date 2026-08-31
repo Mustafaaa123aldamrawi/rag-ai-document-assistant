@@ -3424,7 +3424,7 @@ WEB CONTEXT:
                     messages=casual_messages,
                     temperature=0.8,
                     preferred_models_override=[
-                        "Qwen/Qwen3.5-27B"
+                        "Qwen/Qwen3-32B"
                     ]
                 ).strip()
             

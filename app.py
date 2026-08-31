@@ -3405,7 +3405,10 @@ WEB CONTEXT:
             try:
                 direct_answer = call_conversation_llm(
                     messages=casual_messages,
-                    temperature=0.8
+                    temperature=0.8,
+                    preferred_models_override=[
+                        "openai/gpt-oss-20b"
+                    ]
                 ).strip()
             
             except Exception as e:

@@ -54,6 +54,7 @@ def call_qwen_llm(prompt, preferred_models_override=None):
         raise Exception(
             "No compatible non-thinking chat model is currently available."
         )
+        
     payload = {
         "model": selected_model,
         "messages": [
@@ -110,9 +111,10 @@ def call_qwen_llm(prompt, preferred_models_override=None):
    
     return data["choices"][0]["message"].get("content", "")
 def call_conversation_llm(
-    prompt,
+    prompt=None,
     temperature=0.85,
-    preferred_models_override=None
+    preferred_models_override=None,
+    messages=None
 ):
     url = "https://router.huggingface.co/v1/chat/completions"
     
@@ -167,9 +169,8 @@ def call_conversation_llm(
             "No compatible conversation model is currently available."
         )
     st.write("DEBUG conversation model:", selected_model)
-    payload = {
-        "model": selected_model,
-        "messages": [
+    if messages is None:
+        conversation_messages = [
             {
                 "role": "system",
                 "content": (
@@ -177,14 +178,12 @@ def call_conversation_llm(
                     "For normal conversation, behave as a warm, natural, "
                     "context-aware conversational assistant. "
                     "Follow the user's language, dialect, tone, and level of formality. "
-                    "When the user speaks colloquial Arabic, reply in the same detected "
-                    "Arabic dialect naturally and consistently. "
-                    "Do not mix Arabic dialects. "
+                    "When the user speaks colloquial Arabic, reply naturally in the same dialect. "
+                    "Do not mix Arabic dialects unnecessarily. "
                     "Do not default to Modern Standard Arabic when the user is speaking colloquially. "
                     "Be relaxed, expressive, and conversational rather than formal or robotic. "
                     "Use emojis naturally when appropriate. "
                     "Maintain conversation context. "
-                    "Do not search documents or invent technical grounding for casual conversation. "
                     "If directly asked whether you are human, answer truthfully that you are an AI assistant."
                 )
             },
@@ -192,7 +191,12 @@ def call_conversation_llm(
                 "role": "user",
                 "content": prompt
             }
-        ],
+        ]
+    else:
+        conversation_messages = messages
+    payload = {
+        "model": selected_model,
+        "messages": conversation_messages,
         "temperature": temperature,
         "top_p": 0.9,
         "max_tokens": 1200,

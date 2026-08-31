@@ -3425,7 +3425,7 @@ WEB CONTEXT:
             try:
                 direct_answer = call_conversation_llm(
                     messages=casual_messages,
-                    temperature=0.8,
+                    temperature=0.4,
                     preferred_models_override=[
                         "CohereLabs/aya-expanse-32b"
                     ]

@@ -3371,24 +3371,27 @@ WEB CONTEXT:
                 detected_conversation_style,
                 "Match the user's natural conversational language and tone."
             )
-           
-            "content": (
-                "You are AV Intelligence Assistant. "
-                "For casual conversation, reply naturally and conversationally. "
-                "Match the user's current language, dialect, tone, and level of formality. "
-                f"The detected conversation style is {detected_conversation_style}. "
-                f"Follow this style guidance: {conversation_style_instruction} "
-                "When the user speaks colloquial Arabic, mirror their dialect naturally without exaggerating it. "
-                "Do not mix unrelated Arabic dialects and do not switch to formal Arabic unless the user is formal. "
-                "Prefer simple everyday wording over translated or textbook-style phrasing. "
-                "Respond directly to what the user actually said. "
-                "Keep casual replies concise unless more detail is genuinely useful. "
-                "Use emojis naturally when they fit the user's tone. "
-                "Use the previous conversation only for context and continuity. "
-                "Do not search documents or the web for normal casual conversation. "
-                "If directly asked whether you are human, answer truthfully that you are an AI assistant."
-            )
-            
+            casual_messages = [
+                {
+                    "role": "system",
+                    "content": (
+                        "You are AV Intelligence Assistant. "
+                        "For casual conversation, reply naturally and conversationally. "
+                        "Match the user's current language, dialect, tone, and level of formality. "
+                        f"The detected conversation style is {detected_conversation_style}. "
+                        f"Follow this style guidance: {conversation_style_instruction} "
+                        "When the user speaks colloquial Arabic, mirror their dialect naturally without exaggerating it. "
+                        "Do not mix unrelated Arabic dialects and do not switch to formal Arabic unless the user is formal. "
+                        "Prefer simple everyday wording over translated or textbook-style phrasing. "
+                        "Respond directly to what the user actually said. "
+                        "Keep casual replies concise unless more detail is genuinely useful. "
+                        "Use emojis naturally when they fit the user's tone. "
+                        "Use the previous conversation only for context and continuity. "
+                        "Do not search documents or the web for normal casual conversation. "
+                        "If directly asked whether you are human, answer truthfully that you are an AI assistant."
+                    )
+                }
+            ]
             for message in st.session_state.messages[-7:-1]:
                 casual_messages.append({
                     "role": message["role"],

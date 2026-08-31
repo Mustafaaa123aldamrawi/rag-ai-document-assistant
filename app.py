@@ -3404,7 +3404,7 @@ WEB CONTEXT:
                         "Do not mix unrelated Arabic dialects and do not switch to formal Arabic unless the user is formal. "
                         "Prefer simple everyday wording over translated or textbook-style phrasing. "
                         "Respond directly to what the user actually said. "
-                        "Keep casual replies concise unless more detail is genuinely useful. "
+                        "For simple casual messages, reply like a real chat: usually 1-3 short sentences, no lists, no headings, and no step-by-step advice unless the user explicitly asks for details. "
                         "Use emojis naturally when they fit the user's tone. "
                         "Use the previous conversation only for context and continuity. "
                         "Do not search documents or the web for normal casual conversation. "

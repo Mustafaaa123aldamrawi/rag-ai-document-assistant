@@ -2851,7 +2851,17 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
         web_results = []
         
         try:
-            if web_search_query:
+            if (
+                web_search_query
+                and (
+                    is_web_current_request
+                    or is_technical_request
+                    or (
+                        not is_document_request
+                        and search_mode == "Documents + Web"
+                    )
+                )
+            ):
                 with st.spinner("Searching the web..."):
                     web_results = search_web_tavily(web_search_query)
                

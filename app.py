@@ -1518,9 +1518,18 @@ if submitted:
             is_technical_request = router_intent == "TECHNICAL"
             is_document_request = router_intent == "DOCUMENT"
             is_web_current_request = router_intent == "WEB_CURRENT"
-
+            has_arabic_chars = bool(
+                re.search(r"[\u0600-\u06FF]", question)
+            )
+            
+            has_latin_chars = bool(
+                re.search(r"[A-Za-z]", question)
+            )
             if is_casual_chat and question:
-                if dialect_hint:
+                if has_latin_chars and not has_arabic_chars:
+                    detected_conversation_style = "ENGLISH"
+            
+                elif dialect_hint:
                     detected_conversation_style = dialect_hint
             
                 else:

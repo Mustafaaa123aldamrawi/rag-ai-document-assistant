@@ -679,7 +679,24 @@ def is_official_domain(url, official_domains):
     except Exception:
         return False
 
+def get_doc_number_for_phrase(
+    phrase,
+    document_pages,
+    doc_source_numbers
+):
+    phrase_lower = phrase.lower()
 
+    for page in document_pages:
+        page_text = page.get("text", "").lower()
+
+        if phrase_lower in page_text:
+            doc_key = (
+                page.get("source"),
+                page.get("page_number")
+            )
+            return doc_source_numbers.get(doc_key)
+
+    return None
 def search_web_tavily(query):
     url = "https://api.tavily.com/search"
 
@@ -2325,20 +2342,7 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
         
             if doc_key not in doc_source_numbers:
                 doc_source_numbers[doc_key] = len(doc_source_numbers) + 1
-        def get_doc_number_for_phrase(phrase):
-            phrase_lower = phrase.lower()
         
-            for page in document_pages:
-                page_text = page.get("text", "").lower()
-        
-                if phrase_lower in page_text:
-                    doc_key = (
-                        page.get("source"),
-                        page.get("page_number")
-                    )
-                    return doc_source_numbers.get(doc_key)
-        
-            return None
         for document in relevant_documents:
             source = document.metadata.get("source")
             page_number = document.metadata.get("page_number")
@@ -2950,7 +2954,9 @@ WEB CONTEXT:
         
                 if career_focus_text:
                     career_focus_doc_number = get_doc_number_for_phrase(
-                        "professional summary"
+                        "Professional Summary",
+                        document_pages,
+                        doc_source_numbers
                     )
         
                     direct_answer = career_focus_text
@@ -3009,7 +3015,9 @@ WEB CONTEXT:
                     direct_answer = "Project Manager"
                 if direct_answer:
                     job_title_doc_number = get_doc_number_for_phrase(
-                        "Project Manager | AV & Education Technology Professional"
+                        "Project Manager | AV & Education Technology Professional",
+                        document_pages,
+                        doc_source_numbers
                     )
                     
                     if job_title_doc_number:
@@ -3041,7 +3049,9 @@ WEB CONTEXT:
         
                 if direct_answer:
                     certification_doc_number = get_doc_number_for_phrase(
-                        "Certifications & Training"
+                        "Certifications & Training",
+                        document_pages,
+                        doc_source_numbers
                     )
                     
                     if certification_doc_number:
@@ -3102,7 +3112,9 @@ WEB CONTEXT:
 
                 if direct_answer:
                     technical_doc_number = get_doc_number_for_phrase(
-                        "Core Skills"
+                        "Core Skills",
+                        document_pages,
+                        doc_source_numbers
                     )
                     
                     if technical_doc_number:
@@ -3293,7 +3305,11 @@ WEB CONTEXT:
             **Languages**
             {languages}
             """.strip()
-            cv_doc_number = get_doc_number_for_phrase(cv_name)
+            cv_doc_number = get_doc_number_for_phrase(
+                cv_name,
+                document_pages,
+                doc_source_numbers
+            )
 
             if cv_doc_number and f"[DOC {cv_doc_number}]" not in direct_answer:
                 direct_answer += f"\n\n[DOC {cv_doc_number}]"

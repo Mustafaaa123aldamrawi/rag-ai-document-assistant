@@ -1202,6 +1202,42 @@ if st.session_state.messages:
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
+
+            if message.get("verified"):
+                st.success("✅ Verified against cited sources")
+
+            document_sources = message.get("document_sources", [])
+            if document_sources:
+                st.markdown("### 📄 Document Sources")
+
+                for source in document_sources:
+                    st.write(
+                        f"[DOC {source['doc_number']}] "
+                        f"{source['source_name']} - Page {source['page_number']}"
+                    )
+
+            web_sources = message.get("web_sources", [])
+            if web_sources:
+                st.markdown("### 🌐 Web Sources")
+
+                for source in web_sources:
+                    web_number = source["web_number"]
+                    title = source["title"]
+                    url = source["url"]
+                    source_type = source["source_type"]
+                    manufacturer = source.get("manufacturer")
+
+                    if url:
+                        if source_type == "Official":
+                            st.markdown(
+                                f"[WEB {web_number}] ✅ **Official Source · "
+                                f"{manufacturer}** - [{title}]({url})"
+                            )
+                        else:
+                            st.markdown(
+                                f"[WEB {web_number}] 🌐 **External Source** - "
+                                f"[{title}]({url})"
+                            )
 # Main interface
 st.markdown(
 """
@@ -4517,9 +4553,46 @@ WEB CONTEXT:
         final_cited_web = {
             int(x) for x in re.findall(r"\[WEB (\d+)\]", answer)
         }
+        saved_document_sources = []
+        saved_web_sources = []
+        
+        if final_cited_docs:
+            for (source_name, page_number), doc_number in sorted(
+                doc_source_numbers.items(),
+                key=lambda item: item[1]
+            ):
+                if doc_number in final_cited_docs:
+                    saved_document_sources.append({
+                        "doc_number": doc_number,
+                        "source_name": source_name,
+                        "page_number": page_number
+                    })
+        
+        if web_results and final_cited_web:
+            for web_number, result in enumerate(web_results, start=1):
+                if web_number not in final_cited_web:
+                    continue
+        
+                saved_web_sources.append({
+                    "web_number": web_number,
+                    "title": result.get("title", "Web source"),
+                    "url": result.get("url", ""),
+                    "source_type": result.get("source_type", "External"),
+                    "manufacturer": (
+                        get_manufacturer_name(result.get("url", ""))
+                        if result.get("source_type") == "Official"
+                        else None
+                    )
+                })
         st.session_state.messages.append({
             "role": "assistant",
-            "content": answer
+            "content": answer,
+            "document_sources": saved_document_sources,
+            "web_sources": saved_web_sources,
+            "verified": bool(
+                claim_verification_passed
+                and (final_cited_docs or final_cited_web)
+            )
         })
         
         st.markdown(

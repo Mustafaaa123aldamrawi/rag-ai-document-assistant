@@ -2325,7 +2325,20 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
         
             if doc_key not in doc_source_numbers:
                 doc_source_numbers[doc_key] = len(doc_source_numbers) + 1
+        def get_doc_number_for_phrase(phrase):
+            phrase_lower = phrase.lower()
         
+            for page in document_pages:
+                page_text = page.get("text", "").lower()
+        
+                if phrase_lower in page_text:
+                    doc_key = (
+                        page.get("source"),
+                        page.get("page_number")
+                    )
+                    return doc_source_numbers.get(doc_key)
+        
+            return None
         for document in relevant_documents:
             source = document.metadata.get("source")
             page_number = document.metadata.get("page_number")
@@ -2900,20 +2913,7 @@ WEB CONTEXT:
         except Exception as e:
             st.warning(f"Web search could not be completed: {e}")
         direct_answer = None
-        def get_doc_number_for_phrase(phrase):
-            phrase_lower = phrase.lower()
         
-            for page in document_pages:
-                page_text = page.get("text", "").lower()
-        
-                if phrase_lower in page_text:
-                    doc_key = (
-                        page.get("source"),
-                        page.get("page_number")
-                    )
-                    return doc_source_numbers.get(doc_key)
-        
-            return None
         # Direct extractive handling for career focus questions
         career_focus_question = any(
             phrase in question_lower

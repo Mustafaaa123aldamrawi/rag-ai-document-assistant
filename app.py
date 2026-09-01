@@ -1265,33 +1265,96 @@ if submitted:
         router_history += f"{role}: {message['content']}\n"
     
     router_prompt = f"""
-    Classify the user's CURRENT MESSAGE into exactly one category:
+    Classify the user's CURRENT MESSAGE into exactly ONE intent.
+    
+    Allowed intents:
     
     CASUAL
-    or
-    TASK
+    WRITING
+    TRANSLATION
+    TECHNICAL
+    DOCUMENT
+    WEB_CURRENT
     
-    CASUAL means:
-    - normal conversation
+    Definitions:
+    
+    CASUAL:
+    Normal conversation or general assistance that does not require external research.
+    Examples include:
     - greetings
     - jokes
     - opinions
-    - everyday questions
-    - personal discussion
     - emotional/supportive conversation
-    - general chatting
-    - anything that can be answered naturally without document retrieval or web research
+    - everyday questions
+    - general advice
+    - asking whether you can help
+    - general work or project discussion when the user has not yet provided enough information
+    - short conversational follow-ups
     
-    TASK means:
-    - AV/UC technical questions
-    - troubleshooting
-    - product specifications
-    - project management work
-    - questions about uploaded documents
-    - questions requiring current/latest web information
-    - research
-    - comparisons that require factual research
-    - professional work requests
+    Examples:
+    "How are you?"
+    "احكيلي اشي يضحكني"
+    "شو رأيك باسم التطبيق؟"
+    "بتقدر تساعدني بشغلي؟"
+    "Can you help me with my work?"
+    "عندي مشروع ومش عارف كيف أبلش"
+    
+    WRITING:
+    The user wants help creating, rewriting, polishing, formatting, or replying to written content.
+    Examples:
+    "Write an email for me"
+    "زبطلي هاد الايميل"
+    "Give me a reply to this"
+    "اعطيني رد عليه"
+    "Can you help me do a report for my work?"
+    "Write a project status report"
+    
+    TRANSLATION:
+    The user explicitly asks to translate text from one language to another.
+    Examples:
+    "ترجم"
+    "ترجمه للعربي"
+    "Translate this to English"
+    "لا اكتبو بالانجليزي"
+    
+    TECHNICAL:
+    The user asks a technical, engineering, AV/UC, product, troubleshooting, design, installation, configuration, or professional-domain question that can be answered without requiring current web information.
+    Examples:
+    "Tell me about Q-SYS"
+    "What is Dante?"
+    "How does HDMI EDID work?"
+    "شو وظيفة MXA920؟"
+    "How should I troubleshoot this AV issue?"
+    
+    DOCUMENT:
+    The user explicitly asks for information from, about, or based on an uploaded document or documents.
+    Examples:
+    "According to the PDF..."
+    "حسب الملف شو مكتوب؟"
+    "Summarize this document"
+    "What does my CV say about Q-SYS?"
+    
+    WEB_CURRENT:
+    The user explicitly needs current, latest, changing, externally verified, or web-researched information.
+    Examples:
+    "What is the latest Q-SYS firmware?"
+    "Search the web for the newest Barco model"
+    "كم سعر CTS حالياً؟"
+    "Find current Samsung video wall models"
+    "What changed in Dante recently?"
+    
+    Important routing rules:
+    
+    - Classify the CURRENT MESSAGE by the user's actual intent, not merely by keywords.
+    - Do NOT classify a request as WEB_CURRENT merely because it concerns work, projects, products, reports, or professional topics.
+    - Do NOT use WEB_CURRENT when the user is simply asking for help writing, planning, discussing, or understanding something.
+    - Technical product questions are TECHNICAL unless the user explicitly needs current/latest/web-verified information.
+    - Requests to write or reply are WRITING even when the subject is technical or professional.
+    - Explicit translation requests are TRANSLATION.
+    - Explicit requests based on uploaded files are DOCUMENT.
+    - Use recent conversation only to resolve short follow-ups and references.
+    - A follow-up should preserve the intent of the immediately relevant conversation when appropriate.
+    - If a short message changes the requested action, classify according to the new action.
     
     Recent conversation:
     {router_history}
@@ -1299,9 +1362,13 @@ if submitted:
     Current message:
     {question}
     
-    Important:
-    - Use recent conversation to understand short follow-ups such as "why?", "what about that?", "ليش؟", or "طيب وبعدين؟"
-    - Return ONLY one word: CASUAL or TASK.
+    Return EXACTLY ONE label and nothing else:
+    CASUAL
+    WRITING
+    TRANSLATION
+    TECHNICAL
+    DOCUMENT
+    WEB_CURRENT
     """
     detected_conversation_style = "NEUTRAL"
     # Strong dialect hints before LLM classification
@@ -1376,7 +1443,28 @@ if submitted:
     if question:
         try:
             router_result = call_qwen_llm(router_prompt).strip().upper()
-            is_casual_chat = router_result.startswith("CASUAL")
+
+            allowed_intents = {
+                "CASUAL",
+                "WRITING",
+                "TRANSLATION",
+                "TECHNICAL",
+                "DOCUMENT",
+                "WEB_CURRENT",
+            }
+            
+            router_intent = (
+                router_result
+                if router_result in allowed_intents
+                else "CASUAL"
+            )
+            
+            is_casual_chat = router_intent == "CASUAL"
+            is_writing_request = router_intent == "WRITING"
+            is_translation_request = router_intent == "TRANSLATION"
+            is_technical_request = router_intent == "TECHNICAL"
+            is_document_request = router_intent == "DOCUMENT"
+            is_web_current_request = router_intent == "WEB_CURRENT"
 
             if is_casual_chat and question:
                 if dialect_hint:
@@ -1428,7 +1516,112 @@ if submitted:
     
     if not question:
         st.warning("Please enter a question.")
-
+    
+    elif is_writing_request:
+        writing_prompt = f"""
+    You are AV Intelligence Assistant.
+    
+    The user wants help creating, rewriting, polishing, formatting, or replying to written content.
+    
+    Recent conversation:
+    {router_history}
+    
+    Current user request:
+    {question}
+    
+    Instructions:
+    - Follow the user's requested language.
+    - If the user asks for English, write in natural professional English.
+    - If the user asks for Arabic, match the user's appropriate Arabic style.
+    - Preserve all facts and details provided by the user.
+    - Do not invent missing project details, names, dates, technical facts, or commitments.
+    - Do not search the web unless the user explicitly asks for research or current information.
+    - If enough information is available, produce the requested text directly.
+    - If essential information is genuinely missing, ask one concise clarifying question.
+    - For emails and professional reports, use a natural professional tone rather than robotic wording.
+    - Return only the useful response to the user.
+    """
+    
+        try:
+            direct_answer = call_conversation_llm(
+                prompt=writing_prompt,
+                temperature=0.3
+            ).strip()
+        except Exception as e:
+            direct_answer = f"AI model error: {e}"
+    
+        if direct_answer:
+            st.session_state.messages.append({
+                "role": "assistant",
+                "content": direct_answer
+            })
+    
+            st.markdown(
+                """
+                <div style="padding:18px 20px; border-radius:16px; border:1px solid rgba(120,120,120,0.16);">
+                    <div style="font-size:24px; font-weight:750; margin-bottom:8px;">
+                        🤖 AI Answer
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+    
+            st.markdown(direct_answer)
+            st.stop()
+    elif is_translation_request:
+        translation_prompt = f"""
+    You are AV Intelligence Assistant.
+    
+    The user wants a faithful translation.
+    
+    Recent conversation:
+    {router_history}
+    
+    Current user request:
+    {question}
+    
+    Instructions:
+    - Translate exactly what the user asked to translate.
+    - Preserve the full meaning, tone, structure, names, dates, numbers, and technical terms.
+    - Do not summarize.
+    - Do not omit information.
+    - Do not add greetings, explanations, emojis, or extra commentary unless they already exist in the source text.
+    - If the user specifies a target language, use that language.
+    - If the target language is implied by the conversation, follow that context.
+    - Keep professional wording professional and casual wording casual.
+    - For technical AV/UC terms, preserve product names and standard terminology accurately.
+    - Return only the translation.
+    """
+    
+        try:
+            direct_answer = call_conversation_llm(
+                prompt=translation_prompt,
+                temperature=0.1
+            ).strip()
+        except Exception as e:
+            direct_answer = f"AI model error: {e}"
+    
+        if direct_answer:
+            st.session_state.messages.append({
+                "role": "assistant",
+                "content": direct_answer
+            })
+    
+            st.markdown(
+                """
+                <div style="padding:18px 20px; border-radius:16px; border:1px solid rgba(120,120,120,0.16);">
+                    <div style="font-size:24px; font-weight:750; margin-bottom:8px;">
+                        🤖 AI Answer
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+    
+            st.markdown(direct_answer)
+            st.stop()
+    
     elif search_mode == "Web Only" and not is_casual_chat:
         try:
             with st.spinner("Searching trusted sources and preparing your answer..."):

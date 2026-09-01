@@ -2594,9 +2594,15 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
             "بالمستند",
             )
         
-            is_document_focused_question = any(
-                phrase in question_lower
-                for phrase in document_only_phrases
+            is_document_focused_question = (
+                is_document_request
+                or (
+                    not is_web_current_request
+                    and any(
+                        phrase in question_lower
+                        for phrase in document_only_phrases
+                    )
+                )
             )
         current_web_signals = (
             "current",
@@ -2608,9 +2614,15 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
             "as of",
         )
         
-        is_current_web_question = any(
-            signal in question_lower
-            for signal in current_web_signals
+        is_current_web_question = (
+            is_web_current_request
+            or (
+                not is_document_request
+                and any(
+                    signal in question_lower
+                    for signal in current_web_signals
+                )
+            )
         )
         if "document_scope_active" not in st.session_state:
             st.session_state.document_scope_active = False

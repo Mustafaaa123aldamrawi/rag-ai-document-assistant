@@ -3172,7 +3172,7 @@ WEB CONTEXT:
             summary_instruction = (
                 "Answer with 3 complete sentences describing the person's professional experience."
             )
-                    
+        cv_name = None           
         if is_summary_question:
             is_cv_summary_request = any(
                 phrase in question_lower
@@ -3305,11 +3305,14 @@ WEB CONTEXT:
             **Languages**
             {languages}
             """.strip()
-            cv_doc_number = get_doc_number_for_phrase(
-                cv_name,
-                document_pages,
-                doc_source_numbers
-            )
+            cv_doc_number = None
+
+            if cv_name:
+                cv_doc_number = get_doc_number_for_phrase(
+                    cv_name,
+                    document_pages,
+                    doc_source_numbers
+                )
 
             if cv_doc_number and f"[DOC {cv_doc_number}]" not in direct_answer:
                 direct_answer += f"\n\n[DOC {cv_doc_number}]"

@@ -3758,8 +3758,8 @@ WEB CONTEXT:
                     - Keep emojis only if they fit naturally.
                     - Return only the compact final reply.
                     """
-                    else:
-                        compact_prompt = f"""
+                        else:
+                            compact_prompt = f"""
                     Rewrite the answer below as a short natural chat reply.
                     
                     ORIGINAL USER MESSAGE:

@@ -167,7 +167,7 @@ def call_conversation_llm(
         raise Exception(
             "No compatible conversation model is currently available."
         )
-    st.write("DEBUG selected conversation model:", selected_model)
+    
     if messages is None:
         conversation_messages = [
             {
@@ -3701,9 +3701,7 @@ WEB CONTEXT:
                 "content": question
             })
             try:
-                st.write("DEBUG detected style:", detected_conversation_style)
-                st.write("DEBUG Arabic chars:", has_arabic_chars)
-                st.write("DEBUG Latin chars:", has_latin_chars)
+                
                 direct_answer = call_conversation_llm(
                     messages=casual_messages,
                     temperature=0.4,

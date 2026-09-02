@@ -3734,60 +3734,60 @@ WEB CONTEXT:
                 )
             
                 if casual_needs_compaction:
-                   if detected_conversation_style == "ENGLISH":
+                    if detected_conversation_style == "ENGLISH":
                         compact_prompt = f"""
-                    Rewrite the answer below as a short, natural conversational reply.
-                    
-                    ORIGINAL USER MESSAGE:
-                    {question}
-                    
-                    ANSWER:
-                    {direct_answer}
-                    
-                    Rules:
-                    - Keep the same meaning.
-                    - Reply only in English.
-                    - Match the user's natural conversational tone.
-                    - Do not switch to another language.
-                    - Use only 1-3 short conversational sentences.
-                    - No lists.
-                    - No headings.
-                    - No step-by-step advice unless necessary.
-                    - Remove repetition and unnecessary explanation.
-                    - Do not add new advice or facts.
-                    - Keep emojis only if they fit naturally.
-                    - Return only the compact final reply.
-                    """
-                        else:
-                            compact_prompt = f"""
-                    Rewrite the answer below as a short natural chat reply.
-                    
-                    ORIGINAL USER MESSAGE:
-                    {question}
-                    
-                    ANSWER:
-                    {direct_answer}
-                    
-                    DETECTED STYLE:
-                    {detected_conversation_style}
-                    
-                    Rules:
-                    - Keep the same meaning.
-                    - Reply in the same language and dialect as the user.
-                    - If detected style is LEVANTINE, write specifically in natural Jordanian/Levantine spoken Arabic.
-                    - Do not repeat or restate the user's message.
-                    - Avoid formal Arabic unless the user is speaking formally.
-                    - Prefer natural everyday wording appropriate to the detected dialect.
-                    - Do not force dialect expressions that do not fit naturally.
-                    - Use only 1-3 short conversational sentences.
-                    - No lists.
-                    - No headings.
-                    - No step-by-step advice.
-                    - Remove repetition and unnecessary explanation.
-                    - Do not add new advice or facts.
-                    - Keep emojis only if they fit naturally.
-                    - Return only the compact final reply.
-                    """
+                Rewrite the answer below as a short, natural conversational reply.
+                
+                ORIGINAL USER MESSAGE:
+                {question}
+                
+                ANSWER:
+                {direct_answer}
+                
+                Rules:
+                - Keep the same meaning.
+                - Reply only in English.
+                - Match the user's natural conversational tone.
+                - Do not switch to another language.
+                - Use only 1-3 short conversational sentences.
+                - No lists.
+                - No headings.
+                - No step-by-step advice unless necessary.
+                - Remove repetition and unnecessary explanation.
+                - Do not add new advice or facts.
+                - Keep emojis only if they fit naturally.
+                - Return only the compact final reply.
+                """
+                    else:
+                        compact_prompt = f"""
+                Rewrite the answer below as a short natural chat reply.
+                
+                ORIGINAL USER MESSAGE:
+                {question}
+                
+                ANSWER:
+                {direct_answer}
+                
+                DETECTED STYLE:
+                {detected_conversation_style}
+                
+                Rules:
+                - Keep the same meaning.
+                - Reply in the same language and dialect as the user.
+                - If detected style is LEVANTINE, write specifically in natural Jordanian/Levantine spoken Arabic.
+                - Do not repeat or restate the user's message.
+                - Avoid formal Arabic unless the user is speaking formally.
+                - Prefer natural everyday wording appropriate to the detected dialect.
+                - Do not force dialect expressions that do not fit naturally.
+                - Use only 1-3 short conversational sentences.
+                - No lists.
+                - No headings.
+                - No step-by-step advice.
+                - Remove repetition and unnecessary explanation.
+                - Do not add new advice or facts.
+                - Keep emojis only if they fit naturally.
+                - Return only the compact final reply.
+                """
                 
                     direct_answer = call_conversation_llm(
                         prompt=compact_prompt,

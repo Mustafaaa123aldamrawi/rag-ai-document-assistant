@@ -3567,6 +3567,10 @@ WEB CONTEXT:
         - Web sources may explain a technology, but must not be used to upgrade or infer the user's personal skill level unless the document explicitly supports it.
         - For broad explanation questions, start with a short 1-2 sentence overview, then organize the main points into clear bullet points.
         - Avoid large dense paragraphs when the answer contains multiple capabilities, features, components, or technical concepts.
+        - Use standard professional AV terminology and technically precise wording.
+        - Do not introduce unrelated domains, examples, or contexts such as gaming unless the user explicitly asks about them.
+        - Prefer direct technical definitions over vague, awkward, or translated-sounding phrasing.
+        - For comparison questions, clearly define each concept first, then explain the practical difference between them.
         - Use short descriptive headings when they improve readability, especially for overview, capabilities, components, use cases, or recommendations.
         - Keep each bullet focused on one idea and avoid repeating the same fact in different wording.
         Use the recent conversation only to understand the user's follow-up question and conversational context.

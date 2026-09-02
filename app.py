@@ -1561,12 +1561,12 @@ if submitted:
             - Return only the label and nothing else.
             """
             
-                try:
-                    detected_conversation_style = call_qwen_llm(
-                        dialect_prompt
-                    ).strip().upper()
-                except Exception:
-                    detected_conversation_style = "OTHER"
+                    try:
+                        detected_conversation_style = call_qwen_llm(
+                            dialect_prompt
+                        ).strip().upper()
+                    except Exception:
+                        detected_conversation_style = "OTHER"
         except Exception:
             is_casual_chat = False
     else:

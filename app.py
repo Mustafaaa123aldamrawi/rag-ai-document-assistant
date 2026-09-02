@@ -3571,6 +3571,9 @@ WEB CONTEXT:
         - Do not introduce unrelated domains, examples, or contexts such as gaming unless the user explicitly asks about them.
         - Prefer direct technical definitions over vague, awkward, or translated-sounding phrasing.
         - For comparison questions, clearly define each concept first, then explain the practical difference between them.
+        - When the user asks a general technical concept question, answer at the concept level first and do not introduce specific product models unless they are necessary to explain the answer or the user asks for examples.
+        - For simple technical comparisons, avoid unnecessary introductory phrases and start directly with the two concepts being compared.
+        - End comparison answers with one concise practical-difference statement when it improves clarity.
         - Use short descriptive headings when they improve readability, especially for overview, capabilities, components, use cases, or recommendations.
         - Keep each bullet focused on one idea and avoid repeating the same fact in different wording.
         Use the recent conversation only to understand the user's follow-up question and conversational context.

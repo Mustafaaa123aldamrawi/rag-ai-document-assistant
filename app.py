@@ -3705,9 +3705,19 @@ WEB CONTEXT:
                 direct_answer = call_conversation_llm(
                     messages=casual_messages,
                     temperature=0.4,
-                    preferred_models_override=[
-                        "CohereLabs/aya-expanse-32b"
-                    ]
+                    preferred_models_override=(
+                        [
+                            "Qwen/Qwen2.5-72B-Instruct",
+                            "Qwen/Qwen2.5-32B-Instruct",
+                            "Qwen/Qwen2.5-14B-Instruct",
+                        ]
+                        if detected_conversation_style == "ENGLISH"
+                        else [
+                            "CohereLabs/aya-expanse-32b",
+                            "Qwen/Qwen2.5-72B-Instruct",
+                            "Qwen/Qwen2.5-32B-Instruct",
+                        ]
+                    )
                 ).strip()
                 casual_answer_lines = [
                     line.strip()

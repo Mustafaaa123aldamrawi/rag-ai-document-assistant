@@ -1595,7 +1595,8 @@ if submitted:
     - If the user asks for English, write in natural professional English.
     - If the user asks for Arabic, match the user's appropriate Arabic style.
     - Preserve all facts and details provided by the user.
-    - Do not invent missing project details, names, dates, technical facts, or commitments.
+    - Never invent or add deadlines, dates, meeting times, project names, people, commitments, requirements, technical facts, or actions that the user did not explicitly provide.
+    - If a detail is not necessary to complete the writing task, omit it rather than guessing or adding it.
     - Do not search the web unless the user explicitly asks for research or current information.
     - If enough information is available, produce the requested text directly.
     - If essential information is genuinely missing, ask one concise clarifying question.

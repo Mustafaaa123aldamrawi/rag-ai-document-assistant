@@ -3574,6 +3574,11 @@ WEB CONTEXT:
         - When the user asks a general technical concept question, answer at the concept level first and do not introduce specific product models unless they are necessary to explain the answer or the user asks for examples.
         - For simple technical comparisons, avoid unnecessary introductory phrases and start directly with the two concepts being compared.
         - End comparison answers with one concise practical-difference statement when it improves clarity.
+        - Treat retrieved sources as factual evidence, not as wording to copy or imitate.
+        - For general technical questions, synthesize the supported facts into standard AV-engineering language instead of repeating product-page or marketing phrasing.
+        - Product-specific examples from the sources must be omitted unless the user asks for examples or the product detail is necessary to answer the question.
+        - Use the user's own technical framing when it is correct. If the user asks about an "AV system", describe the concepts in an AV-system context rather than inventing a broader domain label.
+        - For a two-concept comparison, the final sentence MUST state the practical difference between the two concepts in plain technical language.
         - Use short descriptive headings when they improve readability, especially for overview, capabilities, components, use cases, or recommendations.
         - Keep each bullet focused on one idea and avoid repeating the same fact in different wording.
         Use the recent conversation only to understand the user's follow-up question and conversational context.

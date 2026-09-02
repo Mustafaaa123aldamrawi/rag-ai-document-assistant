@@ -3669,10 +3669,33 @@ WEB CONTEXT:
                 }
             ]
             for message in st.session_state.messages[-7:-1]:
-                casual_messages.append({
-                    "role": message["role"],
-                    "content": message["content"]
-                })
+                message_content = message.get("content", "")
+            
+                message_has_arabic = bool(
+                    re.search(r"[\u0600-\u06FF]", message_content)
+                )
+            
+                message_has_latin = bool(
+                    re.search(r"[A-Za-z]", message_content)
+                )
+            
+                same_language = (
+                    (
+                        detected_conversation_style == "ENGLISH"
+                        and message_has_latin
+                        and not message_has_arabic
+                    )
+                    or (
+                        detected_conversation_style != "ENGLISH"
+                        and message_has_arabic
+                    )
+                )
+            
+                if same_language:
+                    casual_messages.append({
+                        "role": message["role"],
+                        "content": message_content
+                    })
             
             casual_messages.append({
                 "role": "user",

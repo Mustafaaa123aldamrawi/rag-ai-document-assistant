@@ -3734,8 +3734,33 @@ WEB CONTEXT:
                 )
             
                 if casual_needs_compaction:
-                    compact_prompt = f"""
-                Rewrite the answer below as a short natural chat reply.
+                   if detected_conversation_style == "ENGLISH":
+                        compact_prompt = f"""
+                    Rewrite the answer below as a short, natural conversational reply.
+                    
+                    ORIGINAL USER MESSAGE:
+                    {question}
+                    
+                    ANSWER:
+                    {direct_answer}
+                    
+                    Rules:
+                    - Keep the same meaning.
+                    - Reply only in English.
+                    - Match the user's natural conversational tone.
+                    - Do not switch to another language.
+                    - Use only 1-3 short conversational sentences.
+                    - No lists.
+                    - No headings.
+                    - No step-by-step advice unless necessary.
+                    - Remove repetition and unnecessary explanation.
+                    - Do not add new advice or facts.
+                    - Keep emojis only if they fit naturally.
+                    - Return only the compact final reply.
+                    """
+                    else:
+                        compact_prompt = f"""
+                    Rewrite the answer below as a short natural chat reply.
                     
                     ORIGINAL USER MESSAGE:
                     {question}
@@ -3751,8 +3776,8 @@ WEB CONTEXT:
                     - Reply in the same language and dialect as the user.
                     - If detected style is LEVANTINE, write specifically in natural Jordanian/Levantine spoken Arabic.
                     - Do not repeat or restate the user's message.
-                    - Avoid formal Arabic such as "يمكن", "استمع", "تواصل", "مارس", or textbook-style phrasing.
-                    - Prefer natural Jordanian wording such as "خدلك بريك", "اطلع تمشى شوي", "روق", "احضرلك فيلم", "اشربلك قهوة" when appropriate.
+                    - Avoid formal Arabic unless the user is speaking formally.
+                    - Prefer natural everyday wording appropriate to the detected dialect.
                     - Do not force dialect expressions that do not fit naturally.
                     - Use only 1-3 short conversational sentences.
                     - No lists.
@@ -3767,9 +3792,19 @@ WEB CONTEXT:
                     direct_answer = call_conversation_llm(
                         prompt=compact_prompt,
                         temperature=0.2,
-                        preferred_models_override=[
-                            "CohereLabs/aya-expanse-32b"
-                        ]
+                        preferred_models_override=(
+                            [
+                                "Qwen/Qwen2.5-72B-Instruct",
+                                "Qwen/Qwen2.5-32B-Instruct",
+                                "Qwen/Qwen2.5-14B-Instruct",
+                            ]
+                            if detected_conversation_style == "ENGLISH"
+                            else [
+                                "CohereLabs/aya-expanse-32b",
+                                "Qwen/Qwen2.5-72B-Instruct",
+                                "Qwen/Qwen2.5-32B-Instruct",
+                            ]
+                        )
                     ).strip()
             except Exception as e:
                 direct_answer = f"AI model error: {e}"

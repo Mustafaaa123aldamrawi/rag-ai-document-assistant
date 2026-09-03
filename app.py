@@ -221,8 +221,8 @@ def get_source_trust_score(title, url, source_type):
     title_lower = title.lower()
     url_lower = url.lower()
 
-    if source_type != "Official":
-        return 10
+    if source_type = "Official":
+        return 120
 
     if (
         "manual" in title_lower

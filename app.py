@@ -3493,7 +3493,38 @@ WEB CONTEXT:
             for message in st.session_state.messages[:-1][-6:]:
                 role = "User" if message["role"] == "user" else "Assistant"
                 conversation_history += f"{role}: {message['content']}\n"  
+        technical_comparison_cues = (
+            "difference between",
+            "compare",
+            "comparison",
+            " vs ",
+            "versus",
+            "فرق بين",
+            "الفرق بين",
+            "قارن",
+            "مقارنة",
+        )
         
+        is_technical_comparison = (
+            is_technical_request
+            and any(
+                cue in question_lower
+                for cue in technical_comparison_cues
+            )
+        )
+        technical_comparison_instruction = ""
+
+        if is_technical_comparison:
+            technical_comparison_instruction = """
+        For this technical comparison:
+        - Define the first concept clearly using only supported evidence.
+        - Define the second concept clearly using only supported evidence.
+        - Use standard professional AV terminology.
+        - Do not introduce specific product models unless the user asks for examples or they are necessary to answer the question.
+        - Do not copy or imitate marketing wording from the retrieved sources.
+        - End with one concise sentence stating the practical difference between the two concepts.
+        - Cite every factual statement with the supporting [DOC X] or [WEB X] label.
+        """.strip()
         prompt = f"""
         Recent conversation:
         {conversation_history}    
@@ -3504,6 +3535,8 @@ WEB CONTEXT:
         If it is True, use the recent conversation only to resolve references such as it, its, this, that, or omitted product names.
         Combined context:
         {context}
+        Technical comparison instructions:
+        {technical_comparison_instruction}
         
         Subject detected in document: {subject_found}
         Answer using only the information provided in the context above.

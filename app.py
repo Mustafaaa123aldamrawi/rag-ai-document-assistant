@@ -720,6 +720,9 @@ def search_web_tavily(query):
         "microsoft.com",
         "zoom.us",
         "hp.com",
+        "hdmi.org",
+        "digital-cp.com",
+        "vesa.org",
     ]
     query_lower = query.lower()
 

@@ -4556,6 +4556,64 @@ WEB CONTEXT:
             lambda match: match.group(1).replace(", ", ""),
             answer
         )
+        # Final guard for unsupported latest/newest product claims
+        latest_claim_cues = (
+            "latest",
+            "newest",
+            "most recent",
+        )
+        
+        latest_evidence_cues = (
+            "latest",
+            "newest",
+            "most recent",
+            "introduced",
+            "announced",
+            "launched",
+            "launch",
+            "released",
+            "release",
+        )
+        
+        is_latest_question = any(
+            cue in question_lower
+            for cue in latest_claim_cues
+        )
+        
+        if is_latest_question and web_results:
+            cited_web_numbers = {
+                int(x)
+                for x in re.findall(r"\[WEB (\d+)\]", answer)
+            }
+        
+            cited_web_text = " ".join(
+                (
+                    result.get("raw_content", "")
+                    or result.get("content", "")
+                    or ""
+                ).lower()
+                for web_number, result in enumerate(web_results, start=1)
+                if web_number in cited_web_numbers
+            )
+        
+            has_explicit_latest_evidence = any(
+                cue in cited_web_text
+                for cue in latest_evidence_cues
+            )
+        
+            if not has_explicit_latest_evidence:
+                answer = re.sub(
+                    r"\bthe latest\b",
+                    "the currently available",
+                    answer,
+                    flags=re.IGNORECASE,
+                )
+                answer = re.sub(
+                    r"\bthe newest\b",
+                    "the currently available",
+                    answer,
+                    flags=re.IGNORECASE,
+                )
         # Final answer quality guard for recommendation questions
         recommendation_cues = (
             "recommend",

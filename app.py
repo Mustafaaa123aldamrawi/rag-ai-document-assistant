@@ -2695,38 +2695,39 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
             "بالدوكيومنت",
             "بالمستند",
             )
-        
+            has_explicit_document_reference = any(
+                phrase in question_lower
+                for phrase in document_only_phrases
+            )
+            current_web_signals = (
+                "current",
+                "currently",
+                "latest",
+                "newest",
+                "most recent",
+                "currently available",
+                "today",
+                "updated",
+                "up-to-date",
+                "as of",
+            )
+            has_current_web_signal = any(
+                signal in question_lower
+                for signal in current_web_signals
+            )
             is_document_focused_question = (
-                is_document_request
+                has_explicit_document_reference
                 or (
-                    not is_web_current_request
-                    and any(
-                        phrase in question_lower
-                        for phrase in document_only_phrases
-                    )
+                    is_document_request
+                    and not has_current_web_signal
                 )
             )
-        current_web_signals = (
-            "current",
-            "currently",
-            "latest",
-            "newest",
-            "most recent",
-            "currently available",
-            "today",
-            "updated",
-            "up-to-date",
-            "as of",
-        )
-        
+                
         is_current_web_question = (
             is_web_current_request
             or (
-                not is_document_request
-                and any(
-                    signal in question_lower
-                    for signal in current_web_signals
-                )
+                has_current_web_signal
+                and not has_explicit_document_reference
             )
         )
         if "document_scope_active" not in st.session_state:

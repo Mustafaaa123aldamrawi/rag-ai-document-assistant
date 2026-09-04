@@ -552,6 +552,9 @@ def build_document_aware_web_query(question, document_context):
         "current",
         "currently",
         "latest",
+        "newest",
+        "most recent",
+        "currently available",
         "today",
         "fee",
         "fees",
@@ -585,7 +588,34 @@ def build_document_aware_web_query(question, document_context):
             return f"{base_query} official exam fee pricing"
     
         return f"{base_query} official pricing"
-        
+    latest_product_cues = (
+        "model",
+        "processor",
+        "product",
+        "device",
+        "hardware",
+        "series",
+        "portfolio",
+        "lineup",
+    )
+    
+    latest_current_cues = (
+        "latest",
+        "newest",
+        "most recent",
+        "currently available",
+    )
+    
+    if (
+        any(cue in question_lower for cue in latest_current_cues)
+        and any(cue in question_lower for cue in latest_product_cues)
+    ):
+        base_query = normalize_search_query(question)
+    
+        return (
+            f"{base_query} "
+            "official current product portfolio lineup models"
+        )    
     if any(cue in question_lower for cue in current_web_cues):
         return normalize_search_query(question)
     query_prompt = f"""

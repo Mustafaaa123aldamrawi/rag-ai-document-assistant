@@ -3998,6 +3998,8 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
         - Every factual statement must use only citation labels that actually appear in the AVAILABLE CONTEXT.
         - Never invent or guess a citation.
         - Do not introduce unrelated products, examples, or marketing language.
+        - Do not state that one technology is better, preferred, or the better choice unless the user explicitly asks for a recommendation and the context supports it.
+        - Avoid market-share percentages, popularity claims, or promotional statistics unless they are necessary to answer the question and explicitly supported by the cited source.
         - Keep the answer concise and technically precise.
         - If the current answer is already complete, preserve it as closely as possible.
         - Return only the final corrected answer.

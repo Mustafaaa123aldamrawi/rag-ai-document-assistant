@@ -4567,12 +4567,8 @@ WEB CONTEXT:
             "latest",
             "newest",
             "most recent",
-            "introduced",
-            "announced",
-            "launched",
-            "launch",
-            "released",
-            "release",
+            "current generation",
+            "current-generation",
         )
         
         is_latest_question = any(

@@ -1009,6 +1009,55 @@ def search_web_tavily(query):
             result["trust_score"] += 15
         elif any(marker in url_lower for marker in non_english_url_markers):
             result["trust_score"] -= 10
+    technical_stop_terms = {
+        "what",
+        "which",
+        "difference",
+        "between",
+        "about",
+        "from",
+        "with",
+        "this",
+        "that",
+        "does",
+        "have",
+        "system",
+        "systems",
+    }
+    
+    technical_source_terms = {
+        token.strip("?!.,:;()[]{}")
+        for token in query_lower.replace("-", " ").split()
+        if (
+            len(token.strip("?!.,:;()[]{}")) >= 4
+            and token.strip("?!.,:;()[]{}") not in technical_stop_terms
+        )
+    }
+    
+    for result in results:
+        if result.get("source_type") != "Official":
+            continue
+    
+        title = result.get("title", "")
+        url = result.get("url", "")
+        content = result.get("content", "")
+        raw_content = result.get("raw_content", "") or ""
+    
+        official_result_text = (
+            f"{title} "
+            f"{url} "
+            f"{content} "
+            f"{raw_content}"
+        ).lower()
+    
+        technical_term_matches = sum(
+            1
+            for term in technical_source_terms
+            if term in official_result_text
+        )
+    
+        if technical_term_matches >= 2:
+            result["trust_score"] += 35
     # Sort highest-trust sources first
     results.sort(
         key=lambda result: result.get("trust_score", 0),

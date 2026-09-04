@@ -747,6 +747,7 @@ def search_web_tavily(query):
         "lg.com",
         "avixa.org",
         "audinate.com",
+        "aes.org",
         "microsoft.com",
         "zoom.us",
         "hp.com",
@@ -757,10 +758,26 @@ def search_web_tavily(query):
     query_lower = query.lower()
 
     targeted_domains = official_domains
+    if "dante" in query_lower and "aes67" in query_lower:
+        targeted_domains = [
+            "audinate.com",
+            "aes.org",
+        ]
     
-    if "avixa" in query_lower or "cts" in query_lower:
+    elif "dante" in query_lower:
+        targeted_domains = [
+            "audinate.com",
+        ]
+    
+    elif "aes67" in query_lower:
+        targeted_domains = [
+            "aes.org",
+            "audinate.com",
+        ]
+    
+    elif "avixa" in query_lower or "cts" in query_lower:
         targeted_domains = ["avixa.org"]
-
+    
     cts_exam_intent_terms = (
         "exam",
         "requirement",

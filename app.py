@@ -899,7 +899,38 @@ def search_web_tavily(query):
             f"{result.get('content', '')} "
             f"{raw_content}"
         ).lower()
-    
+        current_product_cues = (
+            "latest",
+            "newest",
+            "most recent",
+            "currently available",
+            "current",
+        )
+        
+        lifecycle_warning_cues = (
+            "discontinued",
+            "end of life",
+            "end-of-life",
+            "eol",
+            "legacy",
+            "archived",
+            "no longer available",
+            "no longer sold",
+            "replaced by",
+        )
+        
+        is_current_product_query = any(
+            cue in query_lower
+            for cue in current_product_cues
+        )
+        
+        has_lifecycle_warning = any(
+            cue in result_text
+            for cue in lifecycle_warning_cues
+        )
+        
+        if is_current_product_query and has_lifecycle_warning:
+            result["trust_score"] -= 120
         for product_token in product_tokens:
             if product_token in result_text:
                 result["trust_score"] += 25

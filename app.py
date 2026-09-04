@@ -2995,13 +2995,19 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
 
                     web_context = "\n\n".join(web_context_parts)
 
-                    context = f"""
-DOCUMENT CONTEXT:
-{context}
-
-WEB CONTEXT:
-{web_context}
-"""
+                    if is_current_web_question and not has_explicit_document_reference:
+                        context = f"""
+                    WEB CONTEXT:
+                    {web_context}
+                    """
+                    else:
+                        context = f"""
+                    DOCUMENT CONTEXT:
+                    {context}
+                    
+                    WEB CONTEXT:
+                    {web_context}
+                    """
 
         except Exception as e:
             st.warning(f"Web search could not be completed: {e}")

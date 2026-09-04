@@ -810,7 +810,14 @@ def search_web_tavily(query):
             result["source_type"] = "Official"
         else:
             result["source_type"] = "External"
-
+    # Keep only validated official sources from the official-search pass
+    official_results = [
+        result
+        for result in results
+        if result.get("source_type") == "Official"
+    ]
+    
+    results = official_results
     # STEP 2: If official search returns nothing, search the general web
     if not results:
         fallback_payload = {

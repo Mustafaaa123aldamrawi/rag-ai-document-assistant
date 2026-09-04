@@ -4610,6 +4610,12 @@ WEB CONTEXT:
                     answer,
                     flags=re.IGNORECASE,
                 )
+                answer = re.sub(
+                    r"\bthe currently available\b(.*?)\bcurrently available from\b",
+                    r"the currently available\1from",
+                    answer,
+                    flags=re.IGNORECASE,
+                )
         # Final answer quality guard for recommendation questions
         recommendation_cues = (
             "recommend",

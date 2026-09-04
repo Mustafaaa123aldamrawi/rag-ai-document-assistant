@@ -3971,6 +3971,44 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
                     answer = call_qwen_llm(prompt)
                 except Exception as e:
                     answer = f"AI model error: {e}"
+        # Ensure technical comparison answers cover both concepts and their difference
+        if (
+            is_technical_comparison
+            and answer
+            and not answer.startswith("AI model error:")
+        ):
+            comparison_completion_prompt = f"""
+        Review the technical comparison answer below for completeness.
+        
+        USER QUESTION:
+        {question}
+        
+        AVAILABLE CONTEXT:
+        {context}
+        
+        CURRENT ANSWER:
+        {answer}
+        
+        Requirements:
+        - Identify the two concepts being compared from the user's question.
+        - Make sure BOTH concepts are clearly explained.
+        - Make sure the practical difference between them is explicitly stated.
+        - Use only facts supported by the AVAILABLE CONTEXT.
+        - Keep existing valid [DOC X] and [WEB X] citations where supported.
+        - Every factual statement must use only citation labels that actually appear in the AVAILABLE CONTEXT.
+        - Never invent or guess a citation.
+        - Do not introduce unrelated products, examples, or marketing language.
+        - Keep the answer concise and technically precise.
+        - If the current answer is already complete, preserve it as closely as possible.
+        - Return only the final corrected answer.
+        
+        Final answer:
+        """
+        
+            try:
+                answer = call_qwen_llm(comparison_completion_prompt).strip()
+            except Exception:
+                pass
         # Validate citation coverage before displaying the answer
         if direct_answer is None and not answer.startswith("AI model error:"):
             answer_lines = answer.splitlines()

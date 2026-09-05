@@ -726,7 +726,7 @@ def get_doc_number_for_phrase(
             return doc_source_numbers.get(doc_key)
 
     return None
-def search_web_tavily(query):
+def search_web_tavily(query, original_query=None):
     url = "https://api.tavily.com/search"
 
     headers = {
@@ -756,26 +756,27 @@ def search_web_tavily(query):
         "vesa.org",
     ]
     query_lower = query.lower()
+    intent_query_lower = (original_query or query).lower()
 
     targeted_domains = official_domains
-    if "dante" in query_lower and "aes67" in query_lower:
+    if "dante" in intent_query_lower and "aes67" in intent_query_lower:
         targeted_domains = [
             "audinate.com",
             "aes.org",
         ]
     
-    elif "dante" in query_lower:
+    elif "dante" in intent_query_lower:
         targeted_domains = [
             "audinate.com",
         ]
     
-    elif "aes67" in query_lower:
+    elif "aes67" in intent_query_lower:
         targeted_domains = [
             "aes.org",
             "audinate.com",
         ]
     
-    elif "avixa" in query_lower or "cts" in query_lower:
+    elif "avixa" in intent_query_lower or "cts" in intent_query_lower:
         targeted_domains = ["avixa.org"]
     
     cts_exam_intent_terms = (
@@ -3066,7 +3067,10 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
                 )
             ):
                 with st.spinner("Searching the web..."):
-                    web_results = search_web_tavily(web_search_query)
+                    web_results = search_web_tavily(
+                        web_search_query,
+                        original_query=question
+                    )
                
             if web_results:
                 web_context_parts = []

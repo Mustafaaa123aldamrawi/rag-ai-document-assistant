@@ -4704,6 +4704,24 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
             lambda match: match.group(1).replace(", ", ""),
             answer
         )
+        # Final technical terminology normalization guard
+        if is_technical_comparison and answer:
+            terminology_replacements = (
+                (r"\bDanet\b", "Dante"),
+                (r"\bcooperative standard\b", "interoperability standard"),
+                (r"\bsimple open standard\b", "open interoperability standard"),
+                (r"\bsimple standard\b", "interoperability standard"),
+                (r"\bsimple compatibility standard\b", "interoperability standard"),
+                (r"\binternet audio systems\b", "Audio over IP (AoIP) systems"),
+            )
+        
+            for pattern, replacement in terminology_replacements:
+                answer = re.sub(
+                    pattern,
+                    replacement,
+                    answer,
+                    flags=re.IGNORECASE,
+                )
         # Final guard for unsupported latest/newest product claims
         latest_claim_cues = (
             "latest",

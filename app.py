@@ -2768,7 +2768,11 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
                     else:
                         context = full_document_text[start:]
         is_document_focused_question = False
-        
+        has_explicit_document_reference = False
+        has_current_web_signal = False
+        is_document_focused_question = False
+        is_current_web_question = False
+        web_search_query = None
         if search_mode == "Documents + Web" and not is_casual_chat:
             
             document_only_phrases = (
@@ -2821,13 +2825,13 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
                 )
             )
                 
-        is_current_web_question = (
-            is_web_current_request
-            or (
-                has_current_web_signal
-                and not has_explicit_document_reference
+            is_current_web_question = (
+                is_web_current_request
+                or (
+                    has_current_web_signal
+                    and not has_explicit_document_reference
+                )
             )
-        )
         if "document_scope_active" not in st.session_state:
             st.session_state.document_scope_active = False
         

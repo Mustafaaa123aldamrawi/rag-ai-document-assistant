@@ -162,69 +162,79 @@ def call_conversation_llm(
     if preferred_models_override:
         selected_model = conversation_models[0]
     else:
-        selected_model = next(
-            (
-                model_id
-                for model_id in conversation_models
-                if model_id in available_model_ids
-            ),
-            None
-        )
-    
-    if selected_model is None:
-        raise Exception(
-            "No compatible conversation model is currently available."
-        )
-    
-    if messages is None:
-        conversation_messages = [
-            {
-                "role": "system",
-                "content": (
-                    "You are AV Intelligence Assistant. "
-                    "For normal conversation, behave as a warm, natural, "
-                    "context-aware conversational assistant. "
-                    "Follow the user's language, dialect, tone, and level of formality. "
-                    "When the user speaks colloquial Arabic, reply naturally in the same dialect. "
-                    "Do not mix Arabic dialects unnecessarily. "
-                    "Do not default to Modern Standard Arabic when the user is speaking colloquially. "
-                    "Be relaxed, expressive, and conversational rather than formal or robotic. "
-                    "Use emojis naturally when appropriate. "
-                    "Maintain conversation context. "
-                    "If directly asked whether you are human, answer truthfully that you are an AI assistant."
+        if preferred_models_override:
+            models_to_try = conversation_models
+        else:
+            selected_model = next(
+                (
+                    model_id
+                    for model_id in conversation_models
+                    if model_id in available_model_ids
+                ),
+                None
+            )
+        
+            if selected_model is None:
+                raise Exception(
+                    "No compatible conversation model is currently available."
                 )
-            },
-            {
-                "role": "user",
-                "content": prompt
+        
+            models_to_try = [selected_model]
+        
+        if messages is None:
+            conversation_messages = [
+                {
+                    "role": "system",
+                    "content": (
+                        "You are AV Intelligence Assistant. "
+                        "For normal conversation, behave as a warm, natural, "
+                        "context-aware conversational assistant. "
+                        "Follow the user's language, dialect, tone, and level of formality. "
+                        "When the user speaks colloquial Arabic, reply naturally in the same dialect. "
+                        "Do not mix Arabic dialects unnecessarily. "
+                        "Do not default to Modern Standard Arabic when the user is speaking colloquially. "
+                        "Be relaxed, expressive, and conversational rather than formal or robotic. "
+                        "Use emojis naturally when appropriate. "
+                        "Maintain conversation context. "
+                        "If directly asked whether you are human, answer truthfully that you are an AI assistant."
+                    )
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+        else:
+            conversation_messages = messages
+        
+        last_error = None
+        
+        for model_id in models_to_try:
+            payload = {
+                "model": model_id,
+                "messages": conversation_messages,
+                "temperature": temperature,
+                "top_p": 0.9,
+                "max_tokens": 1200,
             }
-        ]
-    else:
-        conversation_messages = messages
-    payload = {
-        "model": selected_model,
-        "messages": conversation_messages,
-        "temperature": temperature,
-        "top_p": 0.9,
-        "max_tokens": 1200,
-    }
-    
-    response = requests.post(
-        url,
-        headers=headers,
-        json=payload,
-        timeout=60
-    )
-    
-    if not response.ok:
-        raise Exception(
-            f"Hugging Face conversation API error "
-            f"{response.status_code}: {response.text}"
-        )
-    
-    data = response.json()
-    
-    return data["choices"][0]["message"].get("content", "")
+        
+            response = requests.post(
+                url,
+                headers=headers,
+                json=payload,
+                timeout=60
+            )
+        
+            if response.ok:
+                data = response.json()
+                return data["choices"][0]["message"].get("content", "")
+        
+            last_error = (
+                f"Hugging Face conversation API error {response.status_code}: "
+                f"{response.text}"
+            )
+        
+        raise Exception(last_error or "No compatible conversation model is currently available.")
 def get_source_trust_score(title, url, source_type):
     title_lower = title.lower()
     url_lower = url.lower()

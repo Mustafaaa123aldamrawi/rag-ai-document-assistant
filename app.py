@@ -4712,6 +4712,41 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
             lambda match: match.group(1).replace(", ", ""),
             answer
         )
+        # Final technical comparison completeness pass
+        if is_technical_comparison and answer:
+            final_comparison_prompt = f"""
+        Review the final technical comparison answer below and correct only completeness issues.
+        
+        USER QUESTION:
+        {question}
+        
+        AVAILABLE CONTEXT:
+        {context}
+        
+        CURRENT ANSWER:
+        {answer}
+        
+        Requirements:
+        - Clearly explain BOTH technologies or concepts being compared.
+        - Give each concept its own concise explanation before stating the difference.
+        - Explicitly state the practical difference between them.
+        - Preserve all supported facts and existing valid [DOC X] and [WEB X] citations.
+        - Use only facts supported by the AVAILABLE CONTEXT.
+        - Do not invent or guess citations.
+        - Do not add unrelated examples, products, recommendations, or marketing language.
+        - Do not introduce market-share percentages, popularity claims, or promotional statistics.
+        - Preserve established technical names and acronyms exactly.
+        - Keep the answer concise and technically precise.
+        - Preserve the language of the current answer.
+        - Return only the corrected final answer.
+        
+        Final answer:
+        """
+        
+            try:
+                answer = call_qwen_llm(final_comparison_prompt).strip()
+            except Exception:
+                pass
         # Final technical terminology normalization guard
         if is_technical_comparison and answer:
             terminology_replacements = (

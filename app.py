@@ -1203,14 +1203,14 @@ def extract_text_from_pdf(pdf_file):
     source_name = getattr(pdf_file, "name", "Uploaded PDF")
 
     for page_number, page in enumerate(reader.pages, start=1):
-        page_text = page.extract_text()
-
-        if page_text:
-            pages.append({
-                "page_number": page_number,
-                "source": source_name,
-                "text": page_text
-            })
+        page_text = page.extract_text() or ""
+    
+        pages.append({
+            "page_number": page_number,
+            "source": source_name,
+            "text": page_text,
+            "has_extractable_text": bool(page_text.strip())
+        })
 
     return pages
 

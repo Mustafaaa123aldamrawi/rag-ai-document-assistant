@@ -758,6 +758,16 @@ def search_web_tavily(query, original_query=None):
     query_lower = query.lower()
     intent_query_lower = (original_query or query).lower()
 
+    official_search_query = query
+
+    if original_query:
+        original_query_clean = original_query.strip()
+    
+        if original_query_clean.lower() not in query_lower:
+            official_search_query = (
+                f"{original_query_clean} {query}"
+            )
+
     targeted_domains = official_domains
     if "dante" in intent_query_lower and "aes67" in intent_query_lower:
         targeted_domains = [
@@ -803,7 +813,7 @@ def search_web_tavily(query, original_query=None):
 
     # STEP 1: Search official AV manufacturer websites first
     official_payload = {
-        "query": query,
+        "query": official_search_query,
         "search_depth": "advanced",
         "max_results": 5,
         "include_domains": targeted_domains,

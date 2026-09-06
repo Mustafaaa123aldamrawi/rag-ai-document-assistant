@@ -5,6 +5,7 @@ import re
 from pypdf import PdfReader
 import fitz
 import io
+import base64
 from PIL import Image
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -112,6 +113,7 @@ def call_qwen_llm(prompt, preferred_models_override=None):
     data = response.json()
    
     return data["choices"][0]["message"].get("content", "")
+
 def call_conversation_llm(
     prompt=None,
     temperature=0.85,
@@ -1353,6 +1355,26 @@ def render_pdf_pages_for_vision(pdf_file, zoom=2.0):
     pdf_document.close()
 
     return rendered_pages
+
+def pil_image_to_data_url(image, quality=90):
+    """
+    Convert a PIL image to a base64 JPEG data URL
+    for multimodal chat requests.
+    """
+
+    image_buffer = io.BytesIO()
+
+    image.convert("RGB").save(
+        image_buffer,
+        format="JPEG",
+        quality=quality
+    )
+
+    image_base64 = base64.b64encode(
+        image_buffer.getvalue()
+    ).decode("utf-8")
+
+    return f"data:image/jpeg;base64,{image_base64}"
     
 def split_text_into_chunks(pages):
     """Split each PDF page into chunks while preserving page numbers."""
@@ -1530,6 +1552,71 @@ if uploaded_files:
                 st.info(
                     f"Rendered {len(rendered_drawing_pages)} drawing page(s) for vision analysis."
                 )
+            if rendered_drawing_pages:
+                first_drawing_page = rendered_drawing_pages[0]
+                first_drawing_image = first_drawing_page["image"]
+                first_drawing_data_url = pil_image_to_data_url(first_drawing_image)
+
+                st.image(
+                    first_drawing_image,
+                    caption="First rendered drawing page used for vision test",
+                    use_container_width=True
+                )
+
+                vision_messages = [
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are an AV technical drawing assistant. "
+                            "Analyze the provided drawing image carefully. "
+                            "Identify the page type, visible room or area name, "
+                            "major AV-related equipment or symbols, and provide "
+                            "a short practical summary. If something is unclear, say so."
+                        )
+                    },
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": (
+                                    f"Analyze this drawing page from the file "
+                                    f"{getattr(uploaded_file, 'name', 'Uploaded PDF')}. "
+                                    "Tell me: "
+                                    "1) what this page appears to be, "
+                                    "2) any visible room name or title, "
+                                    "3) the main AV-related items or symbols you can identify, "
+                                    "4) a short summary in Arabic."
+                                )
+                            },
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": first_drawing_data_url
+                                }
+                            }
+                        ]
+                    }
+                ]
+
+               try:
+                    vision_answer = call_conversation_llm(
+                        messages=vision_messages,
+                        temperature=0.2,
+                        preferred_models_override=[
+                            "Qwen/Qwen2.5-VL-7B-Instruct",
+                            "Qwen/Qwen2.5-VL-3B-Instruct",
+                            "meta-llama/Llama-3.2-11B-Vision-Instruct"
+                        ]
+                    )
+                
+                    st.markdown("### Vision Test Result")
+                    st.write(vision_answer)
+                
+                except Exception as vision_error:
+                    st.warning(
+                        f"Vision test could not be completed: {vision_error}"
+                    )
             for page in file_pages:
                 page["content_type"] = content_type
             document_pages.extend(file_pages)

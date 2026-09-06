@@ -1435,6 +1435,12 @@ if uploaded_files:
     try:
         for uploaded_file in uploaded_files:
             file_pages = extract_text_from_pdf(uploaded_file)
+            content_type = detect_pdf_content_type(
+                file_pages,
+                getattr(uploaded_file, "name", "")
+            )
+            for page in file_pages:
+                page["content_type"] = content_type
             document_pages.extend(file_pages)
         if document_pages:
             text_chunks = split_text_into_chunks(document_pages)

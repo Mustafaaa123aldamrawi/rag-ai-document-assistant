@@ -234,9 +234,18 @@ def call_conversation_llm(
                     .get("content")
                 )
             
-                if content:
-                    return content
-            
+                if isinstance(content, str):
+                    cleaned_content = content.strip()
+                else:
+                    cleaned_content = content
+                
+                if (
+                    cleaned_content
+                    and str(cleaned_content).strip().lower()
+                    not in {"none", "null", "n/a"}
+                ):
+                    return cleaned_content
+                
                 last_error = (
                     f"Model {model_id} returned a successful response "
                     f"but no usable content: {data}"

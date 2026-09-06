@@ -1527,6 +1527,9 @@ if uploaded_files:
                 all_rendered_drawing_pages.extend(
                     rendered_drawing_pages
                 )
+                st.info(
+                    f"Rendered {len(rendered_drawing_pages)} drawing page(s) for vision analysis."
+                )
             for page in file_pages:
                 page["content_type"] = content_type
             document_pages.extend(file_pages)

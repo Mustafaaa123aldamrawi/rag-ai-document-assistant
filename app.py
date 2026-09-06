@@ -1220,71 +1220,99 @@ def detect_pdf_content_type(pages, source_name=""):
     or a project/technical drawing based on extracted text signals.
     """
 
-    drawing_cues = (
-        "drawing",
+    strong_drawing_cues = (
         "floor plan",
         "floorplan",
-        "layout",
         "general arrangement",
         "ga drawing",
         "reflected ceiling plan",
         "rcp",
-        "elevation",
-        "section",
-        "detail",
-        "schematic",
         "single line diagram",
         "block diagram",
         "signal flow",
+        "drawing no",
+        "drawing number",
+        "dwg no",
+        "sheet no",
+        "scale 1:",
         "legend",
+    )
+    
+    weak_drawing_cues = (
+        "drawing",
+        "layout",
+        "elevation",
+        "section",
+        "schematic",
         "symbols",
-        "room",
+        "revision",
         "meeting room",
         "boardroom",
         "conference room",
-        "av-",
-        "dwg",
-        "scale",
-        "revision",
-        "drawing no",
-        "drawing number",
-        "sheet",
     )
-
+    
+    document_cues = (
+        "user guide",
+        "user manual",
+        "hardware user guide",
+        "installation guide",
+        "quick start guide",
+        "manual",
+        "table of contents",
+        "important safety instructions",
+        "specifications",
+        "warranty",
+    )
+    
     source_lower = (source_name or "").lower()
-
+    
     combined_text = " ".join(
         page.get("text", "")
         for page in pages
     ).lower()
-
+    
     searchable_text = f"{source_lower} {combined_text}"
-
-    drawing_score = sum(
-        1
-        for cue in drawing_cues
+    
+    strong_score = sum(
+        1 for cue in strong_drawing_cues
         if cue in searchable_text
     )
-
+    
+    weak_score = sum(
+        1 for cue in weak_drawing_cues
+        if cue in searchable_text
+    )
+    
+    document_score = sum(
+        1 for cue in document_cues
+        if cue in searchable_text
+    )
+    
     total_pages = len(pages)
-
+    
     pages_with_text = sum(
         1
         for page in pages
         if page.get("has_extractable_text")
     )
-
+    
     low_text_ratio = (
         total_pages > 0
         and pages_with_text / total_pages < 0.5
     )
-
-    if drawing_score >= 3 or (
-        drawing_score >= 1
-        and low_text_ratio
-    ):
+    
+    if document_score >= 2 and strong_score < 2:
+        return "DOCUMENT"
+    
+    if strong_score >= 2:
         return "DRAWING"
-
+    
+    if strong_score >= 1 and weak_score >= 2:
+        return "DRAWING"
+    
+    if strong_score >= 1 and low_text_ratio:
+        return "DRAWING"
+    
     return "DOCUMENT"
 
 def split_text_into_chunks(pages):

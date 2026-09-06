@@ -159,14 +159,17 @@ def call_conversation_llm(
         if model.get("id")
     }
     
-    selected_model = next(
-        (
-            model_id
-            for model_id in conversation_models
-            if model_id in available_model_ids
-        ),
-        None
-    )
+    if preferred_models_override:
+        selected_model = conversation_models[0]
+    else:
+        selected_model = next(
+            (
+                model_id
+                for model_id in conversation_models
+                if model_id in available_model_ids
+            ),
+            None
+        )
     
     if selected_model is None:
         raise Exception(

@@ -3739,6 +3739,20 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
         
         Subject detected in document: {subject_found}
         Answer using only the information provided in the context above.
+        
+        Document-grounding rules:
+        - If the user explicitly asks about the uploaded document, answer only what the document actually states or clearly supports.
+        - Answer the exact question first. Do not replace the requested information with a general summary of the document.
+        - If the requested information is not explicitly stated in the document, clearly say that it is not explicitly stated.
+        - Do not reinterpret unrelated information as the requested information.
+        - In particular, do not convert safety instructions, installation procedures, technical specifications, product features, maintenance guidance, or compliance information into job responsibilities unless the document explicitly assigns them as responsibilities to a person, role, team, or organization.
+        - If the user asks for responsibilities, duties, roles, requirements, risks, features, specifications, or procedures, distinguish those categories carefully and do not treat them as interchangeable.
+        - When the document does contain the requested information, return only the most relevant supported points instead of summarizing unrelated sections.
+        - Keep document answers concise and directly focused on the user's request unless the user asks for a full summary or detailed explanation.
+        - Every factual claim taken from the document must retain an appropriate [DOC X] citation.
+        - Do not use [WEB X] citations to support a document-only claim.
+        - Never invent missing document information or infer a role, responsibility, status, requirement, or conclusion that the text does not support.
+        
         Language rules:
         - Answer in the same primary language as the user's question.
         - If the question mixes Arabic and English, answer in clear natural Arabic while preserving technical product names, certification names, acronyms, model numbers, and standard industry terms in English.

@@ -1214,6 +1214,79 @@ def extract_text_from_pdf(pdf_file):
 
     return pages
 
+def detect_pdf_content_type(pages, source_name=""):
+    """
+    Detect whether an uploaded PDF is primarily a normal document
+    or a project/technical drawing based on extracted text signals.
+    """
+
+    drawing_cues = (
+        "drawing",
+        "floor plan",
+        "floorplan",
+        "layout",
+        "general arrangement",
+        "ga drawing",
+        "reflected ceiling plan",
+        "rcp",
+        "elevation",
+        "section",
+        "detail",
+        "schematic",
+        "single line diagram",
+        "block diagram",
+        "signal flow",
+        "legend",
+        "symbols",
+        "room",
+        "meeting room",
+        "boardroom",
+        "conference room",
+        "av-",
+        "dwg",
+        "scale",
+        "revision",
+        "drawing no",
+        "drawing number",
+        "sheet",
+    )
+
+    source_lower = (source_name or "").lower()
+
+    combined_text = " ".join(
+        page.get("text", "")
+        for page in pages
+    ).lower()
+
+    searchable_text = f"{source_lower} {combined_text}"
+
+    drawing_score = sum(
+        1
+        for cue in drawing_cues
+        if cue in searchable_text
+    )
+
+    total_pages = len(pages)
+
+    pages_with_text = sum(
+        1
+        for page in pages
+        if page.get("has_extractable_text")
+    )
+
+    low_text_ratio = (
+        total_pages > 0
+        and pages_with_text / total_pages < 0.5
+    )
+
+    if drawing_score >= 3 or (
+        drawing_score >= 1
+        and low_text_ratio
+    ):
+        return "DRAWING"
+
+    return "DOCUMENT"
+
 def split_text_into_chunks(pages):
     """Split each PDF page into chunks while preserving page numbers."""
     text_splitter = RecursiveCharacterTextSplitter(

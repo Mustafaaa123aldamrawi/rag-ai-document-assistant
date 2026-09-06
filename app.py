@@ -876,6 +876,40 @@ def search_web_tavily(query, original_query=None):
     ]
     
     results = official_results
+
+    # Retry the official search with the original user question before falling back
+    if not results and original_query:
+        retry_official_payload = {
+            "query": original_query.strip(),
+            "search_depth": "advanced",
+            "max_results": 5,
+            "include_domains": targeted_domains,
+            "include_answer": False,
+            "include_raw_content": True
+        }
+    
+        retry_response = requests.post(
+            url,
+            headers=headers,
+            json=retry_official_payload,
+            timeout=60
+        )
+    
+        retry_response.raise_for_status()
+        retry_data = retry_response.json()
+        retry_results = retry_data.get("results", [])
+    
+        validated_retry_results = []
+    
+        for result in retry_results:
+            result_url = result.get("url", "")
+    
+            if is_official_domain(result_url, official_domains):
+                result["source_type"] = "Official"
+                validated_retry_results.append(result)
+    
+        results = validated_retry_results
+    
     # STEP 2: If official search returns nothing, search the general web
     if not results:
         fallback_payload = {

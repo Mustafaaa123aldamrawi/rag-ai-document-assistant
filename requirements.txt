@@ -9,3 +9,5 @@ langchain-huggingface
 sentence-transformers
 huggingface-hub
 torchvision
+PyMuPDF
+Pillow

@@ -1439,6 +1439,10 @@ if uploaded_files:
                 file_pages,
                 getattr(uploaded_file, "name", "")
             )
+            st.info(
+                f"{getattr(uploaded_file, 'name', 'Uploaded PDF')} "
+                f"detected as: {content_type}"
+            )
             for page in file_pages:
                 page["content_type"] = content_type
             document_pages.extend(file_pages)

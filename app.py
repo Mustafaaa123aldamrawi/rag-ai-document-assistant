@@ -3,6 +3,9 @@ import streamlit as st
 import requests
 import re
 from pypdf import PdfReader
+import fitz
+import io
+from PIL import Image
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
@@ -1314,7 +1317,43 @@ def detect_pdf_content_type(pages, source_name=""):
         return "DRAWING"
     
     return "DOCUMENT"
+    
+def render_pdf_pages_for_vision(pdf_file, zoom=2.0):
+    """
+    Render PDF pages into PIL images for vision analysis.
+    """
 
+    pdf_file.seek(0)
+    pdf_bytes = pdf_file.read()
+    pdf_document = fitz.open(stream=pdf_bytes, filetype="pdf")
+
+    rendered_pages = []
+
+    matrix = fitz.Matrix(zoom, zoom)
+
+    for page_index in range(len(pdf_document)):
+        page = pdf_document.load_page(page_index)
+
+        pixmap = page.get_pixmap(
+            matrix=matrix,
+            alpha=False
+        )
+
+        image_bytes = pixmap.tobytes("png")
+
+        image = Image.open(
+            io.BytesIO(image_bytes)
+        ).convert("RGB")
+
+        rendered_pages.append({
+            "page_number": page_index + 1,
+            "image": image
+        })
+
+    pdf_document.close()
+
+    return rendered_pages
+    
 def split_text_into_chunks(pages):
     """Split each PDF page into chunks while preserving page numbers."""
     text_splitter = RecursiveCharacterTextSplitter(
@@ -1458,6 +1497,7 @@ text_chunks = []
 vector_store = None
 web_results = []
 web_context = ""
+all_rendered_drawing_pages = []
 
 if uploaded_files:
     try:
@@ -1471,6 +1511,22 @@ if uploaded_files:
                 f"{getattr(uploaded_file, 'name', 'Uploaded PDF')} "
                 f"detected as: {content_type}"
             )
+            rendered_drawing_pages = []
+
+            if content_type == "DRAWING":
+                rendered_drawing_pages = render_pdf_pages_for_vision(
+                    uploaded_file
+                )
+                for rendered_page in rendered_drawing_pages:
+                    rendered_page["source"] = getattr(
+                        uploaded_file,
+                        "name",
+                        "Uploaded PDF"
+                    )
+                
+                all_rendered_drawing_pages.extend(
+                    rendered_drawing_pages
+                )
             for page in file_pages:
                 page["content_type"] = content_type
             document_pages.extend(file_pages)

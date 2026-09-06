@@ -227,7 +227,21 @@ def call_conversation_llm(
         
             if response.ok:
                 data = response.json()
-                return data["choices"][0]["message"].get("content", "")
+            
+                content = (
+                    data.get("choices", [{}])[0]
+                    .get("message", {})
+                    .get("content")
+                )
+            
+                if content:
+                    return content
+            
+                last_error = (
+                    f"Model {model_id} returned a successful response "
+                    f"but no usable content: {data}"
+                )
+                continue
         
             last_error = (
                 f"Hugging Face conversation API error {response.status_code}: "

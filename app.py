@@ -1598,8 +1598,7 @@ if uploaded_files:
                         ]
                     }
                 ]
-
-               try:
+                try:
                     vision_answer = call_conversation_llm(
                         messages=vision_messages,
                         temperature=0.2,

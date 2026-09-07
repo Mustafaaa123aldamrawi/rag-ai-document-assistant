@@ -1418,7 +1418,48 @@ def pil_image_to_data_url(image, quality=90):
     ).decode("utf-8")
 
     return f"data:image/jpeg;base64,{image_base64}"
-    
+def split_drawing_image_into_regions(image, rows=2, cols=2, overlap=0.08):
+    """
+    Split a drawing image into overlapping regions for higher-resolution
+    vision analysis of small AV callouts and labels.
+    """
+
+    width, height = image.size
+    regions = []
+
+    region_width = width / cols
+    region_height = height / rows
+
+    overlap_x = int(region_width * overlap)
+    overlap_y = int(region_height * overlap)
+
+    region_number = 1
+
+    for row in range(rows):
+        for col in range(cols):
+            left = int(col * region_width) - overlap_x
+            top = int(row * region_height) - overlap_y
+            right = int((col + 1) * region_width) + overlap_x
+            bottom = int((row + 1) * region_height) + overlap_y
+
+            left = max(0, left)
+            top = max(0, top)
+            right = min(width, right)
+            bottom = min(height, bottom)
+
+            cropped_image = image.crop(
+                (left, top, right, bottom)
+            )
+
+            regions.append({
+                "region_number": region_number,
+                "image": cropped_image,
+                "box": (left, top, right, bottom)
+            })
+
+            region_number += 1
+
+    return regions    
 def split_text_into_chunks(pages):
     """Split each PDF page into chunks while preserving page numbers."""
     text_splitter = RecursiveCharacterTextSplitter(
@@ -1600,6 +1641,15 @@ if uploaded_files:
             if rendered_drawing_pages:
                 first_drawing_page = rendered_drawing_pages[0]
                 first_drawing_image = first_drawing_page["image"]
+                drawing_regions = split_drawing_image_into_regions(first_drawing_image)
+
+                test_region = drawing_regions[0]
+                
+                st.image(
+                    test_region["image"],
+                    caption=f"Vision Region {test_region['region_number']}",
+                    use_container_width=True
+                )
                 first_drawing_data_url = pil_image_to_data_url(first_drawing_image)
 
                 st.image(

@@ -257,7 +257,9 @@ def call_conversation_llm(
                 f"{response.text}"
             )
         
-        raise Exception(last_error or "No compatible conversation model is currently available.")
+        raise Exception(
+            last_error or "No compatible conversation model is currently available."
+        )
 def get_source_trust_score(title, url, source_type):
     title_lower = title.lower()
     url_lower = url.lower()

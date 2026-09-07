@@ -1582,7 +1582,7 @@ if uploaded_files:
                 rendered_drawing_pages = render_pdf_pages_for_vision(
                     uploaded_file,
                     max_pages=1,
-                    start_page=7
+                    start_page=8
                 )
                 for rendered_page in rendered_drawing_pages:
                     rendered_page["source"] = getattr(

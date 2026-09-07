@@ -1644,6 +1644,9 @@ if uploaded_files:
                 drawing_regions = split_drawing_image_into_regions(first_drawing_image)
 
                 test_region = drawing_regions[0]
+                test_region_data_url = pil_image_to_data_url(
+                    test_region["image"]
+                )
                 
                 st.image(
                     test_region["image"],
@@ -1696,7 +1699,7 @@ if uploaded_files:
                             {
                                 "type": "image_url",
                                 "image_url": {
-                                    "url": first_drawing_data_url
+                                    "url": test_region_data_url
                                 }
                             }
                         ]

@@ -1355,7 +1355,7 @@ def detect_pdf_content_type(pages, source_name=""):
     
     return "DOCUMENT"
     
-def render_pdf_pages_for_vision(pdf_file, zoom=2.0, max_pages=None):
+def render_pdf_pages_for_vision(pdf_file, zoom=2.0, max_pages=None, start_page=1):
     """
     Render PDF pages into PIL images for vision analysis.
     """
@@ -1368,9 +1368,15 @@ def render_pdf_pages_for_vision(pdf_file, zoom=2.0, max_pages=None):
 
     matrix = fitz.Matrix(zoom, zoom)
 
-    page_count = len(pdf_document) if max_pages is None else min(len(pdf_document), max_pages)
-
-    for page_index in range(page_count):
+    total_pages = len(pdf_document)
+    start_index = max(0, start_page - 1)
+    
+    if max_pages is None:
+        end_index = total_pages
+    else:
+        end_index = min(total_pages, start_index + max_pages)
+    
+    for page_index in range(start_index, end_index):
         page = pdf_document.load_page(page_index)
 
         pixmap = page.get_pixmap(

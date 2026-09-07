@@ -2,6 +2,7 @@
 import streamlit as st
 import requests
 import re
+import json
 from pypdf import PdfReader
 import fitz
 import io
@@ -1809,9 +1810,12 @@ if uploaded_files:
                         prompt=structured_prompt,
                         temperature=0.0
                     )
+                    structured_json_text = structured_vision_answer.strip()
+                    structured_json_text = re.sub(r"^```json\s*|\s*```$", "", structured_json_text).strip()
+                    structured_drawing_data = json.loads(structured_json_text)
 
                     st.markdown("### Structured Drawing Data")
-                    st.code(structured_vision_answer, language="json")
+                    st.code(structured_json_text, language="json")
                 
                 except Exception as vision_error:
                     st.warning(

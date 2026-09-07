@@ -201,62 +201,62 @@ def call_conversation_llm(
                 "content": prompt
             }
         ]
-        else:
-            conversation_messages = messages
+    else:
+        conversation_messages = messages
+    
+    last_error = None
+    
+    for model_id in models_to_try:
+        payload = {
+            "model": model_id,
+            "messages": conversation_messages,
+            "temperature": temperature,
+            "top_p": 0.9,
+            "max_tokens": 1200,
+        }
         
-        last_error = None
-        
-        for model_id in models_to_try:
-            payload = {
-                "model": model_id,
-                "messages": conversation_messages,
-                "temperature": temperature,
-                "top_p": 0.9,
-                "max_tokens": 1200,
-            }
-        
-            response = requests.post(
-                url,
-                headers=headers,
-                json=payload,
-                timeout=60
-            )
-        
-            if response.ok:
-                data = response.json()
-            
-                content = (
-                    data.get("choices", [{}])[0]
-                    .get("message", {})
-                    .get("content")
-                )
-            
-                if isinstance(content, str):
-                    cleaned_content = content.strip()
-                else:
-                    cleaned_content = content
-                
-                if (
-                    cleaned_content
-                    and str(cleaned_content).strip().lower()
-                    not in {"none", "null", "n/a"}
-                ):
-                    return cleaned_content
-                
-                last_error = (
-                    f"Model {model_id} returned a successful response "
-                    f"but no usable content: {data}"
-                )
-                continue
-        
-            last_error = (
-                f"Hugging Face conversation API error {response.status_code}: "
-                f"{response.text}"
-            )
-        
-        raise Exception(
-            last_error or "No compatible conversation model is currently available."
+        response = requests.post(
+            url,
+            headers=headers,
+            json=payload,
+            timeout=60
         )
+    
+        if response.ok:
+            data = response.json()
+        
+            content = (
+                data.get("choices", [{}])[0]
+                .get("message", {})
+                .get("content")
+            )
+        
+            if isinstance(content, str):
+                cleaned_content = content.strip()
+            else:
+                cleaned_content = content
+            
+            if (
+                cleaned_content
+                and str(cleaned_content).strip().lower()
+                not in {"none", "null", "n/a"}
+            ):
+                return cleaned_content
+            
+            last_error = (
+                f"Model {model_id} returned a successful response "
+                f"but no usable content: {data}"
+            )
+            continue
+    
+        last_error = (
+            f"Hugging Face conversation API error {response.status_code}: "
+            f"{response.text}"
+        )
+        
+    raise Exception(
+        last_error or "No compatible conversation model is currently available."
+    )
 def get_source_trust_score(title, url, source_type):
     title_lower = title.lower()
     url_lower = url.lower()

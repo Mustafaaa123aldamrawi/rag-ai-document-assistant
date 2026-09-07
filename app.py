@@ -1643,16 +1643,6 @@ if uploaded_files:
                 first_drawing_image = first_drawing_page["image"]
                 drawing_regions = split_drawing_image_into_regions(first_drawing_image)
 
-                test_region = drawing_regions[1]
-                test_region_data_url = pil_image_to_data_url(
-                    test_region["image"]
-                )
-                
-                st.image(
-                    test_region["image"],
-                    caption=f"Vision Region {test_region['region_number']}",
-                    use_container_width=True
-                )
                 first_drawing_data_url = pil_image_to_data_url(first_drawing_image)
 
                 st.image(
@@ -1699,23 +1689,39 @@ if uploaded_files:
                             {
                                 "type": "image_url",
                                 "image_url": {
-                                    "url": test_region_data_url
+                                    "url": first_drawing_data_url
                                 }
                             }
                         ]
                     }
                 ]
                 try:
-                    vision_answer = call_conversation_llm(
-                        messages=vision_messages,
-                        temperature=0.2,
-                        preferred_models_override=[
-                            "zai-org/GLM-4.5V",
-                            "Qwen/Qwen2.5-VL-3B-Instruct",
-                            "swiss-ai/Apertus-v1.5-8B"
-                        ]
-                    )
-                    
+                    region_answers = []
+                
+                    for region in drawing_regions:
+                        region_data_url = pil_image_to_data_url(
+                            region["image"]
+                        )
+                
+                        vision_messages[1]["content"][1]["image_url"]["url"] = region_data_url
+                
+                        region_answer = call_conversation_llm(
+                            messages=vision_messages,
+                            temperature=0.2,
+                            preferred_models_override=[
+                                "zai-org/GLM-4.5V",
+                                "Qwen/Qwen2.5-VL-3B-Instruct",
+                                "swiss-ai/Apertus-v1.5-8B"
+                            ]
+                        )
+                
+                        if region_answer:
+                            region_answers.append(
+                                f"### Region {region['region_number']}\n{region_answer}"
+                            )
+                
+                    vision_answer = "\n\n".join(region_answers)
+                
                     st.markdown("### Drawing Analysis")
                     st.write(vision_answer)
                 

@@ -160,50 +160,47 @@ def call_conversation_llm(
     }
     
     if preferred_models_override:
-        selected_model = conversation_models[0]
+        models_to_try = conversation_models
     else:
-        if preferred_models_override:
-            models_to_try = conversation_models
-        else:
-            selected_model = next(
-                (
-                    model_id
-                    for model_id in conversation_models
-                    if model_id in available_model_ids
-                ),
-                None
+        selected_model = next(
+            (
+                model_id
+                for model_id in conversation_models
+                if model_id in available_model_ids
+            ),
+            None
+        )
+    
+        if selected_model is None:
+            raise Exception(
+                "No compatible conversation model is currently available."
             )
+    
+        models_to_try = [selected_model]
         
-            if selected_model is None:
-                raise Exception(
-                    "No compatible conversation model is currently available."
+    if messages is None:
+        conversation_messages = [
+            {
+                "role": "system",
+                "content": (
+                    "You are AV Intelligence Assistant. "
+                    "For normal conversation, behave as a warm, natural, "
+                    "context-aware conversational assistant. "
+                    "Follow the user's language, dialect, tone, and level of formality. "
+                    "When the user speaks colloquial Arabic, reply naturally in the same dialect. "
+                    "Do not mix Arabic dialects unnecessarily. "
+                    "Do not default to Modern Standard Arabic when the user is speaking colloquially. "
+                    "Be relaxed, expressive, and conversational rather than formal or robotic. "
+                    "Use emojis naturally when appropriate. "
+                    "Maintain conversation context. "
+                    "If directly asked whether you are human, answer truthfully that you are an AI assistant."
                 )
-        
-            models_to_try = [selected_model]
-        
-        if messages is None:
-            conversation_messages = [
-                {
-                    "role": "system",
-                    "content": (
-                        "You are AV Intelligence Assistant. "
-                        "For normal conversation, behave as a warm, natural, "
-                        "context-aware conversational assistant. "
-                        "Follow the user's language, dialect, tone, and level of formality. "
-                        "When the user speaks colloquial Arabic, reply naturally in the same dialect. "
-                        "Do not mix Arabic dialects unnecessarily. "
-                        "Do not default to Modern Standard Arabic when the user is speaking colloquially. "
-                        "Be relaxed, expressive, and conversational rather than formal or robotic. "
-                        "Use emojis naturally when appropriate. "
-                        "Maintain conversation context. "
-                        "If directly asked whether you are human, answer truthfully that you are an AI assistant."
-                    )
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ]
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
         else:
             conversation_messages = messages
         

@@ -1641,9 +1641,9 @@ if uploaded_files:
                         messages=vision_messages,
                         temperature=0.2,
                         preferred_models_override=[
-                            "Qwen/Qwen2.5-VL-7B-Instruct",
+                            "zai-org/GLM-4.5V",
                             "Qwen/Qwen2.5-VL-3B-Instruct",
-                            "meta-llama/Llama-3.2-11B-Vision-Instruct"
+                            "swiss-ai/Apertus-v1.5-8B"
                         ]
                     )
                     

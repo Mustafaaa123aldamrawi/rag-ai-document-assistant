@@ -1612,14 +1612,17 @@ if uploaded_files:
                     {
                         "role": "system",
                         "content": (
-                            "You are an AV technical drawing assistant. "
-                            "Analyze the provided drawing image carefully. "
-                            "Identify the page type, drawing number, visible room or area name, "
-                            "major AV-related equipment, manufacturers, model numbers, quantities, "
-                            "symbols, references, and any relevant installation information. "
-                            "Pay close attention to the title block and equipment callouts. "
-                            "Do not confuse the project number with the AV drawing sheet number. "
-                            "If something is unclear, say so rather than guessing."
+                            "You are an AV technical drawing extraction assistant. "
+                            "Read the provided AV drawing carefully. "
+                            "Your highest priority is factual accuracy. "
+                            "Only report equipment names, manufacturers, model numbers, quantities, "
+                            "room names, drawing numbers, and callouts that are actually visible in the drawing. "
+                            "Preserve visible equipment labels as closely as possible to the original text. "
+                            "Do not infer a manufacturer from a product type. "
+                            "Do not invent model numbers, accessories, mounting types, or quantities. "
+                            "Never use words such as 'multiple' unless that exact quantity wording is visible. "
+                            "If text cannot be read confidently, state that it is unclear. "
+                            "Pay special attention to the title block and equipment callout text."
                         )
                     },
                     {
@@ -1631,12 +1634,13 @@ if uploaded_files:
                                         f"Analyze this drawing page from the file "
                                         f"{getattr(uploaded_file, 'name', 'Uploaded PDF')}. "
                                         f"This is PDF page {first_drawing_page['page_number']}. "
-                                        "Tell me: "
-                                        "1) the page type and AV drawing number, "
-                                        "2) the room name, floor, or visible areas, "
-                                        "3) all clearly visible AV equipment with manufacturer, model and quantity when available, "
-                                        "4) drawing references or callouts, "
-                                        "5) a short practical summary in Arabic."
+                                        "Report: "
+                                        "1) the AV drawing number and drawing title, "
+                                        "2) visible room or area names, "
+                                        "3) a verbatim-style list of all readable AV equipment callouts, "
+                                        "including any visible manufacturer, model, and quantity, "
+                                        "4) drawing references or installation notes that are clearly readable. "
+                                        "Do not normalize or guess unclear equipment names."
                                     )
                             },
                             {

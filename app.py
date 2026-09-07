@@ -1647,15 +1647,12 @@ if uploaded_files:
                         ]
                     )
                     
-                    st.write("DEBUG vision type:", type(vision_answer).__name__)
-                    st.code(repr(vision_answer))
-                    
-                    st.markdown("### Vision Test Result")
+                    st.markdown("### Drawing Analysis")
                     st.write(vision_answer)
                 
                 except Exception as vision_error:
                     st.warning(
-                        f"Vision test could not be completed: {vision_error}"
+                        f"Drawing analysis could not be completed: {vision_error}"
                     )
             for page in file_pages:
                 page["content_type"] = content_type

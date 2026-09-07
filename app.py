@@ -1612,11 +1612,14 @@ if uploaded_files:
                     {
                         "role": "system",
                         "content": (
-                            "You are an AV technical drawing assistant. "
-                            "Analyze the provided drawing image carefully. "
-                            "Identify the page type, visible room or area name, "
-                            "major AV-related equipment or symbols, and provide "
-                            "a short practical summary. If something is unclear, say so."
+                            "You are an AV technical drawing analysis assistant. "
+                            "Analyze the provided AV drawing image carefully and extract only information "
+                            "that is clearly visible or strongly supported by the drawing. "
+                            "Return the result as valid JSON only. "
+                            "Do not add markdown, code fences, headings, or explanatory text outside the JSON. "
+                            "Do not invent equipment, quantities, drawing numbers, room names, or relationships. "
+                            "If a value is unclear, use null. "
+                            "For equipment quantities, use null if the exact quantity cannot be confirmed."
                         )
                     },
                     {
@@ -1627,11 +1630,28 @@ if uploaded_files:
                                 "text": (
                                     f"Analyze this drawing page from the file "
                                     f"{getattr(uploaded_file, 'name', 'Uploaded PDF')}. "
-                                    "Tell me: "
-                                    "1) what this page appears to be, "
-                                    "2) any visible room name or title, "
-                                    "3) the main AV-related items or symbols you can identify, "
-                                    "4) a short summary in Arabic."
+                                    "Extract the drawing information using exactly this JSON structure: "
+                                    "{"
+                                    '"page_number": null, '
+                                    '"drawing_number": null, '
+                                    '"drawing_title": null, '
+                                    '"page_type": null, '
+                                    '"floor": null, '
+                                    '"room_name": null, '
+                                    '"areas": [], '
+                                    '"devices": ['
+                                    '{'
+                                    '"name": "", '
+                                    '"manufacturer": null, '
+                                    '"model": null, '
+                                    '"quantity": null, '
+                                    '"location": null'
+                                    '}'
+                                    "], "
+                                    '"references": [], '
+                                    '"notes": [], '
+                                    '"arabic_summary": ""'
+                                    "}"
                                 )
                             },
                             {

@@ -1765,6 +1765,25 @@ if uploaded_files:
                     )
                     st.markdown("### Drawing Analysis")
                     st.write(cleaned_vision_answer)
+
+                    structured_prompt = (
+                        "Convert the cleaned AV drawing analysis below into strict JSON. "
+                        "Do not add new information. "
+                        "Use null for unknown values and [] for missing lists. "
+                        "Preserve model numbers and quantities exactly as written. "
+                        "Separate equipment from installation notes. "
+                        "Do not treat OCR fragments or ambiguous labels as equipment unless clearly supported. "
+                        "Return JSON only, with no markdown or commentary.\n\n"
+                        f"{cleaned_vision_answer}"
+                    )
+
+                    structured_vision_answer = call_conversation_llm(
+                        prompt=structured_prompt,
+                        temperature=0.0
+                    )
+
+                    st.markdown("### Structured Drawing Data")
+                    st.code(structured_vision_answer, language="json")
                 
                 except Exception as vision_error:
                     st.warning(

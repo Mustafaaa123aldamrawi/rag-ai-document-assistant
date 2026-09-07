@@ -1643,7 +1643,7 @@ if uploaded_files:
                 first_drawing_image = first_drawing_page["image"]
                 drawing_regions = split_drawing_image_into_regions(first_drawing_image)
 
-                test_region = drawing_regions[0]
+                test_region = drawing_regions[1]
                 test_region_data_url = pil_image_to_data_url(
                     test_region["image"]
                 )

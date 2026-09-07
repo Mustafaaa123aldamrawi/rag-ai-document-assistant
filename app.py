@@ -1721,9 +1721,26 @@ if uploaded_files:
                             )
                 
                     vision_answer = "\n\n".join(region_answers)
-                
+                    merge_prompt = (
+                        "You are consolidating multiple AV drawing region analyses into one final result. "
+                        "Use only information present in the region analyses below. "
+                        "Do not invent new facts. "
+                        "Remove duplicates and resolve conflicts conservatively. "
+                        "Prefer AV sheet numbers like AV-201 as the drawing number. "
+                        "Do not use opportunity numbers or project numbers as the drawing number. "
+                        "Preserve manufacturer names and model numbers exactly when clearly supported. "
+                        "If regions disagree and the conflict cannot be resolved confidently, mark it as unclear. "
+                        "Return one clean consolidated analysis with these sections: "
+                        "Drawing Number, Drawing Title, Room/Areas, Equipment, Installation Notes, References. "
+                        "Do not mention region numbers in the final answer.\n\n"
+                        f"{vision_answer}"
+                    )
+                    merged_vision_answer = call_conversation_llm(
+                        prompt=merge_prompt,
+                        temperature=0.1
+                    )
                     st.markdown("### Drawing Analysis")
-                    st.write(vision_answer)
+                    st.write(merged_vision_answer)
                 
                 except Exception as vision_error:
                     st.warning(

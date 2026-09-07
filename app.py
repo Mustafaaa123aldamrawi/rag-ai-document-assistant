@@ -1649,7 +1649,10 @@ if uploaded_files:
                             "meta-llama/Llama-3.2-11B-Vision-Instruct"
                         ]
                     )
-                
+                    
+                    st.write("DEBUG vision type:", type(vision_answer).__name__)
+                    st.code(repr(vision_answer))
+                    
                     st.markdown("### Vision Test Result")
                     st.write(vision_answer)
                 

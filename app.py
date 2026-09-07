@@ -1739,8 +1739,26 @@ if uploaded_files:
                         prompt=merge_prompt,
                         temperature=0.1
                     )
+                    cleanup_prompt = (
+                        "Review the consolidated AV drawing analysis below for consistency and accuracy. "
+                        "Do not add any new information. "
+                        "Remove duplicate equipment entries that clearly refer to the same device. "
+                        "Prefer the most complete manufacturer and model description when duplicates exist. "
+                        "Remove incomplete fragments when a more complete version of the same item is present. "
+                        "Do not convert project numbers or opportunity numbers into drawing numbers. "
+                        "Keep installation notes only when they are clearly supported by the analysis. "
+                        "If a value is uncertain or conflicting, mark it as unclear instead of guessing. "
+                        "Preserve valid quantities, manufacturers, and model numbers exactly. "
+                        "Return a clean professional AV drawing analysis with these sections: "
+                        "Drawing Number, Drawing Title, Room/Areas, Equipment, Installation Notes, References.\n\n"
+                        f"{merged_vision_answer}"
+                    )
+                    cleaned_vision_answer = call_conversation_llm(
+                        prompt=cleanup_prompt,
+                        temperature=0.1
+                    )
                     st.markdown("### Drawing Analysis")
-                    st.write(merged_vision_answer)
+                    st.write(cleaned_vision_answer)
                 
                 except Exception as vision_error:
                     st.warning(

@@ -1612,14 +1612,18 @@ if uploaded_files:
                     {
                         "role": "system",
                         "content": (
-                            "You are an AV technical drawing analysis assistant. "
-                            "Analyze the provided AV drawing image carefully and extract only information "
-                            "that is clearly visible or strongly supported by the drawing. "
-                            "Return the result as valid JSON only. "
-                            "Do not add markdown, code fences, headings, or explanatory text outside the JSON. "
-                            "Do not invent equipment, quantities, drawing numbers, room names, or relationships. "
-                            "If a value is unclear, use null. "
-                            "For equipment quantities, use null if the exact quantity cannot be confirmed."
+                            "You are an expert AV shop drawing analysis assistant. "
+                            "Analyze the provided AV drawing carefully and extract structured technical information. "
+                            "Return valid JSON only, with no markdown, code fences, headings, or text outside the JSON. "
+                            "Only report information that is visible or strongly supported by the drawing. "
+                            "Pay special attention to the drawing title block, room labels, equipment callouts, manufacturers, "
+                            "model numbers, quantities, mounts, cameras, codecs, displays, touch panels, room schedulers, "
+                            "floor boxes, AV outlets, containment, and drawing references. "
+                            "The drawing_number must be the AV sheet number such as AV-201, AV-204, or AV-301. "
+                            "Do NOT use the project number, job number, opportunity number, or document package number as drawing_number. "
+                            "Extract visible AV equipment even if some fields such as manufacturer or model are unclear. "
+                            "If an exact quantity cannot be confirmed, use null rather than omitting the device. "
+                            "If a value is genuinely unavailable, use null."
                         )
                     },
                     {
@@ -1630,9 +1634,10 @@ if uploaded_files:
                                 "text": (
                                     f"Analyze this drawing page from the file "
                                     f"{getattr(uploaded_file, 'name', 'Uploaded PDF')}. "
+                                    f"This is PDF page {first_drawing_page['page_number']}. "
                                     "Extract the drawing information using exactly this JSON structure: "
                                     "{"
-                                    '"page_number": null, '
+                                    f'"page_number": {first_drawing_page["page_number"]}, '
                                     '"drawing_number": null, '
                                     '"drawing_title": null, '
                                     '"page_type": null, '

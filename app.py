@@ -1612,18 +1612,14 @@ if uploaded_files:
                     {
                         "role": "system",
                         "content": (
-                            "You are an expert AV shop drawing analysis assistant. "
-                            "Analyze the provided AV drawing carefully and extract structured technical information. "
-                            "Return valid JSON only, with no markdown, code fences, headings, or text outside the JSON. "
-                            "Only report information that is visible or strongly supported by the drawing. "
-                            "Pay special attention to the drawing title block, room labels, equipment callouts, manufacturers, "
-                            "model numbers, quantities, mounts, cameras, codecs, displays, touch panels, room schedulers, "
-                            "floor boxes, AV outlets, containment, and drawing references. "
-                            "The drawing_number must be the AV sheet number such as AV-201, AV-204, or AV-301. "
-                            "Do NOT use the project number, job number, opportunity number, or document package number as drawing_number. "
-                            "Extract visible AV equipment even if some fields such as manufacturer or model are unclear. "
-                            "If an exact quantity cannot be confirmed, use null rather than omitting the device. "
-                            "If a value is genuinely unavailable, use null."
+                            "You are an AV technical drawing assistant. "
+                            "Analyze the provided drawing image carefully. "
+                            "Identify the page type, drawing number, visible room or area name, "
+                            "major AV-related equipment, manufacturers, model numbers, quantities, "
+                            "symbols, references, and any relevant installation information. "
+                            "Pay close attention to the title block and equipment callouts. "
+                            "Do not confuse the project number with the AV drawing sheet number. "
+                            "If something is unclear, say so rather than guessing."
                         )
                     },
                     {
@@ -1632,32 +1628,17 @@ if uploaded_files:
                             {
                                 "type": "text",
                                 "text": (
-                                    f"Analyze this drawing page from the file "
-                                    f"{getattr(uploaded_file, 'name', 'Uploaded PDF')}. "
-                                    f"This is PDF page {first_drawing_page['page_number']}. "
-                                    "Extract the drawing information using exactly this JSON structure: "
-                                    "{"
-                                    f'"page_number": {first_drawing_page["page_number"]}, '
-                                    '"drawing_number": null, '
-                                    '"drawing_title": null, '
-                                    '"page_type": null, '
-                                    '"floor": null, '
-                                    '"room_name": null, '
-                                    '"areas": [], '
-                                    '"devices": ['
-                                    '{'
-                                    '"name": "", '
-                                    '"manufacturer": null, '
-                                    '"model": null, '
-                                    '"quantity": null, '
-                                    '"location": null'
-                                    '}'
-                                    "], "
-                                    '"references": [], '
-                                    '"notes": [], '
-                                    '"arabic_summary": ""'
-                                    "}"
-                                )
+                                    "text": (
+                                        f"Analyze this drawing page from the file "
+                                        f"{getattr(uploaded_file, 'name', 'Uploaded PDF')}. "
+                                        f"This is PDF page {first_drawing_page['page_number']}. "
+                                        "Tell me: "
+                                        "1) the page type and AV drawing number, "
+                                        "2) the room name, floor, or visible areas, "
+                                        "3) all clearly visible AV equipment with manufacturer, model and quantity when available, "
+                                        "4) drawing references or callouts, "
+                                        "5) a short practical summary in Arabic."
+                                    )
                             },
                             {
                                 "type": "image_url",

@@ -1627,7 +1627,6 @@ if uploaded_files:
                         "content": [
                             {
                                 "type": "text",
-                                "text": (
                                     "text": (
                                         f"Analyze this drawing page from the file "
                                         f"{getattr(uploaded_file, 'name', 'Uploaded PDF')}. "

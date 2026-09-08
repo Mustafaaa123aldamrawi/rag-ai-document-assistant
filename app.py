@@ -1775,10 +1775,16 @@ if uploaded_files:
                         f"{conflict_summary}\n\n"
                         f"{vision_answer}"
                     )
+                   
                     merged_vision_answer = call_conversation_llm(
                         prompt=merge_prompt,
-                        temperature=0.1
+                        temperature=0.1,
+                        preferred_models_override=[
+                            "Qwen/Qwen2.5-VL-3B-Instruct",
+                            "swiss-ai/Apertus-v1.5-8B"
+                        ]
                     )
+                    
                     cleanup_prompt = (
                         "Review the consolidated AV drawing analysis below for consistency and accuracy. "
                         "Do not add any new information. "

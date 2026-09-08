@@ -1857,7 +1857,11 @@ if uploaded_files:
                     try:
                         structured_vision_answer = call_conversation_llm(
                             prompt=structured_prompt,
-                            temperature=0.0
+                            temperature=0.0,
+                            preferred_models_override=[
+                                "Qwen/Qwen2.5-VL-3B-Instruct",
+                                "swiss-ai/Apertus-v1.5-8B"
+                            ]
                         )
                         structured_json_text = structured_vision_answer.strip()
                         structured_json_text = re.sub(r"^```json\s*|\s*```$", "", structured_json_text).strip()

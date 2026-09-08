@@ -1862,9 +1862,62 @@ if uploaded_files:
                         structured_json_text = structured_vision_answer.strip()
                         structured_json_text = re.sub(r"^```json\s*|\s*```$", "", structured_json_text).strip()
                         structured_drawing_data = json.loads(structured_json_text)
+                        raw_region_text = "\n".join(region_answers).lower()
+
+                        uncertainty_notes = structured_drawing_data.setdefault(
+                            "uncertainty_notes", []
+                        )
+                        
+                        for equipment_item in structured_drawing_data.get("equipment", []):
+                            model = equipment_item.get("model")
+                            manufacturer = equipment_item.get("manufacturer")
+                        
+                            support_terms = []
+
+                            if isinstance(model, str) and model.strip():
+                                support_terms.append(model.strip().lower())
+                            else:
+                                equipment_name = equipment_item.get("name")
+                            
+                                if isinstance(equipment_name, str) and equipment_name.strip():
+                                    support_terms.append(equipment_name.strip().lower())
+                            
+                            if not support_terms:
+                                continue
+                        
+                            support_count = 0
+                        
+                            for region_text in region_answers:
+                                region_text_lower = region_text.lower()
+                        
+                                if any(term in region_text_lower for term in support_terms):
+                                    support_count += 1
+                        
+                            if support_count >= 2:
+                                continue
+                        
+                            if support_count == 1:
+                                if equipment_item.get("confidence") == "high":
+                                    equipment_item["confidence"] = "medium"
+                        
+                            else:
+                                equipment_item["confidence"] = "low"
+                        
+                                equipment_name = equipment_item.get("name") or "Unknown equipment"
+                        
+                                uncertainty_notes.append(
+                                    f"{equipment_name}: model/manufacturer is not directly supported "
+                                    "by the raw region analyses."
+                                )
     
                         st.markdown("### Structured Drawing Data")
-                        st.code(structured_json_text, language="json")
+                        validated_json_text = json.dumps(
+                            structured_drawing_data,
+                            indent=2,
+                            ensure_ascii=False
+                        )
+                        
+                        st.code(validated_json_text, language="json")
                     except Exception as structured_error:
                         structured_drawing_data = None
                         st.warning(

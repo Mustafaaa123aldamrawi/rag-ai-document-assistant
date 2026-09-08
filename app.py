@@ -1815,17 +1815,22 @@ if uploaded_files:
                         f"RAW REGION ANALYSES:\n{vision_answer}\n\n"
                         f"CLEANED CONSOLIDATED ANALYSIS:\n{cleaned_vision_answer}"
                     )
-
-                    structured_vision_answer = call_conversation_llm(
-                        prompt=structured_prompt,
-                        temperature=0.0
-                    )
-                    structured_json_text = structured_vision_answer.strip()
-                    structured_json_text = re.sub(r"^```json\s*|\s*```$", "", structured_json_text).strip()
-                    structured_drawing_data = json.loads(structured_json_text)
-
-                    st.markdown("### Structured Drawing Data")
-                    st.code(structured_json_text, language="json")
+                    try:
+                        structured_vision_answer = call_conversation_llm(
+                            prompt=structured_prompt,
+                            temperature=0.0
+                        )
+                        structured_json_text = structured_vision_answer.strip()
+                        structured_json_text = re.sub(r"^```json\s*|\s*```$", "", structured_json_text).strip()
+                        structured_drawing_data = json.loads(structured_json_text)
+    
+                        st.markdown("### Structured Drawing Data")
+                        st.code(structured_json_text, language="json")
+                    except Exception as structured_error:
+                        structured_drawing_data = None
+                        st.warning(
+                            f"Structured drawing data could not be generated: {structured_error}"
+                        )
                 
                 except Exception as vision_error:
                     st.warning(

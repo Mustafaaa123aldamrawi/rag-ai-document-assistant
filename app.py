@@ -1737,8 +1737,25 @@ if uploaded_files:
                         raise Exception(
                             "All drawing region analyses failed; no region results are available to merge."
                         )
+                    conflict_flags = []
+
+                    vision_text_lower = "\n".join(region_answers).lower()
                     
+                    known_conflict_patterns = [
+                        ("85\"", "86\""),
+                        ("ft2-700", "ftz-700"),
+                        ("sx-dpp-104i", "sx-dcp-4041"),
+                        ("41.9", "47.6"),
+                        ("8.4", "3.4"),
+                    ]
+                    
+                    for value_a, value_b in known_conflict_patterns:
+                        if value_a in vision_text_lower and value_b in vision_text_lower:
+                            conflict_flags.append(
+                                f"Conflicting readings detected: {value_a} vs {value_b}"
+                            )
                     vision_answer = "\n\n".join(region_answers)
+                    conflict_summary = "\n".join(conflict_flags) if conflict_flags else "No predefined conflicts detected."
                     merge_prompt = (
                         "You are consolidating multiple AV drawing region analyses into one final result. "
                         "Use only information present in the region analyses below. "
@@ -1748,9 +1765,14 @@ if uploaded_files:
                         "Do not use opportunity numbers or project numbers as the drawing number. "
                         "Preserve manufacturer names and model numbers exactly when clearly supported. "
                         "If regions disagree and the conflict cannot be resolved confidently, mark it as unclear. "
+                        "Treat every item listed under Programmatically detected conflicts as unresolved unless one reading is clearly supported by multiple independent regions. "
+                        "Do not select either conflicting value merely because it appears in the cleaned analysis. "
+                        "For unresolved conflicts, keep the affected value unclear and mention both readings briefly. "
                         "Return one clean consolidated analysis with these sections: "
                         "Drawing Number, Drawing Title, Room/Areas, Equipment, Installation Notes, References. "
                         "Do not mention region numbers in the final answer.\n\n"
+                        "Programmatically detected conflicts:\n"
+                        f"{conflict_summary}\n\n"
                         f"{vision_answer}"
                     )
                     merged_vision_answer = call_conversation_llm(

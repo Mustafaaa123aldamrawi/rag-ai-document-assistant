@@ -1712,22 +1712,32 @@ if uploaded_files:
                         )
                 
                         vision_messages[1]["content"][1]["image_url"]["url"] = region_data_url
-                
-                        region_answer = call_conversation_llm(
-                            messages=vision_messages,
-                            temperature=0.2,
-                            preferred_models_override=[
-                                "zai-org/GLM-4.5V",
-                                "Qwen/Qwen2.5-VL-3B-Instruct",
-                                "swiss-ai/Apertus-v1.5-8B"
-                            ]
-                        )
-                
-                        if region_answer:
-                            region_answers.append(
-                                f"### Region {region['region_number']}\n{region_answer}"
+                        try:
+                            region_answer = call_conversation_llm(
+                                messages=vision_messages,
+                                temperature=0.2,
+                                preferred_models_override=[
+                                    "zai-org/GLM-4.5V",
+                                    "Qwen/Qwen2.5-VL-3B-Instruct",
+                                    "swiss-ai/Apertus-v1.5-8B"
+                                ]
                             )
                 
+                            if region_answer:
+                                region_answers.append(
+                                    f"### Region {region['region_number']}\n{region_answer}"
+                                )
+                        except Exception as region_error:
+                            st.warning(
+                                f"Region {region['region_number']} analysis skipped: {region_error}"
+                            )
+                            continue
+
+                    if not region_answers:
+                        raise Exception(
+                            "All drawing region analyses failed; no region results are available to merge."
+                        )
+                    
                     vision_answer = "\n\n".join(region_answers)
                     merge_prompt = (
                         "You are consolidating multiple AV drawing region analyses into one final result. "

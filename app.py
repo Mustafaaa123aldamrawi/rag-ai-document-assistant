@@ -1881,7 +1881,48 @@ if uploaded_files:
                         for equipment_item in structured_drawing_data.get("equipment", []):
                             model = equipment_item.get("model")
                             manufacturer = equipment_item.get("manufacturer")
-                        
+                            quantity = equipment_item.get("quantity")
+                            equipment_name = equipment_item.get("name") or ""
+                            if quantity == 1:
+                                quantity_evidence_patterns = [
+                                    "(x1)",
+                                    "qty 1",
+                                    "qty: 1",
+                                    "quantity 1",
+                                    "quantity: 1",
+                                    "1x "
+                                ]
+                            
+                                quantity_context_terms = []
+
+                                if isinstance(model, str) and model.strip():
+                                    quantity_context_terms.append(model.strip().lower())
+                                
+                                if isinstance(equipment_name, str) and equipment_name.strip():
+                                    quantity_context_terms.append(equipment_name.strip().lower())
+                                
+                                has_explicit_quantity_one = False
+                                
+                                for region_text in region_answers:
+                                    region_text_lower = region_text.lower()
+                                
+                                    has_item_context = any(
+                                        term in region_text_lower
+                                        for term in quantity_context_terms
+                                    )
+                                
+                                    has_quantity_marker = any(
+                                        pattern in region_text_lower
+                                        for pattern in quantity_evidence_patterns
+                                    )
+                                
+                                    if has_item_context and has_quantity_marker:
+                                        has_explicit_quantity_one = True
+                                        break
+                            
+                                if not has_explicit_quantity_one:
+                                    equipment_item["quantity"] = None
+                            
                             support_terms = []
 
                             if isinstance(model, str) and model.strip():
@@ -1904,12 +1945,11 @@ if uploaded_files:
                                     support_count += 1
                         
                             if support_count >= 2:
-                                continue
-                        
-                            if support_count == 1:
-                                if equipment_item.get("confidence") == "high":
-                                    equipment_item["confidence"] = "medium"
-                        
+                                equipment_item["confidence"] = "high"
+                            
+                            elif support_count == 1:
+                                equipment_item["confidence"] = "medium"
+                            
                             else:
                                 equipment_item["confidence"] = "low"
                         

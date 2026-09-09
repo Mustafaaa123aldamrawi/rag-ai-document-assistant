@@ -1864,7 +1864,6 @@ if uploaded_files:
                             temperature=0.0,
                             preferred_models_override=[
                                 "Qwen/Qwen2.5-VL-3B-Instruct",
-                                "swiss-ai/Apertus-v1.5-8B"
                             ]
                         )
                         structured_json_text = structured_vision_answer.strip()

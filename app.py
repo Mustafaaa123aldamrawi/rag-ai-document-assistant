@@ -1862,7 +1862,7 @@ if uploaded_files:
                             prompt=structured_prompt,
                             temperature=0.0,
                             preferred_models_override=[
-                                "zai-org/GLM-4.5V"
+                                "Qwen/Qwen2.5-7B-Instruct"
                             ]
                         )
                         structured_json_text = structured_vision_answer.strip()

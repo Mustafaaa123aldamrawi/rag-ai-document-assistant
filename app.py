@@ -1718,8 +1718,7 @@ if uploaded_files:
                                 temperature=0.2,
                                 preferred_models_override=[
                                     "zai-org/GLM-4.5V",
-                                    "Qwen/Qwen2.5-VL-3B-Instruct",
-                                    "swiss-ai/Apertus-v1.5-8B"
+                                    "Qwen/Qwen2.5-VL-3B-Instruct"
                                 ]
                             )
                 
@@ -1781,7 +1780,6 @@ if uploaded_files:
                         temperature=0.1,
                         preferred_models_override=[
                             "Qwen/Qwen2.5-VL-3B-Instruct",
-                            "swiss-ai/Apertus-v1.5-8B"
                         ]
                     )
                     

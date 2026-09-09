@@ -213,7 +213,7 @@ def call_conversation_llm(
             "messages": conversation_messages,
             "temperature": temperature,
             "top_p": 0.9,
-            "max_tokens": 1200,
+            "max_tokens": 3000,
         }
         
         try:

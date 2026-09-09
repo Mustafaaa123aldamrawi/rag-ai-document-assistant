@@ -221,10 +221,10 @@ def call_conversation_llm(
                 url,
                 headers=headers,
                 json=payload,
-                timeout=60
+                timeout=120
             )
         except requests.exceptions.Timeout:
-            last_error = f"Model {model_id} timed out after 60 seconds."
+            last_error = f"Model {model_id} timed out after 120 seconds."
             continue
         except requests.exceptions.ConnectionError as connection_error:
             last_error = f"Model {model_id} connection error: {connection_error}"

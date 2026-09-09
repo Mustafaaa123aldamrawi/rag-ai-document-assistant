@@ -1872,11 +1872,39 @@ if uploaded_files:
                         structured_json_text = structured_vision_answer.strip()
                         structured_json_text = re.sub(r"^```json\s*|\s*```$", "", structured_json_text).strip()
                         structured_drawing_data = json.loads(structured_json_text)
+                        for equipment_item in structured_drawing_data.get("equipment", []):
+                            quantity_value = equipment_item.get("quantity")
+                        
+                            if isinstance(quantity_value, str):
+                                quantity_value = quantity_value.strip()
+                        
+                                if quantity_value.isdigit():
+                                    equipment_item["quantity"] = int(quantity_value)
                         raw_region_text = "\n".join(region_answers).lower()
 
                         uncertainty_notes = structured_drawing_data.setdefault(
                             "uncertainty_notes", []
                         )
+                        def normalize_equipment_text(text):
+                            if not isinstance(text, str):
+                                return ""
+                        
+                            text = text.lower().strip()
+                        
+                            replacements = {
+                                "camera": "cam",
+                                "cameras": "cam",
+                                "with wall mount": "",
+                                "wall mount": "",
+                                "with mount": "",
+                            }
+                        
+                            for old, new in replacements.items():
+                                text = text.replace(old, new)
+                        
+                            text = re.sub(r"\s+", " ", text).strip()
+                        
+                            return text
                         
                         for equipment_item in structured_drawing_data.get("equipment", []):
                             model = equipment_item.get("model")
@@ -1899,12 +1927,14 @@ if uploaded_files:
                                     quantity_context_terms.append(model.strip().lower())
                                 
                                 if isinstance(equipment_name, str) and equipment_name.strip():
-                                    quantity_context_terms.append(equipment_name.strip().lower())
+                                    quantity_context_terms.append(
+                                        normalize_equipment_text(equipment_name)
+                                    )
                                 
                                 has_explicit_quantity_one = False
                                 
                                 for region_text in region_answers:
-                                    region_text_lower = region_text.lower()
+                                    region_text_lower = normalize_equipment_text(region_text)
                                 
                                     has_item_context = any(
                                         term in region_text_lower
@@ -1931,7 +1961,9 @@ if uploaded_files:
                                 equipment_name = equipment_item.get("name")
                             
                                 if isinstance(equipment_name, str) and equipment_name.strip():
-                                    support_terms.append(equipment_name.strip().lower())
+                                    support_terms.append(
+                                        normalize_equipment_text(equipment_name)
+                                    )
                             
                             if not support_terms:
                                 continue
@@ -1939,7 +1971,7 @@ if uploaded_files:
                             support_count = 0
                         
                             for region_text in region_answers:
-                                region_text_lower = region_text.lower()
+                                region_text_lower = normalize_equipment_text(region_text)
                         
                                 if any(term in region_text_lower for term in support_terms):
                                     support_count += 1

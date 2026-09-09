@@ -1861,6 +1861,9 @@ if uploaded_files:
                         structured_vision_answer = call_conversation_llm(
                             prompt=structured_prompt,
                             temperature=0.0,
+                            preferred_models_override=[
+                                "zai-org/GLM-4.5V"
+                            ]
                         )
                         structured_json_text = structured_vision_answer.strip()
                         structured_json_text = re.sub(r"^```json\s*|\s*```$", "", structured_json_text).strip()

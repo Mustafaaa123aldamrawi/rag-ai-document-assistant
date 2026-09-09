@@ -1718,7 +1718,6 @@ if uploaded_files:
                                 temperature=0.2,
                                 preferred_models_override=[
                                     "zai-org/GLM-4.5V",
-                                    "Qwen/Qwen2.5-VL-3B-Instruct"
                                 ]
                             )
                 

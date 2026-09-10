@@ -2058,6 +2058,18 @@ if uploaded_files:
                         for equipment_item in structured_drawing_data.get("equipment", []):
                             model = equipment_item.get("model")
                             manufacturer = equipment_item.get("manufacturer")
+                            if isinstance(manufacturer, str):
+                                manufacturer_normalized = manufacturer.lower().replace("-", "").replace(" ", "")
+                            
+                                if manufacturer_normalized == "avispl":
+                                    equipment_item["manufacturer"] = None
+                                    manufacturer = None
+                            
+                                    equipment_name = equipment_item.get("name") or "Unknown equipment"
+                                    uncertainty_notes.append(
+                                        f"{equipment_name}: AVI-SPL was excluded as the equipment manufacturer "
+                                        "because it is project/company information."
+                                    )
                             quantity = equipment_item.get("quantity")
                             equipment_name = equipment_item.get("name") or ""
                             if quantity == 1:

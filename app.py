@@ -1900,6 +1900,7 @@ if uploaded_files:
                             "dimension markings",
                             "mm",
                             "reference tags",
+                            "reference tag",
                             "view labels",
                             "device front view",
                             "side view",

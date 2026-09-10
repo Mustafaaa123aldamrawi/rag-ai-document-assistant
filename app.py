@@ -1866,7 +1866,7 @@ if uploaded_files:
                             temperature=0.0,
                             preferred_models_override=[
                                 "openai/gpt-oss-20b"
-                            ]و
+                            ],
                             reasoning_effort="low"
                         )
                         structured_json_text = structured_vision_answer.strip()

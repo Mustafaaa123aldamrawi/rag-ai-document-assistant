@@ -1936,6 +1936,8 @@ if uploaded_files:
                                 "revision:",
                                 "scale:",
                                 "project:",
+                                "status:",
+                                "approved by:",
                                 "copyright",
                             ]
                             

@@ -2020,14 +2020,16 @@ if uploaded_files:
                             support_terms = []
 
                             if isinstance(model, str) and model.strip():
-                                support_terms.append(model.strip().lower())
-                            else:
-                                equipment_name = equipment_item.get("name")
+                                support_terms.append(
+                                    normalize_equipment_text(model)
+                                )
                             
-                                if isinstance(equipment_name, str) and equipment_name.strip():
-                                    support_terms.append(
-                                        normalize_equipment_text(equipment_name)
-                                    )
+                            equipment_name = equipment_item.get("name")
+                            
+                            if isinstance(equipment_name, str) and equipment_name.strip():
+                                support_terms.append(
+                                    normalize_equipment_text(equipment_name)
+                                )
                             
                             if not support_terms:
                                 continue

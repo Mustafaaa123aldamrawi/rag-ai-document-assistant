@@ -1896,6 +1896,8 @@ if uploaded_files:
                             "dimension:",
                             "dimension callout",
                             "dimensions (mm)",
+                            "dimensions:",
+                            "mm",
                             "view labels",
                             "device front view",
                             "side view",

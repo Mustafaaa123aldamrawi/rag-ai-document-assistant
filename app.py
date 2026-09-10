@@ -1929,6 +1929,35 @@ if uploaded_files:
                                 continue
                         
                             filtered_installation_notes.append(note)
+
+                            reference_patterns = [
+                                "company information",
+                                "date:",
+                                "revision:",
+                                "scale:",
+                                "project:",
+                                "copyright",
+                            ]
+                            
+                            references = structured_drawing_data.setdefault(
+                                "references", []
+                            )
+                            
+                            final_installation_notes = []
+                            
+                            for note in filtered_installation_notes:
+                                note_lower = note.lower()
+                            
+                                if any(
+                                    pattern in note_lower
+                                    for pattern in reference_patterns
+                                ):
+                                    references.append(note)
+                                    continue
+                            
+                                final_installation_notes.append(note)
+                            
+                            filtered_installation_notes = final_installation_notes
                         
                         structured_drawing_data["installation_notes"] = (
                             filtered_installation_notes

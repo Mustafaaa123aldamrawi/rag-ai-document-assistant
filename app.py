@@ -1962,6 +1962,12 @@ if uploaded_files:
                             "hidden d1",
                             "hidden door",
                         }
+                        non_equipment_patterns = [
+                            "backing to withstand",
+                            "provide backing",
+                            "safety factor",
+                            "provide pull string",
+                        ]
                         
                         filtered_equipment = []
                         
@@ -1970,7 +1976,13 @@ if uploaded_files:
                                 equipment_item.get("name") or ""
                             ).strip()
                         
-                            if equipment_name.lower() in ambiguous_equipment_names:
+                            if (
+                                equipment_name.lower() in ambiguous_equipment_names
+                                or any(
+                                    pattern in equipment_name.lower()
+                                    for pattern in non_equipment_patterns
+                                )
+                            ):
                                 uncertainty_notes.append(
                                     f"Excluded ambiguous non-equipment label: {equipment_name}"
                                 )

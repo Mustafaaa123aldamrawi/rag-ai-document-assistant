@@ -1964,6 +1964,31 @@ if uploaded_files:
                         structured_drawing_data["installation_notes"] = (
                             filtered_installation_notes
                         )
+                        confirmed_installation_patterns = [
+                            "backing to withstand",
+                            "provide backing",
+                        ]
+                        
+                        remaining_uncertainty_notes = []
+                        
+                        for note in uncertainty_notes:
+                            note_lower = note.lower()
+                        
+                            if any(
+                                pattern in note_lower
+                                for pattern in confirmed_installation_patterns
+                            ):
+                                if note not in structured_drawing_data["installation_notes"]:
+                                    structured_drawing_data["installation_notes"].append(note)
+                                continue
+                        
+                            remaining_uncertainty_notes.append(note)
+                        
+                        structured_drawing_data["uncertainty_notes"] = (
+                            remaining_uncertainty_notes
+                        )
+                        
+                        uncertainty_notes = remaining_uncertainty_notes
                         room_areas = structured_drawing_data.get(
                             "room_areas", []
                         )

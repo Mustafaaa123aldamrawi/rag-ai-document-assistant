@@ -1949,6 +1949,38 @@ if uploaded_files:
                         structured_drawing_data["room_areas"] = (
                             filtered_room_areas
                         )
+                        equipment_items = structured_drawing_data.get(
+                            "equipment", []
+                        )
+                        
+                        ambiguous_equipment_names = {
+                            "av",
+                            "av label",
+                            "fb",
+                            "fb label",
+                            "n",
+                            "hidden d1",
+                            "hidden door",
+                        }
+                        
+                        filtered_equipment = []
+                        
+                        for equipment_item in equipment_items:
+                            equipment_name = str(
+                                equipment_item.get("name") or ""
+                            ).strip()
+                        
+                            if equipment_name.lower() in ambiguous_equipment_names:
+                                uncertainty_notes.append(
+                                    f"Excluded ambiguous non-equipment label: {equipment_name}"
+                                )
+                                continue
+                        
+                            filtered_equipment.append(equipment_item)
+                        
+                        structured_drawing_data["equipment"] = (
+                            filtered_equipment
+                        )
                         def normalize_equipment_text(text):
                             if not isinstance(text, str):
                                 return ""

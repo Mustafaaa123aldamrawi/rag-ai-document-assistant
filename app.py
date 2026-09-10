@@ -1920,6 +1920,34 @@ if uploaded_files:
                         structured_drawing_data["installation_notes"] = (
                             filtered_installation_notes
                         )
+                        room_areas = structured_drawing_data.get(
+                            "room_areas", []
+                        )
+                        
+                        non_room_patterns = [
+                            "hidden door",
+                            "hidden do",
+                        ]
+                        
+                        filtered_room_areas = []
+                        
+                        for room_area in room_areas:
+                            room_area_lower = room_area.lower()
+                        
+                            if any(
+                                pattern in room_area_lower
+                                for pattern in non_room_patterns
+                            ):
+                                uncertainty_notes.append(
+                                    f"Excluded non-room architectural label: {room_area}"
+                                )
+                                continue
+                        
+                            filtered_room_areas.append(room_area)
+                        
+                        structured_drawing_data["room_areas"] = (
+                            filtered_room_areas
+                        )
                         def normalize_equipment_text(text):
                             if not isinstance(text, str):
                                 return ""

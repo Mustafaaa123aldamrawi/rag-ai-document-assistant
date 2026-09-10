@@ -1885,6 +1885,41 @@ if uploaded_files:
                         uncertainty_notes = structured_drawing_data.setdefault(
                             "uncertainty_notes", []
                         )
+                        installation_notes = structured_drawing_data.get(
+                            "installation_notes", []
+                        )
+                        
+                        filtered_installation_notes = []
+                        
+                        non_installation_patterns = [
+                            "dimensional notation",
+                            "dimension:",
+                            "dimensions (mm)",
+                            "view labels",
+                            "device front view",
+                            "side view",
+                            "infrastructure front view",
+                            "display outline",
+                            "field coordinate",
+                            "hidden do",
+                            "text note",
+                        ]
+                        
+                        for note in installation_notes:
+                            note_lower = note.lower()
+                        
+                            if any(
+                                pattern in note_lower
+                                for pattern in non_installation_patterns
+                            ):
+                                uncertainty_notes.append(note)
+                                continue
+                        
+                            filtered_installation_notes.append(note)
+                        
+                        structured_drawing_data["installation_notes"] = (
+                            filtered_installation_notes
+                        )
                         def normalize_equipment_text(text):
                             if not isinstance(text, str):
                                 return ""

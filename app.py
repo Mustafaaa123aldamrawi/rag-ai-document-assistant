@@ -119,7 +119,8 @@ def call_conversation_llm(
     prompt=None,
     temperature=0.85,
     preferred_models_override=None,
-    messages=None
+    messages=Noneو
+    reasoning_effort=None
 ):
     url = "https://router.huggingface.co/v1/chat/completions"
     
@@ -215,6 +216,8 @@ def call_conversation_llm(
             "top_p": 0.9,
             "max_tokens": 3000,
         }
+        if reasoning_effort is not None:
+            payload["reasoning_effort"] = reasoning_effort
         
         try:
             response = requests.post(
@@ -1863,7 +1866,8 @@ if uploaded_files:
                             temperature=0.0,
                             preferred_models_override=[
                                 "openai/gpt-oss-20b"
-                            ]
+                            ]و
+                            reasoning_effort="low"
                         )
                         structured_json_text = structured_vision_answer.strip()
                         structured_json_text = re.sub(r"^```json\s*|\s*```$", "", structured_json_text).strip()

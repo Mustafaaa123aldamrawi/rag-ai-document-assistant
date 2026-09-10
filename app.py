@@ -1912,6 +1912,13 @@ if uploaded_files:
                         
                         for note in installation_notes:
                             note_lower = note.lower()
+                            if note_lower.strip() in {
+                                "n / 1",
+                                "n/1",
+                                "n",
+                            }:
+                                uncertainty_notes.append(note)
+                                continue
                         
                             if any(
                                 pattern in note_lower

@@ -1862,7 +1862,7 @@ if uploaded_files:
                             prompt=structured_prompt,
                             temperature=0.0,
                             preferred_models_override=[
-                                "Qwen/Qwen2.5-7B-Instruct"
+                                "openai/gpt-oss-20b"
                             ]
                         )
                         structured_json_text = structured_vision_answer.strip()

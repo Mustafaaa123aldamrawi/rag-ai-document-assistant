@@ -1894,6 +1894,7 @@ if uploaded_files:
                         non_installation_patterns = [
                             "dimensional notation",
                             "dimension:",
+                            "dimension callout",
                             "dimensions (mm)",
                             "view labels",
                             "device front view",

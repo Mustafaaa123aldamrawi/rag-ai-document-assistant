@@ -2097,11 +2097,15 @@ if uploaded_files:
                                         f"{equipment_name}: AVI-SPL was excluded as the equipment manufacturer "
                                         "because it is project/company information."
                                     )
-                            if (
-                                isinstance(model, str)
-                                and equipment_name == "AM-3100-WF AIR MEDIA"
-                            ):
-                                if model.strip() == "AM-3100-WF AIR MEDIA":
+                            if equipment_name == "AM-3100-WF AIR MEDIA":
+                                if isinstance(manufacturer, str) and manufacturer.strip().lower() == "am":
+                                    equipment_item["manufacturer"] = None
+                                    manufacturer = None
+                            
+                                if isinstance(model, str) and model.strip() in {
+                                    "3100-WF",
+                                    "AM-3100-WF AIR MEDIA",
+                                }:
                                     equipment_item["model"] = "AM-3100-WF"
                                     model = "AM-3100-WF"
                             quantity = equipment_item.get("quantity")

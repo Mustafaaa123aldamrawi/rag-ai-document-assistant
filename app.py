@@ -2091,6 +2091,7 @@ if uploaded_files:
                             "n",
                             "hidden d1",
                             "hidden door",
+                            "loudspeaker (fb)",
                         }
                         non_equipment_patterns = [
                             "backing to withstand",

@@ -2000,6 +2000,20 @@ if uploaded_files:
                                     structured_drawing_data["installation_notes"].append(
                                         analysis_line_clean
                                     )
+                        deduplicated_installation_notes = []
+
+                        for note in structured_drawing_data["installation_notes"]:
+                            normalized_note = note.lstrip("-• ").strip().lower()
+                        
+                            if not any(
+                                normalized_note == existing.lstrip("-• ").strip().lower()
+                                for existing in deduplicated_installation_notes
+                            ):
+                                deduplicated_installation_notes.append(note)
+                        
+                        structured_drawing_data["installation_notes"] = (
+                            deduplicated_installation_notes
+                        )
                         room_areas = structured_drawing_data.get(
                             "room_areas", []
                         )

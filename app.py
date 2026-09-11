@@ -1989,6 +1989,17 @@ if uploaded_files:
                         )
                         
                         uncertainty_notes = remaining_uncertainty_notes
+                        for analysis_line in cleaned_vision_answer.splitlines():
+                            analysis_line_clean = analysis_line.strip()
+                        
+                            if any(
+                                pattern in analysis_line_clean.lower()
+                                for pattern in confirmed_installation_patterns
+                            ):
+                                if analysis_line_clean not in structured_drawing_data["installation_notes"]:
+                                    structured_drawing_data["installation_notes"].append(
+                                        analysis_line_clean
+                                    )
                         room_areas = structured_drawing_data.get(
                             "room_areas", []
                         )

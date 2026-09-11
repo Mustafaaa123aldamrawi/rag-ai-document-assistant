@@ -2128,11 +2128,6 @@ if uploaded_files:
                                     equipment_item["manufacturer"] = None
                                     manufacturer = None
                             
-                                    equipment_name = equipment_item.get("name") or "Unknown equipment"
-                                    uncertainty_notes.append(
-                                        f"{equipment_name}: AVI-SPL was excluded as the equipment manufacturer "
-                                        "because it is project/company information."
-                                    )
                             quantity = equipment_item.get("quantity")
                             equipment_name = equipment_item.get("name") or ""
                             if equipment_name == "AM-3100-WF AIR MEDIA":

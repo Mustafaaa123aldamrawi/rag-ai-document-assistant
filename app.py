@@ -2003,10 +2003,20 @@ if uploaded_files:
                         deduplicated_installation_notes = []
 
                         for note in structured_drawing_data["installation_notes"]:
-                            normalized_note = note.lstrip("-• ").strip().lower()
+                            normalized_note = re.sub(
+                                r"^\s*[-•]?\s*\(x\d+\)\s*",
+                                "",
+                                note,
+                                flags=re.IGNORECASE
+                            ).strip().lower()
                         
                             if not any(
-                                normalized_note == existing.lstrip("-• ").strip().lower()
+                                normalized_note == re.sub(
+                                    r"^\s*[-•]?\s*\(x\d+\)\s*",
+                                    "",
+                                    existing,
+                                    flags=re.IGNORECASE
+                                ).strip().lower()
                                 for existing in deduplicated_installation_notes
                             ):
                                 deduplicated_installation_notes.append(note)

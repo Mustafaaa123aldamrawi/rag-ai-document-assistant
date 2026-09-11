@@ -2126,6 +2126,27 @@ if uploaded_files:
                         structured_drawing_data["equipment"] = (
                             filtered_equipment
                         )
+                        airmedia_seen = False
+                        final_equipment = []
+                        
+                        for equipment_item in structured_drawing_data["equipment"]:
+                            equipment_name = str(
+                                equipment_item.get("name") or ""
+                            ).strip().lower()
+                        
+                            is_airmedia = (
+                                "airmedia" in equipment_name
+                                or "air media" in equipment_name
+                            )
+                        
+                            if is_airmedia:
+                                if airmedia_seen:
+                                    continue
+                                airmedia_seen = True
+                        
+                            final_equipment.append(equipment_item)
+                        
+                        structured_drawing_data["equipment"] = final_equipment
                         def normalize_equipment_text(text):
                             if not isinstance(text, str):
                                 return ""

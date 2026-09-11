@@ -2097,6 +2097,8 @@ if uploaded_files:
                                         f"{equipment_name}: AVI-SPL was excluded as the equipment manufacturer "
                                         "because it is project/company information."
                                     )
+                            quantity = equipment_item.get("quantity")
+                            equipment_name = equipment_item.get("name") or ""
                             if equipment_name == "AM-3100-WF AIR MEDIA":
                                 if isinstance(manufacturer, str) and manufacturer.strip().lower() == "am":
                                     equipment_item["manufacturer"] = None
@@ -2108,8 +2110,7 @@ if uploaded_files:
                                 }:
                                     equipment_item["model"] = "AM-3100-WF"
                                     model = "AM-3100-WF"
-                            quantity = equipment_item.get("quantity")
-                            equipment_name = equipment_item.get("name") or ""
+                            
                             if quantity == 1:
                                 quantity_evidence_patterns = [
                                     "(x1)",

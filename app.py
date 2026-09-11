@@ -2005,7 +2005,7 @@ if uploaded_files:
 
                         for note in structured_drawing_data["installation_notes"]:
                             normalized_note = re.sub(
-                                r"^\s*[-•]?\s*\(x\d+\)\s*",
+                                r"^\s*[-•]?\s*(?:\(x\d+\)\s*)?",
                                 "",
                                 note,
                                 flags=re.IGNORECASE
@@ -2013,7 +2013,7 @@ if uploaded_files:
                         
                             if not any(
                                 normalized_note == re.sub(
-                                    r"^\s*[-•]?\s*\(x\d+\)\s*",
+                                    r"^\s*[-•]?\s*(?:\(x\d+\)\s*)?",
                                     "",
                                     existing,
                                     flags=re.IGNORECASE

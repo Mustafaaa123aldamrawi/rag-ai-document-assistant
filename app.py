@@ -2121,7 +2121,12 @@ if uploaded_files:
                                 }:
                                     equipment_item["model"] = "AM-3100-WF"
                                     model = "AM-3100-WF"
+                            if "XTM1U" in equipment_name.upper():
+                                equipment_item["manufacturer"] = "CHIEF"
+                                manufacturer = "CHIEF"
                             
+                                equipment_item["model"] = "XTM1U"
+                                model = "XTM1U"
                             if quantity == 1:
                                 quantity_evidence_patterns = [
                                     "(x1)",

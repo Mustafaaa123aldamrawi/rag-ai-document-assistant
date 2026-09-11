@@ -1939,6 +1939,7 @@ if uploaded_files:
                                 "project:",
                                 "status:",
                                 "approved by:",
+                                "description:",
                                 "copyright",
                             ]
                             

@@ -1940,6 +1940,8 @@ if uploaded_files:
                                 "status:",
                                 "approved by:",
                                 "description:",
+                                "issued for approval",
+                                "shop drawings",
                                 "copyright",
                             ]
                             

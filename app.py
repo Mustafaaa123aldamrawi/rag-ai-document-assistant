@@ -1892,6 +1892,34 @@ if uploaded_files:
                         uncertainty_notes = structured_drawing_data.setdefault(
                             "uncertainty_notes", []
                         )
+                        source_drawing_text = " ".join(
+                            page.get("text", "")
+                            for page in file_pages
+                        )
+                        
+                        source_drawing_candidates = {
+                            re.sub(r"\s+", "", match).upper()
+                            for match in re.findall(
+                                r"\bAV[-\s]?\d+(?:\.\d+)?\b",
+                                source_drawing_text,
+                                flags=re.IGNORECASE
+                            )
+                        }
+                        
+                        structured_drawing_number = structured_drawing_data.get("drawing_number")
+                        
+                        if structured_drawing_number:
+                            normalized_drawing_number = re.sub(
+                                r"\s+",
+                                "",
+                                str(structured_drawing_number)
+                            ).upper()
+                        
+                            if normalized_drawing_number not in source_drawing_candidates:
+                                uncertainty_notes.append(
+                                    f"Rejected unsupported drawing number: {structured_drawing_number}"
+                                )
+                                structured_drawing_data["drawing_number"] = None
                         installation_notes = structured_drawing_data.get(
                             "installation_notes", []
                         )

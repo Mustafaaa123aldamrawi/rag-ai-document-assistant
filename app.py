@@ -2116,20 +2116,47 @@ if uploaded_files:
                         ]
                         
                         filtered_room_areas = []
-                        
+
                         for room_area in room_areas:
-                            room_area_lower = room_area.lower()
+                            room_area_text = str(room_area).strip()
+                            room_area_lower = room_area_text.lower()
+                        
+                            if not room_area_text:
+                                continue
                         
                             if any(
                                 pattern in room_area_lower
                                 for pattern in non_room_patterns
                             ):
                                 uncertainty_notes.append(
-                                    f"Excluded non-room architectural label: {room_area}"
+                                    f"Excluded non-room architectural label: {room_area_text}"
                                 )
                                 continue
                         
-                            filtered_room_areas.append(room_area)
+                            if len(room_area_text) <= 3:
+                                uncertainty_notes.append(
+                                    f"Excluded ambiguous room label: {room_area_text}"
+                                )
+                                continue
+                        
+                            project_location_terms = (
+                                "riyadh",
+                                "saudi arabia",
+                                "project",
+                                "phase",
+                                "design services",
+                            )
+                        
+                            if any(
+                                term in room_area_lower
+                                for term in project_location_terms
+                            ):
+                                uncertainty_notes.append(
+                                    f"Excluded project/location metadata from room areas: {room_area_text}"
+                                )
+                                continue
+                        
+                            filtered_room_areas.append(room_area_text)
                         
                         structured_drawing_data["room_areas"] = (
                             filtered_room_areas

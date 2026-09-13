@@ -1778,8 +1778,7 @@ if uploaded_files:
                 "pending_question",
                 ""
             ).strip()
-            
-           run_drawing_vision = should_run_drawing_vision(
+            run_drawing_vision = should_run_drawing_vision(
                 content_type=content_type,
                 pending_question=pending_drawing_question,
                 search_mode=search_mode,
@@ -1789,6 +1788,7 @@ if uploaded_files:
                 ),
             )
             
+              
             if content_type == "DRAWING" and run_drawing_vision:
                 rendered_drawing_pages = render_pdf_pages_for_vision(
                     uploaded_file,

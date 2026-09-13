@@ -1,4 +1,5 @@
 import ast
+import re
 from pathlib import Path
 
 import pytest
@@ -153,6 +154,7 @@ normalize_equipment_quantities = load_function_from_app(
 extract_primary_drawing_number = load_function_from_app(
     "extract_primary_drawing_number"
 )
+extract_primary_drawing_number.__globals__["re"] = re
 should_run_drawing_vision.__globals__["decide_query_route"] = decide_query_route
 
 @pytest.mark.parametrize(

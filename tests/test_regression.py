@@ -154,7 +154,11 @@ normalize_equipment_quantities = load_function_from_app(
 extract_primary_drawing_number = load_function_from_app(
     "extract_primary_drawing_number"
 )
+validate_structured_drawing_number = load_function_from_app(
+    "validate_structured_drawing_number"
+)
 extract_primary_drawing_number.__globals__["re"] = re
+validate_structured_drawing_number.__globals__["re"] = re
 should_run_drawing_vision.__globals__["decide_query_route"] = decide_query_route
 
 @pytest.mark.parametrize(
@@ -342,4 +346,23 @@ def test_extract_primary_drawing_number():
 
     assert primary_number == "AV-203"
     assert "AV-203" in normalized_numbers
+
+
+def test_validate_structured_drawing_number():
+    data = {
+        "drawing_number": "AV-999"
+    }
+    uncertainty_notes = []
+
+    result = validate_structured_drawing_number(
+        structured_drawing_data=data,
+        primary_drawing_number=None,
+        normalized_source_numbers=["AV-203"],
+        uncertainty_notes=uncertainty_notes,
+    )
+
+    assert result["drawing_number"] is None
+    assert uncertainty_notes == [
+        "Rejected unsupported drawing number: AV-999"
+    ]
     

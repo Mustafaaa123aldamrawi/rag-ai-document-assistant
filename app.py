@@ -1749,10 +1749,33 @@ if uploaded_files:
                 f"detected as: {content_type}"
             )
             rendered_drawing_pages = []
-            drawing_analysis_deferred = content_type == "DRAWING"
-            run_drawing_vision = not drawing_analysis_deferred
+            
+            pending_drawing_question = st.session_state.get(
+                "pending_question",
+                ""
+            ).strip()
+            
+            pending_drawing_route = None
 
-            if content_type == "DRAWING":
+            if pending_drawing_question:
+                pending_drawing_route = decide_query_route(
+                    question=pending_drawing_question,
+                    search_mode=search_mode,
+                    has_document=True,
+                    content_type=content_type,
+                    document_scope_active=st.session_state.get(
+                        "document_scope_active",
+                        False,
+                    ),
+                    is_follow_up=False,
+                )
+            
+            run_drawing_vision = (
+                content_type == "DRAWING"
+                and pending_drawing_route in {"DRAWING", "HYBRID"}
+            )
+            
+            if content_type == "DRAWING" and run_drawing_vision:
                 rendered_drawing_pages = render_pdf_pages_for_vision(
                     uploaded_file,
                     max_pages=1,

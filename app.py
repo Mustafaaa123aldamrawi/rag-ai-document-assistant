@@ -1749,6 +1749,8 @@ if uploaded_files:
                 f"detected as: {content_type}"
             )
             rendered_drawing_pages = []
+            drawing_analysis_deferred = content_type == "DRAWING"
+            run_drawing_vision = not drawing_analysis_deferred
 
             if content_type == "DRAWING":
                 rendered_drawing_pages = render_pdf_pages_for_vision(

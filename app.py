@@ -859,6 +859,30 @@ def decide_query_route(
             return "WEB"
 
     return "GENERAL"
+def should_run_drawing_vision(
+    content_type,
+    pending_question,
+    search_mode,
+    document_scope_active=False,
+):
+    if str(content_type or "").upper() != "DRAWING":
+        return False
+
+    pending_question = str(pending_question or "").strip()
+
+    if not pending_question:
+        return False
+
+    route = decide_query_route(
+        question=pending_question,
+        search_mode=search_mode,
+        has_document=True,
+        content_type="DRAWING",
+        document_scope_active=document_scope_active,
+        is_follow_up=False,
+    )
+
+    return route in {"DRAWING", "HYBRID"}
 
 def is_official_domain(url, official_domains):
     try:
@@ -1755,24 +1779,14 @@ if uploaded_files:
                 ""
             ).strip()
             
-            pending_drawing_route = None
-
-            if pending_drawing_question:
-                pending_drawing_route = decide_query_route(
-                    question=pending_drawing_question,
-                    search_mode=search_mode,
-                    has_document=True,
-                    content_type=content_type,
-                    document_scope_active=st.session_state.get(
-                        "document_scope_active",
-                        False,
-                    ),
-                    is_follow_up=False,
-                )
-            
-            run_drawing_vision = (
-                content_type == "DRAWING"
-                and pending_drawing_route in {"DRAWING", "HYBRID"}
+           run_drawing_vision = should_run_drawing_vision(
+                content_type=content_type,
+                pending_question=pending_drawing_question,
+                search_mode=search_mode,
+                document_scope_active=st.session_state.get(
+                    "document_scope_active",
+                    False,
+                ),
             )
             
             if content_type == "DRAWING" and run_drawing_vision:

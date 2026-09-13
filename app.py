@@ -1897,25 +1897,46 @@ if uploaded_files:
                             for page in file_pages
                         )
                         
-                        source_drawing_candidates = {
-                            re.sub(r"\s+", "", match).upper()
-                            for match in re.findall(
-                                r"\bAV[-\s]?\d+(?:\.\d+)?\b",
-                                source_drawing_text,
-                                flags=re.IGNORECASE
-                            )
-                        }
+                        source_drawing_numbers = re.findall(
+                            r"\bAV[-\s]?\d+(?:\.\d+)?\b",
+                            source_drawing_text,
+                            flags=re.IGNORECASE
+                        )
+                        
+                        normalized_source_numbers = [
+                            re.sub(r"\s+", "", number).upper()
+                            for number in source_drawing_numbers
+                        ]
+                        
+                        primary_drawing_number = None
+
+                        primary_match = re.search(
+                            r"AS\s+SHOWN\s*@\s*A1\s+(AV[-\s]?\d+(?:\.\d+)?)",
+                            source_drawing_text,
+                            flags=re.IGNORECASE
+                        )
+                        
+                        if primary_match:
+                            primary_drawing_number = re.sub(
+                                r"\s+",
+                                "",
+                                primary_match.group(1)
+                            ).upper()
+                        elif len(set(normalized_source_numbers)) == 1:
+                            primary_drawing_number = normalized_source_numbers[0]
                         
                         structured_drawing_number = structured_drawing_data.get("drawing_number")
                         
-                        if structured_drawing_number:
+                        if primary_drawing_number:
+                            structured_drawing_data["drawing_number"] = primary_drawing_number
+                        elif structured_drawing_number:
                             normalized_drawing_number = re.sub(
                                 r"\s+",
                                 "",
                                 str(structured_drawing_number)
                             ).upper()
                         
-                            if normalized_drawing_number not in source_drawing_candidates:
+                            if normalized_drawing_number not in normalized_source_numbers:
                                 uncertainty_notes.append(
                                     f"Rejected unsupported drawing number: {structured_drawing_number}"
                                 )

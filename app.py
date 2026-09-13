@@ -896,6 +896,37 @@ def normalize_equipment_quantities(structured_drawing_data):
 
     return structured_drawing_data
 
+def extract_primary_drawing_number(source_drawing_text):
+    source_drawing_numbers = re.findall(
+        r"\bAV[-\s]?\d+(?:\.\d+)?\b",
+        source_drawing_text,
+        flags=re.IGNORECASE,
+    )
+
+    normalized_source_numbers = [
+        re.sub(r"\s+", "-", number).upper()
+        for number in source_drawing_numbers
+    ]
+
+    primary_drawing_number = None
+
+    primary_match = re.search(
+        r"AS\s+SHOWN\s*@\s*A1\s+(AV[-\s]?\d+(?:\.\d+)?)",
+        source_drawing_text,
+        flags=re.IGNORECASE,
+    )
+
+    if primary_match:
+        primary_drawing_number = re.sub(
+            r"\s+",
+            "-",
+            primary_match.group(1),
+        ).upper()
+    elif len(set(normalized_source_numbers)) == 1:
+        primary_drawing_number = normalized_source_numbers[0]
+
+    return primary_drawing_number, normalized_source_numbers
+
 def is_official_domain(url, official_domains):
     try:
         domain = url.lower().split("/")[2]

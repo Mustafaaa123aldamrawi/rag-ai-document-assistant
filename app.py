@@ -1812,9 +1812,7 @@ if uploaded_files:
                         prompt=cleanup_prompt,
                         temperature=0.1
                     )
-                    st.markdown("### Drawing Analysis")
-                    st.write(cleaned_vision_answer)
-
+                    
                     structured_prompt = (
                         "Convert the cleaned AV drawing analysis below into strict JSON. "
                         "Do not add new information. "
@@ -2334,7 +2332,62 @@ if uploaded_files:
                                     f"{equipment_name}: model/manufacturer is not directly supported "
                                     "by the raw region analyses."
                                 )
-    
+                        st.markdown("### Drawing Analysis")
+
+                        drawing_number = structured_drawing_data.get("drawing_number")
+                        drawing_title = structured_drawing_data.get("drawing_title")
+                        room_areas = structured_drawing_data.get("room_areas", [])
+                        equipment = structured_drawing_data.get("equipment", [])
+                        installation_notes = structured_drawing_data.get("installation_notes", [])
+                        references = structured_drawing_data.get("references", [])
+                        uncertainty_notes = structured_drawing_data.get("uncertainty_notes", [])
+                        
+                        if drawing_number:
+                            st.markdown(f"**Drawing Number:** {drawing_number}")
+                        
+                        if drawing_title:
+                            st.markdown(f"**Drawing Title:** {drawing_title}")
+                        
+                        if room_areas:
+                            st.markdown("**Room/Areas:**")
+                            for room in room_areas:
+                                st.markdown(f"- {room}")
+                        
+                        if equipment:
+                            st.markdown("**Equipment:**")
+                            for item in equipment:
+                                name = item.get("name") or "Unknown equipment"
+                                manufacturer = item.get("manufacturer")
+                                model = item.get("model")
+                                quantity = item.get("quantity")
+                        
+                                details = [name]
+                        
+                                if manufacturer:
+                                    details.append(f"Manufacturer: {manufacturer}")
+                        
+                                if model:
+                                    details.append(f"Model: {model}")
+                        
+                                if quantity is not None:
+                                    details.append(f"Quantity: {quantity}")
+                        
+                                st.markdown("- " + " | ".join(details))
+                        
+                        if installation_notes:
+                            st.markdown("**Installation Notes:**")
+                            for note in installation_notes:
+                                st.markdown(f"- {note}")
+                        
+                        if references:
+                            st.markdown("**References:**")
+                            for reference in references:
+                                st.markdown(f"- {reference}")
+                        
+                        if uncertainty_notes:
+                            st.markdown("**Uncertainty Notes:**")
+                            for note in uncertainty_notes:
+                                st.markdown(f"- {note}")
                         st.markdown("### Structured Drawing Data")
                         validated_json_text = json.dumps(
                             structured_drawing_data,

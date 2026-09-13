@@ -322,3 +322,4 @@ def test_normalize_equipment_quantities():
     assert result["equipment"][0]["quantity"] == 2
     assert result["equipment"][1]["quantity"] == 1
     assert result["equipment"][2]["quantity"] == "multiple"
+    

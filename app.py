@@ -4345,7 +4345,7 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
                 web_search_query
                 and (
                     query_route in {"WEB", "HYBRID"}
-                    is_web_current_request
+                    or is_web_current_request
                     or is_technical_request
                     or (
                         not is_document_request

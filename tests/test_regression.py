@@ -147,6 +147,9 @@ decide_query_route = load_function_from_app(
 should_run_drawing_vision = load_function_from_app(
     "should_run_drawing_vision"
 )
+normalize_equipment_quantities = load_function_from_app(
+    "normalize_equipment_quantities"
+)
 should_run_drawing_vision.__globals__["decide_query_route"] = decide_query_route
 
 @pytest.mark.parametrize(
@@ -305,3 +308,17 @@ def test_drawing_vision_runs_for_hybrid_question():
     )
 
     assert result is True
+def test_normalize_equipment_quantities():
+    data = {
+        "equipment": [
+            {"name": "Display", "quantity": " 2 "},
+            {"name": "Camera", "quantity": 1},
+            {"name": "Speaker", "quantity": "multiple"},
+        ]
+    }
+
+    result = normalize_equipment_quantities(data)
+
+    assert result["equipment"][0]["quantity"] == 2
+    assert result["equipment"][1]["quantity"] == 1
+    assert result["equipment"][2]["quantity"] == "multiple"

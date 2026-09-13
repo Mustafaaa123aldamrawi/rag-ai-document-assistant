@@ -150,6 +150,9 @@ should_run_drawing_vision = load_function_from_app(
 normalize_equipment_quantities = load_function_from_app(
     "normalize_equipment_quantities"
 )
+extract_primary_drawing_number = load_function_from_app(
+    "extract_primary_drawing_number"
+)
 should_run_drawing_vision.__globals__["decide_query_route"] = decide_query_route
 
 @pytest.mark.parametrize(
@@ -322,4 +325,19 @@ def test_normalize_equipment_quantities():
     assert result["equipment"][0]["quantity"] == 2
     assert result["equipment"][1]["quantity"] == 1
     assert result["equipment"][2]["quantity"] == "multiple"
+    
+
+def test_extract_primary_drawing_number():
+    source_text = """
+    PROJECT AV DRAWINGS
+    AV-203
+    AS SHOWN @ A1 AV-203
+    """
+
+    primary_number, normalized_numbers = extract_primary_drawing_number(
+        source_text
+    )
+
+    assert primary_number == "AV-203"
+    assert "AV-203" in normalized_numbers
     

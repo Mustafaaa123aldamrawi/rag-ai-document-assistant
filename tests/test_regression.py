@@ -140,3 +140,132 @@ def test_generic_text_does_not_become_drawing():
     )
 
     assert result == "DOCUMENT"
+    
+decide_query_route = load_function_from_app(
+    "decide_query_route"
+)
+
+
+@pytest.mark.parametrize(
+    "question,search_mode,has_document,content_type,document_scope_active,is_follow_up,expected",
+    [
+        (
+            "What is the latest Cisco Room Bar firmware?",
+            "Documents + Web",
+            False,
+            None,
+            False,
+            False,
+            "WEB",
+        ),
+        (
+            "What equipment is shown in this drawing?",
+            "Documents + Web",
+            True,
+            "DRAWING",
+            False,
+            False,
+            "DRAWING",
+        ),
+        (
+            "What does this document say about installation?",
+            "Documents + Web",
+            True,
+            "DOCUMENT",
+            False,
+            False,
+            "DOCUMENT",
+        ),
+        (
+            "What is the latest firmware for the device in this drawing?",
+            "Documents + Web",
+            True,
+            "DRAWING",
+            False,
+            False,
+            "HYBRID",
+        ),
+        (
+            "شو الأجهزة الموجودة في هذا المخطط؟",
+            "Documents + Web",
+            True,
+            "DRAWING",
+            False,
+            False,
+            "DRAWING",
+        ),
+        (
+            "شو آخر إصدار للجهاز الموجود في هذا المخطط؟",
+            "Documents + Web",
+            True,
+            "DRAWING",
+            False,
+            False,
+            "HYBRID",
+        ),
+        (
+            "Explain acoustic echo cancellation",
+            "Documents + Web",
+            False,
+            None,
+            False,
+            False,
+            "GENERAL",
+        ),
+        (
+            "What about its price?",
+            "Documents + Web",
+            True,
+            "DOCUMENT",
+            True,
+            True,
+            "HYBRID",
+        ),
+        (
+            "Find the latest Shure MXA920 firmware",
+            "Web Only",
+            True,
+            "DOCUMENT",
+            False,
+            False,
+            "WEB",
+        ),
+        (
+            "List the equipment",
+            "Documents Only",
+            True,
+            "DRAWING",
+            False,
+            False,
+            "DRAWING",
+        ),
+        (
+            "Summarize the uploaded manual",
+            "Documents Only",
+            True,
+            "DOCUMENT",
+            False,
+            False,
+            "DOCUMENT",
+        ),
+    ],
+)
+def test_query_router(
+    question,
+    search_mode,
+    has_document,
+    content_type,
+    document_scope_active,
+    is_follow_up,
+    expected,
+):
+    result = decide_query_route(
+        question=question,
+        search_mode=search_mode,
+        has_document=has_document,
+        content_type=content_type,
+        document_scope_active=document_scope_active,
+        is_follow_up=is_follow_up,
+    )
+
+    assert result == expected

@@ -884,6 +884,18 @@ def should_run_drawing_vision(
 
     return route in {"DRAWING", "HYBRID"}
 
+def normalize_equipment_quantities(structured_drawing_data):
+    for equipment_item in structured_drawing_data.get("equipment", []):
+        quantity_value = equipment_item.get("quantity")
+
+        if isinstance(quantity_value, str):
+            quantity_value = quantity_value.strip()
+
+            if quantity_value.isdigit():
+                equipment_item["quantity"] = int(quantity_value)
+
+    return structured_drawing_data
+
 def is_official_domain(url, official_domains):
     try:
         domain = url.lower().split("/")[2]

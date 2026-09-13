@@ -2155,16 +2155,16 @@ if uploaded_files:
                                     f"Excluded project/location metadata from room areas: {room_area_text}"
                                 )
                                 continue
-                                drawing_descriptor_terms = (
-                                    "ground floor type",
-                                    "screen (",
-                                    "screens (",
-                                    "av plans",
-                                    "plans and elevations",
-                                    "device layout",
-                                    "containment layout",
-                                    "elevation",
-                                )
+                            drawing_descriptor_terms = (
+                                "ground floor type",
+                                "screen (",
+                                "screens (",
+                                "av plans",
+                                "plans and elevations",
+                                "device layout",
+                                "containment layout",
+                                "elevation",
+                            )
                                 
                             if any(
                                 term in room_area_lower

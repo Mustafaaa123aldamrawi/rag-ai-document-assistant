@@ -147,6 +147,7 @@ decide_query_route = load_function_from_app(
 should_run_drawing_vision = load_function_from_app(
     "should_run_drawing_vision"
 )
+should_run_drawing_vision.__globals__["decide_query_route"] = decide_query_route
 
 @pytest.mark.parametrize(
     "question,search_mode,has_document,content_type,document_scope_active,is_follow_up,expected",

@@ -2155,6 +2155,42 @@ if uploaded_files:
                                     f"Excluded project/location metadata from room areas: {room_area_text}"
                                 )
                                 continue
+                                drawing_descriptor_terms = (
+                                    "ground floor type",
+                                    "screen (",
+                                    "screens (",
+                                    "av plans",
+                                    "plans and elevations",
+                                    "device layout",
+                                    "containment layout",
+                                    "elevation",
+                                )
+                                
+                                if any(
+                                    term in room_area_lower
+                                    for term in drawing_descriptor_terms
+                                ):
+                                    uncertainty_notes.append(
+                                        f"Excluded drawing descriptor from room areas: {room_area_text}"
+                                    )
+                                    continue
+                                    words = room_area_text.split()
+                                    
+                                    if (
+                                        len(words) <= 2
+                                        and any(
+                                            word in {"area", "room", "space"}
+                                            for word in room_area_lower.split()
+                                        )
+                                        and any(
+                                            len(word) <= 2
+                                            for word in words
+                                        )
+                                    ):
+                                        uncertainty_notes.append(
+                                            f"Excluded ambiguous OCR room fragment: {room_area_text}"
+                                        )
+                                        continue
                         
                             filtered_room_areas.append(room_area_text)
                         

@@ -274,33 +274,33 @@ def test_query_router(
 
     
     def test_drawing_vision_does_not_run_without_question():
-    result = should_run_drawing_vision(
-        content_type="DRAWING",
-        pending_question="",
-        search_mode="Documents + Web",
-        document_scope_active=False,
-    )
+        result = should_run_drawing_vision(
+            content_type="DRAWING",
+            pending_question="",
+            search_mode="Documents + Web",
+            document_scope_active=False,
+        )
 
     assert result is False
 
 
 def test_drawing_vision_runs_for_drawing_question():
-    result = should_run_drawing_vision(
-        content_type="DRAWING",
-        pending_question="What equipment is shown in this drawing?",
-        search_mode="Documents + Web",
-        document_scope_active=False,
-    )
+        result = should_run_drawing_vision(
+            content_type="DRAWING",
+            pending_question="What equipment is shown in this drawing?",
+            search_mode="Documents + Web",
+            document_scope_active=False,
+        )
 
     assert result is True
 
 
 def test_drawing_vision_runs_for_hybrid_question():
-    result = should_run_drawing_vision(
-        content_type="DRAWING",
-        pending_question="What is the latest firmware for the device in this drawing?",
-        search_mode="Documents + Web",
-        document_scope_active=False,
-    )
+        result = should_run_drawing_vision(
+            content_type="DRAWING",
+            pending_question="What is the latest firmware for the device in this drawing?",
+            search_mode="Documents + Web",
+            document_scope_active=False,
+        )
 
     assert result is True

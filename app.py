@@ -1287,6 +1287,12 @@ def detect_pdf_content_type(pages, source_name=""):
         "sheet no",
         "scale 1:",
         "legend",
+        "av device",
+        "av elevation",
+        "av containment",
+        "av infrastructure",
+        "av plans and elevations",
+        "drawing #",
     )
     
     weak_drawing_cues = (

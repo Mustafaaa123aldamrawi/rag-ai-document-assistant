@@ -3593,6 +3593,9 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
                     matched_source = best_source
         if is_casual_chat:
             search_results = []
+
+        elif query_route in {"WEB", "GENERAL"}:
+            search_results = []
         
         elif vector_store is None:
             search_results = []

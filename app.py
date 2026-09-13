@@ -927,6 +927,32 @@ def extract_primary_drawing_number(source_drawing_text):
 
     return primary_drawing_number, normalized_source_numbers
 
+def validate_structured_drawing_number(
+    structured_drawing_data,
+    primary_drawing_number,
+    normalized_source_numbers,
+    uncertainty_notes,
+):
+    structured_drawing_number = structured_drawing_data.get("drawing_number")
+
+    if primary_drawing_number:
+        structured_drawing_data["drawing_number"] = primary_drawing_number
+
+    elif structured_drawing_number:
+        normalized_drawing_number = re.sub(
+            r"\s+",
+            "-",
+            str(structured_drawing_number),
+        ).upper()
+
+        if normalized_drawing_number not in normalized_source_numbers:
+            uncertainty_notes.append(
+                f"Rejected unsupported drawing number: {structured_drawing_number}"
+            )
+            structured_drawing_data["drawing_number"] = None
+
+    return structured_drawing_data
+
 def is_official_domain(url, official_domains):
     try:
         domain = url.lower().split("/")[2]

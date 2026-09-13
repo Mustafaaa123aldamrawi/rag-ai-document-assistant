@@ -144,7 +144,9 @@ def test_generic_text_does_not_become_drawing():
 decide_query_route = load_function_from_app(
     "decide_query_route"
 )
-
+should_run_drawing_vision = load_function_from_app(
+    "should_run_drawing_vision"
+)
 
 @pytest.mark.parametrize(
     "question,search_mode,has_document,content_type,document_scope_active,is_follow_up,expected",
@@ -269,3 +271,36 @@ def test_query_router(
     )
 
     assert result == expected
+
+    
+    def test_drawing_vision_does_not_run_without_question():
+    result = should_run_drawing_vision(
+        content_type="DRAWING",
+        pending_question="",
+        search_mode="Documents + Web",
+        document_scope_active=False,
+    )
+
+    assert result is False
+
+
+def test_drawing_vision_runs_for_drawing_question():
+    result = should_run_drawing_vision(
+        content_type="DRAWING",
+        pending_question="What equipment is shown in this drawing?",
+        search_mode="Documents + Web",
+        document_scope_active=False,
+    )
+
+    assert result is True
+
+
+def test_drawing_vision_runs_for_hybrid_question():
+    result = should_run_drawing_vision(
+        content_type="DRAWING",
+        pending_question="What is the latest firmware for the device in this drawing?",
+        search_mode="Documents + Web",
+        document_scope_active=False,
+    )
+
+    assert result is True

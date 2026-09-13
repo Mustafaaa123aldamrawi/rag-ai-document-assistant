@@ -2042,14 +2042,9 @@ if uploaded_files:
                         structured_json_text = structured_vision_answer.strip()
                         structured_json_text = re.sub(r"^```json\s*|\s*```$", "", structured_json_text).strip()
                         structured_drawing_data = json.loads(structured_json_text)
-                        for equipment_item in structured_drawing_data.get("equipment", []):
-                            quantity_value = equipment_item.get("quantity")
-                        
-                            if isinstance(quantity_value, str):
-                                quantity_value = quantity_value.strip()
-                        
-                                if quantity_value.isdigit():
-                                    equipment_item["quantity"] = int(quantity_value)
+                        structured_drawing_data = normalize_equipment_quantities(
+                            structured_drawing_data
+                        )
                         raw_region_text = "\n".join(region_answers).lower()
 
                         uncertainty_notes = structured_drawing_data.setdefault(

@@ -745,6 +745,120 @@ Web search query:
         document_context
     )
 
+def decide_query_route(
+    question,
+    search_mode,
+    has_document=False,
+    content_type=None,
+    document_scope_active=False,
+    is_follow_up=False,
+):
+    """
+    Decide which information path should handle a user's question.
+
+    Returns one of:
+    GENERAL, DOCUMENT, DRAWING, WEB, HYBRID
+    """
+
+    question_lower = str(question or "").strip().lower()
+    content_type = str(content_type or "").upper()
+
+    if search_mode == "Web Only":
+        return "WEB"
+
+    if search_mode == "Documents Only":
+        if has_document and content_type == "DRAWING":
+            return "DRAWING"
+        return "DOCUMENT"
+
+    document_reference_phrases = (
+        "this document",
+        "the document",
+        "this pdf",
+        "the pdf",
+        "this file",
+        "uploaded file",
+        "uploaded document",
+        "according to the document",
+        "based on the document",
+        "in the document",
+        "in this drawing",
+        "this drawing",
+        "the drawing",
+        "according to the drawing",
+        "based on the drawing",
+        "في هذا الملف",
+        "حسب الملف",
+        "في الملف",
+        "هذا المستند",
+        "حسب المستند",
+        "في المستند",
+        "هذا المخطط",
+        "في المخطط",
+        "حسب المخطط",
+    )
+
+    current_web_signals = (
+        "current",
+        "currently",
+        "latest",
+        "newest",
+        "most recent",
+        "today",
+        "updated",
+        "up-to-date",
+        "price",
+        "pricing",
+        "cost",
+        "availability",
+        "available now",
+        "latest firmware",
+        "latest version",
+        "حاليا",
+        "حالياً",
+        "اليوم",
+        "احدث",
+        "أحدث",
+        "آخر إصدار",
+        "اخر اصدار",
+        "السعر",
+        "سعر",
+        "متوفر حاليا",
+        "متوفر حالياً",
+    )
+
+    has_document_reference = any(
+        phrase in question_lower
+        for phrase in document_reference_phrases
+    )
+
+    needs_current_web = any(
+        signal in question_lower
+        for signal in current_web_signals
+    )
+
+    continuing_document_context = (
+        has_document
+        and document_scope_active
+        and is_follow_up
+    )
+
+    if search_mode == "Documents + Web":
+        if needs_current_web and (
+            has_document_reference
+            or continuing_document_context
+        ):
+            return "HYBRID"
+
+        if has_document_reference or continuing_document_context:
+            if content_type == "DRAWING":
+                return "DRAWING"
+            return "DOCUMENT"
+
+        if needs_current_web:
+            return "WEB"
+
+    return "GENERAL"
 
 def is_official_domain(url, official_domains):
     try:

@@ -2179,24 +2179,24 @@ if uploaded_files:
                             uncertainty_notes,
                         )
 
-                            reference_patterns = [
-                                "company information",
-                                "date:",
-                                "revision:",
-                                "scale:",
-                                "project:",
-                                "status:",
-                                "approved by:",
-                                "description:",
-                                "issued for approval",
-                                "shop drawings",
-                                "copyright",
-                            ]
-                            
-                            references = structured_drawing_data.setdefault(
-                                "references", []
-                            )
-                            deduplicated_references = []
+                        reference_patterns = [
+                            "company information",
+                            "date:",
+                            "revision:",
+                            "scale:",
+                            "project:",
+                            "status:",
+                            "approved by:",
+                            "description:",
+                            "issued for approval",
+                            "shop drawings",
+                            "copyright",
+                        ]
+                        
+                        references = structured_drawing_data.setdefault(
+                            "references", []
+                        )
+                        deduplicated_references = []
 
                             for reference in references:
                                 if not isinstance(reference, str):

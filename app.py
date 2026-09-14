@@ -1989,6 +1989,9 @@ web_results = []
 web_context = ""
 all_rendered_drawing_pages = []
 
+if "drawing_analysis_cache" not in st.session_state:
+    st.session_state["drawing_analysis_cache"] = {}
+
 if uploaded_files:
     try:
         for uploaded_file in uploaded_files:

@@ -2198,45 +2198,45 @@ if uploaded_files:
                         )
                         deduplicated_references = []
 
-                            for reference in references:
-                                if not isinstance(reference, str):
-                                    deduplicated_references.append(reference)
-                                    continue
-                            
-                                normalized_reference = re.sub(
+                        for reference in references:
+                            if not isinstance(reference, str):
+                                deduplicated_references.append(reference)
+                                continue
+                        
+                            normalized_reference = re.sub(
+                                r"\s+",
+                                " ",
+                                reference.strip().lower()
+                            )
+                        
+                            if not any(
+                                isinstance(existing, str)
+                                and normalized_reference == re.sub(
                                     r"\s+",
                                     " ",
-                                    reference.strip().lower()
+                                    existing.strip().lower()
                                 )
-                            
-                                if not any(
-                                    isinstance(existing, str)
-                                    and normalized_reference == re.sub(
-                                        r"\s+",
-                                        " ",
-                                        existing.strip().lower()
-                                    )
-                                    for existing in deduplicated_references
-                                ):
-                                    deduplicated_references.append(reference)
-                            
-                            structured_drawing_data["references"] = deduplicated_references
-                            references = deduplicated_references
-                            final_installation_notes = []
-                            
-                            for note in filtered_installation_notes:
-                                note_lower = note.lower()
-                            
-                                if any(
-                                    pattern in note_lower
-                                    for pattern in reference_patterns
-                                ):
-                                    references.append(note)
-                                    continue
-                            
-                                final_installation_notes.append(note)
-                            
-                            filtered_installation_notes = final_installation_notes
+                                for existing in deduplicated_references
+                            ):
+                                deduplicated_references.append(reference)
+                        
+                        structured_drawing_data["references"] = deduplicated_references
+                        references = deduplicated_references
+                        final_installation_notes = []
+                        
+                        for note in filtered_installation_notes:
+                            note_lower = note.lower()
+                        
+                            if any(
+                                pattern in note_lower
+                                for pattern in reference_patterns
+                            ):
+                                references.append(note)
+                                continue
+                        
+                            final_installation_notes.append(note)
+                        
+                        filtered_installation_notes = final_installation_notes
                         
                         structured_drawing_data["installation_notes"] = (
                             filtered_installation_notes

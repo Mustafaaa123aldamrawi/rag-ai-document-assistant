@@ -386,10 +386,11 @@ def test_filter_installation_notes():
     )
 
     assert result == [
-        "Mount display at 1200 mm AFF",
         "Provide backing for display",
+        "N/A",
     ]
-
+    
+    assert "Mount display at 1200 mm AFF" in uncertainty_notes
     assert "Dimension: 1200 mm" in uncertainty_notes
     assert "Reference tag AV-203" in uncertainty_notes
-    assert "N/A" in uncertainty_notes
+    

@@ -2250,21 +2250,11 @@ if uploaded_files:
                         
                         structured_drawing_data["references"] = deduplicated_references
                         references = deduplicated_references
-                        final_installation_notes = []
-                        
-                        for note in filtered_installation_notes:
-                            note_lower = note.lower()
-                        
-                            if any(
-                                pattern in note_lower
-                                for pattern in reference_patterns
-                            ):
-                                references.append(note)
-                                continue
-                        
-                            final_installation_notes.append(note)
-                        
-                        filtered_installation_notes = final_installation_notes
+                        filtered_installation_notes = move_reference_notes(
+                            filtered_installation_notes,
+                            references,
+                            reference_patterns,
+                        )
                         
                         structured_drawing_data["installation_notes"] = (
                             filtered_installation_notes

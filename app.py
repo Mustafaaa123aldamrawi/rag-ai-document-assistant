@@ -2223,29 +2223,9 @@ if uploaded_files:
                         references = structured_drawing_data.setdefault(
                             "references", []
                         )
-                        deduplicated_references = []
-
-                        for reference in references:
-                            if not isinstance(reference, str):
-                                deduplicated_references.append(reference)
-                                continue
-                        
-                            normalized_reference = re.sub(
-                                r"\s+",
-                                " ",
-                                reference.strip().lower()
-                            )
-                        
-                            if not any(
-                                isinstance(existing, str)
-                                and normalized_reference == re.sub(
-                                    r"\s+",
-                                    " ",
-                                    existing.strip().lower()
-                                )
-                                for existing in deduplicated_references
-                            ):
-                                deduplicated_references.append(reference)
+                        deduplicated_references = deduplicate_references(
+                            references
+                        )
                         
                         structured_drawing_data["references"] = deduplicated_references
                         references = deduplicated_references

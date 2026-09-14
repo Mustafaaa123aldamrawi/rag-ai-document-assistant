@@ -169,9 +169,13 @@ move_reference_notes = load_function_from_app(
 promote_confirmed_installation_notes = load_function_from_app(
     "promote_confirmed_installation_notes"
 )
+deduplicate_installation_notes = load_function_from_app(
+    "deduplicate_installation_notes"
+)
 extract_primary_drawing_number.__globals__["re"] = re
 validate_structured_drawing_number.__globals__["re"] = re
 deduplicate_references.__globals__["re"] = re
+deduplicate_installation_notes.__globals__["re"] = re
 should_run_drawing_vision.__globals__["decide_query_route"] = decide_query_route
 
 @pytest.mark.parametrize(
@@ -488,4 +492,21 @@ def test_promote_confirmed_installation_notes():
 
     assert remaining_uncertainty_notes == [
         "Unknown room label"
+    ]
+
+def test_deduplicate_installation_notes():
+    installation_notes = [
+        "Provide backing for display",
+        "- Provide backing for display",
+        "(1) Provide backing for display",
+        "Mount camera above display",
+    ]
+
+    result = deduplicate_installation_notes(
+        installation_notes
+    )
+
+    assert result == [
+        "Provide backing for display",
+        "Mount camera above display",
     ]

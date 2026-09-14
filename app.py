@@ -1027,6 +1027,27 @@ def deduplicate_references(references):
             deduplicated_references.append(reference)
 
     return deduplicated_references
+
+def move_reference_notes(
+    filtered_installation_notes,
+    references,
+    reference_patterns,
+):
+    final_installation_notes = []
+
+    for note in filtered_installation_notes:
+        note_lower = note.lower()
+
+        if any(
+            pattern in note_lower
+            for pattern in reference_patterns
+        ):
+            references.append(note)
+            continue
+
+        final_installation_notes.append(note)
+
+    return final_installation_notes
     
 def is_official_domain(url, official_domains):
     try:

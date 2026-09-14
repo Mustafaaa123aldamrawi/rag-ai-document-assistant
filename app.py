@@ -2714,6 +2714,11 @@ if uploaded_files:
                             indent=2,
                             ensure_ascii=False
                         )
+
+                        if structured_drawing_data:
+                            st.session_state["drawing_analysis_cache"][drawing_cache_key] = {
+                                "structured_drawing_data": structured_drawing_data,
+                            }
                         
                         st.code(validated_json_text, language="json")
                     except Exception as structured_error:

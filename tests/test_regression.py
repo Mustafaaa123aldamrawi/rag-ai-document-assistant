@@ -157,6 +157,9 @@ extract_primary_drawing_number = load_function_from_app(
 validate_structured_drawing_number = load_function_from_app(
     "validate_structured_drawing_number"
 )
+filter_installation_notes = load_function_from_app(
+    "filter_installation_notes"
+)
 extract_primary_drawing_number.__globals__["re"] = re
 validate_structured_drawing_number.__globals__["re"] = re
 should_run_drawing_vision.__globals__["decide_query_route"] = decide_query_route
@@ -366,3 +369,27 @@ def test_validate_structured_drawing_number():
         "Rejected unsupported drawing number: AV-999"
     ]
     
+def test_filter_installation_notes():
+    installation_notes = [
+        "Mount display at 1200 mm AFF",
+        "Dimension: 1200 mm",
+        "Provide backing for display",
+        "Reference tag AV-203",
+        "N/A",
+    ]
+
+    uncertainty_notes = []
+
+    result = filter_installation_notes(
+        installation_notes,
+        uncertainty_notes,
+    )
+
+    assert result == [
+        "Mount display at 1200 mm AFF",
+        "Provide backing for display",
+    ]
+
+    assert "Dimension: 1200 mm" in uncertainty_notes
+    assert "Reference tag AV-203" in uncertainty_notes
+    assert "N/A" in uncertainty_notes

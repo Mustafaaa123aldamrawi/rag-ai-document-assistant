@@ -1,5 +1,6 @@
 import ast
 import re
+import json
 from pathlib import Path
 
 import pytest
@@ -175,10 +176,14 @@ deduplicate_installation_notes = load_function_from_app(
 build_drawing_cache_key = load_function_from_app(
     "build_drawing_cache_key"
 )
+build_drawing_analysis_page = load_function_from_app(
+    "build_drawing_analysis_page"
+)
 extract_primary_drawing_number.__globals__["re"] = re
 validate_structured_drawing_number.__globals__["re"] = re
 deduplicate_references.__globals__["re"] = re
 deduplicate_installation_notes.__globals__["re"] = re
+build_drawing_analysis_page.__globals__["json"] = json
 should_run_drawing_vision.__globals__["decide_query_route"] = decide_query_route
 
 @pytest.mark.parametrize(
@@ -542,3 +547,35 @@ def test_build_drawing_cache_key():
     assert key_a == "AV-203.pdf:12345"
     assert key_a == key_a_copy
     assert key_a != key_b
+
+def test_build_drawing_analysis_page():
+    structured_drawing_data = {
+        "drawing_number": "AV-203",
+        "equipment": [
+            {
+                "name": "Display",
+                "quantity": 2,
+            }
+        ],
+    }
+
+    result = build_drawing_analysis_page(
+        structured_drawing_data,
+        "AV-203.pdf",
+    )
+
+    assert result["page_number"] == 1
+    assert result["source"] == "AV-203.pdf"
+    assert result["content_type"] == "DRAWING"
+    assert result["is_drawing_analysis"] is True
+    assert result["has_extractable_text"] is True
+    assert '"drawing_number": "AV-203"' in result["text"]
+    assert '"name": "Display"' in result["text"]
+
+def test_build_drawing_analysis_page_returns_none_without_data():
+    result = build_drawing_analysis_page(
+        None,
+        "AV-203.pdf",
+    )
+
+    assert result is None

@@ -172,6 +172,9 @@ promote_confirmed_installation_notes = load_function_from_app(
 deduplicate_installation_notes = load_function_from_app(
     "deduplicate_installation_notes"
 )
+build_drawing_cache_key = load_function_from_app(
+    "build_drawing_cache_key"
+)
 extract_primary_drawing_number.__globals__["re"] = re
 validate_structured_drawing_number.__globals__["re"] = re
 deduplicate_references.__globals__["re"] = re
@@ -510,3 +513,32 @@ def test_deduplicate_installation_notes():
         "Provide backing for display",
         "Mount camera above display",
     ]
+
+def test_build_drawing_cache_key():
+    class FakeUploadedFile:
+        def __init__(self, name, size):
+            self.name = name
+            self.size = size
+
+    drawing_a = FakeUploadedFile(
+        "AV-203.pdf",
+        12345,
+    )
+
+    drawing_a_copy = FakeUploadedFile(
+        "AV-203.pdf",
+        12345,
+    )
+
+    drawing_b = FakeUploadedFile(
+        "AV-206.pdf",
+        54321,
+    )
+
+    key_a = build_drawing_cache_key(drawing_a)
+    key_a_copy = build_drawing_cache_key(drawing_a_copy)
+    key_b = build_drawing_cache_key(drawing_b)
+
+    assert key_a == "AV-203.pdf:12345"
+    assert key_a == key_a_copy
+    assert key_a != key_b

@@ -611,12 +611,12 @@ def test_get_drawing_analysis_pages():
     assert result[0]["is_drawing_analysis"] is True
     assert '"quantity": 2' in result[0]["text"]
 
-    @pytest.mark.parametrize(
+@pytest.mark.parametrize(
     "question,expected",
     [
         ("What about its quantities?", True),
         ("And what are the quantities?", True),
-        ("طيب شو الكميات؟", True),
+("طيب شو الكميات؟", True),
         ("What are the quantities?", False),
         ("What equipment is shown in this drawing?", False),
     ],

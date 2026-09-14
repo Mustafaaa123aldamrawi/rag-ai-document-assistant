@@ -146,6 +146,9 @@ def test_generic_text_does_not_become_drawing():
 decide_query_route = load_function_from_app(
     "decide_query_route"
 )
+detect_follow_up_question = load_function_from_app(
+    "detect_follow_up_question"
+)
 should_run_drawing_vision = load_function_from_app(
     "should_run_drawing_vision"
 )
@@ -607,3 +610,16 @@ def test_get_drawing_analysis_pages():
     assert len(result) == 1
     assert result[0]["is_drawing_analysis"] is True
     assert '"quantity": 2' in result[0]["text"]
+
+    @pytest.mark.parametrize(
+    "question,expected",
+    [
+        ("What about its quantities?", True),
+        ("And what are the quantities?", True),
+        ("طيب شو الكميات؟", True),
+        ("What are the quantities?", False),
+        ("What equipment is shown in this drawing?", False),
+    ],
+)
+def test_detect_follow_up_question(question, expected):
+    assert detect_follow_up_question(question) is expected

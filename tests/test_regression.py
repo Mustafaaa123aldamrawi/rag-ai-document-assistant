@@ -160,6 +160,9 @@ validate_structured_drawing_number = load_function_from_app(
 filter_installation_notes = load_function_from_app(
     "filter_installation_notes"
 )
+deduplicate_references = load_function_from_app(
+    "deduplicate_references"
+)
 extract_primary_drawing_number.__globals__["re"] = re
 validate_structured_drawing_number.__globals__["re"] = re
 should_run_drawing_vision.__globals__["decide_query_route"] = decide_query_route
@@ -393,4 +396,21 @@ def test_filter_installation_notes():
     assert "Mount display at 1200 mm AFF" in uncertainty_notes
     assert "Dimension: 1200 mm" in uncertainty_notes
     assert "Reference tag AV-203" in uncertainty_notes
+
+def test_deduplicate_references():
+    references = [
+        "AV-203",
+        "  AV-203  ",
+        "av-203",
+        "AV-206",
+        {"type": "drawing", "value": "AV-209"},
+    ]
+
+    result = deduplicate_references(references)
+
+    assert result == [
+        "AV-203",
+        "AV-206",
+        {"type": "drawing", "value": "AV-209"},
+    ]
     

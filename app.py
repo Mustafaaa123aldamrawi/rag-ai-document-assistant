@@ -1048,6 +1048,46 @@ def move_reference_notes(
         final_installation_notes.append(note)
 
     return final_installation_notes
+
+def promote_confirmed_installation_notes(
+    structured_drawing_data,
+    uncertainty_notes,
+    cleaned_vision_answer,
+    confirmed_installation_patterns,
+):
+    remaining_uncertainty_notes = []
+
+    installation_notes = structured_drawing_data.setdefault(
+        "installation_notes",
+        [],
+    )
+
+    for note in uncertainty_notes:
+        note_lower = note.lower()
+
+        if any(
+            pattern in note_lower
+            for pattern in confirmed_installation_patterns
+        ):
+            if note not in installation_notes:
+                installation_notes.append(note)
+            continue
+
+        remaining_uncertainty_notes.append(note)
+
+    for analysis_line in cleaned_vision_answer.splitlines():
+        analysis_line_clean = analysis_line.strip()
+
+        if any(
+            pattern in analysis_line_clean.lower()
+            for pattern in confirmed_installation_patterns
+        ):
+            if analysis_line_clean not in installation_notes:
+                installation_notes.append(
+                    analysis_line_clean
+                )
+
+    return remaining_uncertainty_notes
     
 def is_official_domain(url, official_domains):
     try:

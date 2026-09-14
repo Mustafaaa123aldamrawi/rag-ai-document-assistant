@@ -4004,7 +4004,36 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
         
             if doc_key not in doc_source_numbers:
                 doc_source_numbers[doc_key] = len(doc_source_numbers) + 1
+        if query_route in {"DRAWING", "HYBRID"}:
+            drawing_analysis_pages = get_drawing_analysis_pages(
+                document_pages
+            )
         
+            for page in drawing_analysis_pages:
+                doc_key = (
+                    page.get("source"),
+                    page.get("page_number"),
+                )
+        
+                doc_number = doc_source_numbers.get(doc_key)
+        
+                if doc_number is None:
+                    doc_number = len(doc_source_numbers) + 1
+                    doc_source_numbers[doc_key] = doc_number
+        
+                expanded_texts.append(
+                    f"[DOC {doc_number}]\n"
+                    f"Source: {page.get('source')} | "
+                    f"Page: {page.get('page_number')}\n"
+                    f"{page.get('text')}"
+                )
+        
+                used_sources.add(
+                    (
+                        page.get("source"),
+                        page.get("page_number"),
+                    )
+                )
         for document in relevant_documents:
             source = document.metadata.get("source")
             page_number = document.metadata.get("page_number")

@@ -3185,6 +3185,7 @@ if submitted:
             is_technical_request = router_intent == "TECHNICAL"
             is_document_request = router_intent == "DOCUMENT"
             is_web_current_request = router_intent == "WEB_CURRENT"
+            is_follow_up_question = detect_follow_up_question(question)
             query_route = decide_query_route(
                 question=question,
                 search_mode=search_mode,
@@ -3198,7 +3199,7 @@ if submitted:
                     "document_scope_active",
                     False,
                 ),
-                is_follow_up=False,
+                is_follow_up=is_follow_up_question,
             )
             has_arabic_chars = bool(
                 re.search(r"[\u0600-\u06FF]", question)

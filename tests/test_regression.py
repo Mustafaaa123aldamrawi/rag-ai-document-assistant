@@ -166,6 +166,9 @@ deduplicate_references = load_function_from_app(
 move_reference_notes = load_function_from_app(
     "move_reference_notes"
 )
+promote_confirmed_installation_notes = load_function_from_app(
+    "promote_confirmed_installation_notes"
+)
 extract_primary_drawing_number.__globals__["re"] = re
 validate_structured_drawing_number.__globals__["re"] = re
 deduplicate_references.__globals__["re"] = re
@@ -448,3 +451,41 @@ def test_move_reference_notes():
         "Revision: A",
     ]
     
+def test_promote_confirmed_installation_notes():
+    data = {
+        "installation_notes": [
+            "Mount display on wall"
+        ]
+    }
+
+    uncertainty_notes = [
+        "Provide backing for display",
+        "Unknown room label",
+    ]
+
+    cleaned_vision_answer = """
+    Camera location confirmed.
+    Backing to withstand display load.
+    """
+
+    confirmed_installation_patterns = [
+        "backing to withstand",
+        "provide backing",
+    ]
+
+    remaining_uncertainty_notes = promote_confirmed_installation_notes(
+        structured_drawing_data=data,
+        uncertainty_notes=uncertainty_notes,
+        cleaned_vision_answer=cleaned_vision_answer,
+        confirmed_installation_patterns=confirmed_installation_patterns,
+    )
+
+    assert data["installation_notes"] == [
+        "Mount display on wall",
+        "Provide backing for display",
+        "Backing to withstand display load.",
+    ]
+
+    assert remaining_uncertainty_notes == [
+        "Unknown room label"
+    ]

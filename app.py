@@ -791,6 +791,24 @@ def detect_follow_up_question(question):
         follow_up_starters
     )
 
+    explicit_document_reference = any(
+        phrase in question_lower
+        for phrase in (
+            "this drawing",
+            "this document",
+            "this file",
+            "the drawing",
+            "the document",
+            "the file",
+            "هذا المخطط",
+            "هذه الوثيقة",
+            "هذا الملف",
+        )
+    )
+    
+    if explicit_document_reference:
+        return False
+    
     return (
         bool(question_words & follow_up_references)
         or starts_like_follow_up

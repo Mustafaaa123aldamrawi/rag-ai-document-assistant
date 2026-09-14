@@ -1000,6 +1000,33 @@ def filter_installation_notes(
         filtered_installation_notes.append(note)
 
     return filtered_installation_notes
+
+def deduplicate_references(references):
+    deduplicated_references = []
+
+    for reference in references:
+        if not isinstance(reference, str):
+            deduplicated_references.append(reference)
+            continue
+
+        normalized_reference = re.sub(
+            r"\s+",
+            " ",
+            reference.strip().lower(),
+        )
+
+        if not any(
+            isinstance(existing, str)
+            and normalized_reference == re.sub(
+                r"\s+",
+                " ",
+                existing.strip().lower(),
+            )
+            for existing in deduplicated_references
+        ):
+            deduplicated_references.append(reference)
+
+    return deduplicated_references
     
 def is_official_domain(url, official_domains):
     try:

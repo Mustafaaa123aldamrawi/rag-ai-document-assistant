@@ -1088,6 +1088,30 @@ def promote_confirmed_installation_notes(
                 )
 
     return remaining_uncertainty_notes
+
+def deduplicate_installation_notes(installation_notes):
+    deduplicated_installation_notes = []
+
+    for note in installation_notes:
+        normalized_note = re.sub(
+            r"^\s*[-•]?\s*(?:\((\d+)\)\s*)?",
+            "",
+            note,
+            flags=re.IGNORECASE,
+        ).strip().lower()
+
+        if not any(
+            normalized_note == re.sub(
+                r"^\s*[-•]?\s*(?:\((\d+)\)\s*)?",
+                "",
+                existing,
+                flags=re.IGNORECASE,
+            ).strip().lower()
+            for existing in deduplicated_installation_notes
+        ):
+            deduplicated_installation_notes.append(note)
+
+    return deduplicated_installation_notes
     
 def is_official_domain(url, official_domains):
     try:

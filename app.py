@@ -1112,7 +1112,22 @@ def deduplicate_installation_notes(installation_notes):
             deduplicated_installation_notes.append(note)
 
     return deduplicated_installation_notes
-    
+
+def build_drawing_cache_key(uploaded_file):
+    file_name = getattr(uploaded_file, "name", "uploaded_drawing")
+    file_size = getattr(uploaded_file, "size", None)
+
+    if file_size is None:
+        try:
+            current_position = uploaded_file.tell()
+            uploaded_file.seek(0, 2)
+            file_size = uploaded_file.tell()
+            uploaded_file.seek(current_position)
+        except Exception:
+            file_size = 0
+
+    return f"{file_name}:{file_size}"
+
 def is_official_domain(url, official_domains):
     try:
         domain = url.lower().split("/")[2]

@@ -2304,37 +2304,14 @@ if uploaded_files:
                             "provide backing",
                         ]
                         
-                        remaining_uncertainty_notes = []
-                        
-                        for note in uncertainty_notes:
-                            note_lower = note.lower()
-                        
-                            if any(
-                                pattern in note_lower
-                                for pattern in confirmed_installation_patterns
-                            ):
-                                if note not in structured_drawing_data["installation_notes"]:
-                                    structured_drawing_data["installation_notes"].append(note)
-                                continue
-                        
-                            remaining_uncertainty_notes.append(note)
-                        
-                        structured_drawing_data["uncertainty_notes"] = (
-                            remaining_uncertainty_notes
+                        uncertainty_notes = promote_confirmed_installation_notes(
+                            structured_drawing_data=structured_drawing_data,
+                            uncertainty_notes=uncertainty_notes,
+                            cleaned_vision_answer=cleaned_vision_answer,
+                            confirmed_installation_patterns=confirmed_installation_patterns,
                         )
                         
-                        uncertainty_notes = remaining_uncertainty_notes
-                        for analysis_line in cleaned_vision_answer.splitlines():
-                            analysis_line_clean = analysis_line.strip()
-                        
-                            if any(
-                                pattern in analysis_line_clean.lower()
-                                for pattern in confirmed_installation_patterns
-                            ):
-                                if analysis_line_clean not in structured_drawing_data["installation_notes"]:
-                                    structured_drawing_data["installation_notes"].append(
-                                        analysis_line_clean
-                                    )
+                        structured_drawing_data["uncertainty_notes"] = uncertainty_notes
                         deduplicated_installation_notes = []
 
                         for note in structured_drawing_data["installation_notes"]:

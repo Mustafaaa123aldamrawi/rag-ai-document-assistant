@@ -5259,6 +5259,18 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
         - End with one concise sentence stating the practical difference between the two concepts.
         - Cite every factual statement with the supporting [DOC X] or [WEB X] label.
         """.strip()
+        drawing_fidelity_instruction = ""
+
+        if query_route in {"DRAWING", "HYBRID"}:
+            drawing_fidelity_instruction = """
+        Drawing fidelity rules:
+        - Treat structured drawing-analysis data in the context as authoritative for drawing-specific facts.
+        - Preserve equipment names, manufacturers, models, room/area names, quantities, and installation notes exactly as supported by the context.
+        - Do not rename, translate, normalize, expand, or invent equipment names, manufacturers, or models.
+        - Do not assign a function or product category that is not explicitly stated in the context.
+        - If a quantity is null, missing, or unspecified, state that the quantity is unspecified. Do not infer a count.
+        - If the context contains conflicting values, report the conflict instead of choosing one.
+        """.strip()
         prompt = f"""
         Recent conversation:
         {conversation_history}    
@@ -5269,6 +5281,7 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
         If it is True, use the recent conversation only to resolve references such as it, its, this, that, or omitted product names.
         Combined context:
         {context}
+        {drawing_fidelity_instruction}
         Technical comparison instructions:
         {technical_comparison_instruction}
         

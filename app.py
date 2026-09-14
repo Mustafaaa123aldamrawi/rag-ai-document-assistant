@@ -745,6 +745,57 @@ Web search query:
         document_context
     )
 
+def detect_follow_up_question(question):
+    question_lower = str(question or "").strip().lower()
+
+    follow_up_references = {
+        "it",
+        "its",
+        "this",
+        "that",
+        "they",
+        "their",
+        "them",
+        "هذا",
+        "هذه",
+        "هذي",
+        "ذلك",
+        "تلك",
+        "هم",
+        "هما",
+        "ها",
+    }
+
+    question_words = set(
+        question_lower
+        .replace("?", "")
+        .replace(".", "")
+        .replace(",", "")
+        .split()
+    )
+
+    follow_up_starters = (
+        "if ",
+        "what happens",
+        "what about",
+        "how about",
+        "and ",
+        "then ",
+        "طيب",
+        "وإذا",
+        "وماذا",
+        "ولو",
+    )
+
+    starts_like_follow_up = question_lower.startswith(
+        follow_up_starters
+    )
+
+    return (
+        bool(question_words & follow_up_references)
+        or starts_like_follow_up
+    )
+
 def decide_query_route(
     question,
     search_mode,

@@ -2336,29 +2336,10 @@ if uploaded_files:
                         )
                         
                         structured_drawing_data["uncertainty_notes"] = uncertainty_notes
-                        deduplicated_installation_notes = []
-
-                        for note in structured_drawing_data["installation_notes"]:
-                            normalized_note = re.sub(
-                                r"^\s*[-•]?\s*(?:\(x\d+\)\s*)?",
-                                "",
-                                note,
-                                flags=re.IGNORECASE
-                            ).strip().lower()
-                        
-                            if not any(
-                                normalized_note == re.sub(
-                                    r"^\s*[-•]?\s*(?:\(x\d+\)\s*)?",
-                                    "",
-                                    existing,
-                                    flags=re.IGNORECASE
-                                ).strip().lower()
-                                for existing in deduplicated_installation_notes
-                            ):
-                                deduplicated_installation_notes.append(note)
-                        
                         structured_drawing_data["installation_notes"] = (
-                            deduplicated_installation_notes
+                            deduplicate_installation_notes(
+                                structured_drawing_data["installation_notes"]
+                            )
                         )
                         room_areas = structured_drawing_data.get(
                             "room_areas", []

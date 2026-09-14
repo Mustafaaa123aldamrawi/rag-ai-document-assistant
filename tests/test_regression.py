@@ -163,6 +163,9 @@ filter_installation_notes = load_function_from_app(
 deduplicate_references = load_function_from_app(
     "deduplicate_references"
 )
+move_reference_notes = load_function_from_app(
+    "move_reference_notes"
+)
 extract_primary_drawing_number.__globals__["re"] = re
 validate_structured_drawing_number.__globals__["re"] = re
 deduplicate_references.__globals__["re"] = re
@@ -413,5 +416,35 @@ def test_deduplicate_references():
         "AV-203",
         "AV-206",
         {"type": "drawing", "value": "AV-209"},
+    ]
+
+def test_move_reference_notes():
+    filtered_installation_notes = [
+        "Provide backing for display",
+        "Project: Riyadh HQ",
+        "Mount camera above display",
+        "Revision: A",
+    ]
+
+    references = []
+    reference_patterns = [
+        "project:",
+        "revision:",
+    ]
+
+    result = move_reference_notes(
+        filtered_installation_notes,
+        references,
+        reference_patterns,
+    )
+
+    assert result == [
+        "Provide backing for display",
+        "Mount camera above display",
+    ]
+
+    assert references == [
+        "Project: Riyadh HQ",
+        "Revision: A",
     ]
     

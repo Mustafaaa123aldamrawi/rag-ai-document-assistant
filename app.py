@@ -1128,6 +1128,26 @@ def build_drawing_cache_key(uploaded_file):
 
     return f"{file_name}:{file_size}"
 
+def build_drawing_analysis_page(
+    structured_drawing_data,
+    source_name,
+):
+    if not structured_drawing_data:
+        return None
+
+    return {
+        "page_number": 1,
+        "source": source_name,
+        "text": json.dumps(
+            structured_drawing_data,
+            ensure_ascii=False,
+            indent=2,
+        ),
+        "has_extractable_text": True,
+        "content_type": "DRAWING",
+        "is_drawing_analysis": True,
+    }
+
 def is_official_domain(url, official_domains):
     try:
         domain = url.lower().split("/")[2]

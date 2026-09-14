@@ -2010,6 +2010,7 @@ if "drawing_analysis_cache" not in st.session_state:
 if uploaded_files:
     try:
         for uploaded_file in uploaded_files:
+            drawing_cache_key = build_drawing_cache_key(uploaded_file)
             file_pages = extract_text_from_pdf(uploaded_file)
             content_type = detect_pdf_content_type(
                 file_pages,

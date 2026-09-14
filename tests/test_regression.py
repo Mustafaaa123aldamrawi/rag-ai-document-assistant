@@ -179,6 +179,9 @@ build_drawing_cache_key = load_function_from_app(
 build_drawing_analysis_page = load_function_from_app(
     "build_drawing_analysis_page"
 )
+get_drawing_analysis_pages = load_function_from_app(
+    "get_drawing_analysis_pages"
+)
 extract_primary_drawing_number.__globals__["re"] = re
 validate_structured_drawing_number.__globals__["re"] = re
 deduplicate_references.__globals__["re"] = re
@@ -579,3 +582,28 @@ def test_build_drawing_analysis_page_returns_none_without_data():
     )
 
     assert result is None
+
+def test_get_drawing_analysis_pages():
+    document_pages = [
+        {
+            "source": "AV-203.pdf",
+            "text": "Normal extracted PDF text",
+            "is_drawing_analysis": False,
+        },
+        {
+            "source": "AV-203.pdf",
+            "text": '{"drawing_number": "AV-203", "quantity": 2}',
+            "is_drawing_analysis": True,
+        },
+        {
+            "source": "AV-206.pdf",
+            "text": "",
+            "is_drawing_analysis": True,
+        },
+    ]
+
+    result = get_drawing_analysis_pages(document_pages)
+
+    assert len(result) == 1
+    assert result[0]["is_drawing_analysis"] is True
+    assert '"quantity": 2' in result[0]["text"]

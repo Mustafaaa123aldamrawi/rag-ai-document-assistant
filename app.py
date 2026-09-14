@@ -2058,7 +2058,8 @@ if uploaded_files:
                     False,
                 ),
             )
-            
+            if cached_drawing_analysis:
+                run_drawing_vision = False
               
             if content_type == "DRAWING" and run_drawing_vision:
                 rendered_drawing_pages = render_pdf_pages_for_vision(

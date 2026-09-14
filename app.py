@@ -1148,6 +1148,14 @@ def build_drawing_analysis_page(
         "is_drawing_analysis": True,
     }
 
+def get_drawing_analysis_pages(document_pages):
+    return [
+        page
+        for page in document_pages
+        if page.get("is_drawing_analysis")
+        and page.get("text")
+    ]
+
 def is_official_domain(url, official_domains):
     try:
         domain = url.lower().split("/")[2]

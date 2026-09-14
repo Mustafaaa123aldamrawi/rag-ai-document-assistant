@@ -953,6 +953,54 @@ def validate_structured_drawing_number(
 
     return structured_drawing_data
 
+def filter_installation_notes(
+    installation_notes,
+    uncertainty_notes,
+):
+    filtered_installation_notes = []
+
+    non_installation_patterns = [
+        "dimensional notation",
+        "dimension:",
+        "dimension callout",
+        "dimensions (mm)",
+        "dimensions:",
+        "dimension markings",
+        "mm",
+        "reference tags",
+        "reference tag",
+        "view labels",
+        "device front view",
+        "side view",
+        "infrastructure front view",
+        "display outline",
+        "field coordinate",
+        "hidden do",
+        "text note",
+    ]
+
+    for note in installation_notes:
+        note_lower = note.lower()
+
+        if note_lower.strip() in {
+            "n / 1",
+            "n/1",
+            "n",
+        }:
+            uncertainty_notes.append(note)
+            continue
+
+        if any(
+            pattern in note_lower
+            for pattern in non_installation_patterns
+        ):
+            uncertainty_notes.append(note)
+            continue
+
+        filtered_installation_notes.append(note)
+
+    return filtered_installation_notes
+    
 def is_official_domain(url, official_domains):
     try:
         domain = url.lower().split("/")[2]

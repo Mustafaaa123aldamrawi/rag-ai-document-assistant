@@ -2753,6 +2753,23 @@ if uploaded_files:
                     )
             for page in file_pages:
                 page["content_type"] = content_type
+            active_drawing_analysis = (
+                structured_drawing_data
+                if content_type == "DRAWING" and run_drawing_vision
+                else (
+                    cached_drawing_analysis.get("structured_drawing_data")
+                    if cached_drawing_analysis
+                    else None
+                )
+            )
+            
+            drawing_analysis_page = build_drawing_analysis_page(
+                active_drawing_analysis,
+                getattr(uploaded_file, "name", "Uploaded PDF"),
+            )
+            
+            if drawing_analysis_page:
+                file_pages.append(drawing_analysis_page)
             document_pages.extend(file_pages)
         if document_pages:
             text_chunks = split_text_into_chunks(document_pages)

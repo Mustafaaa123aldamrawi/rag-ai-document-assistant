@@ -1270,6 +1270,58 @@ def is_ambiguous_equipment_annotation(equipment_item):
         and confidence != "high"
     )
 
+def simplify_composite_equipment_name(equipment_item):
+    if not isinstance(equipment_item, dict):
+        return equipment_item
+
+    name = str(equipment_item.get("name") or "").strip()
+    manufacturer = str(
+        equipment_item.get("manufacturer") or ""
+    ).strip()
+    model = str(
+        equipment_item.get("model") or ""
+    ).strip()
+
+    if not name:
+        return equipment_item
+
+    name_lower = name.lower()
+
+    mount_terms = (
+        " wall mount",
+        " with wall mount",
+        " mounting bracket",
+        " with mount",
+    )
+
+    accessory_terms = (
+        " with accessory",
+        " with accessories",
+    )
+
+    cutoff_positions = []
+
+    for term in mount_terms + accessory_terms:
+        position = name_lower.find(term)
+        if position > 0:
+            cutoff_positions.append(position)
+
+    if not cutoff_positions:
+        return equipment_item
+
+    simplified_name = name[:min(cutoff_positions)].strip()
+
+    if manufacturer and manufacturer.lower() not in simplified_name.lower():
+        pass
+
+    if model and model.lower() not in simplified_name.lower():
+        simplified_name = f"{simplified_name} {model}".strip()
+
+    updated_item = dict(equipment_item)
+    updated_item["name"] = simplified_name
+
+    return updated_item
+
 def is_official_domain(url, official_domains):
     try:
         domain = url.lower().split("/")[2]

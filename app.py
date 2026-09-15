@@ -1225,6 +1225,21 @@ def get_drawing_analysis_pages(document_pages):
         and page.get("text")
     ]
 
+def is_generic_room_label(room_area):
+    generic_room_labels = {
+        "area",
+        "room",
+        "space",
+        "zone",
+        "view",
+        "layout",
+        "elevation",
+    }
+
+    room_area_text = str(room_area or "").strip().lower()
+
+    return room_area_text in generic_room_labels
+
 def is_official_domain(url, official_domains):
     try:
         domain = url.lower().split("/")[2]
@@ -2479,17 +2494,7 @@ if uploaded_files:
                             if not room_area_text:
                                 continue
 
-                            generic_room_labels = {
-                                "area",
-                                "room",
-                                "space",
-                                "zone",
-                                "view",
-                                "layout",
-                                "elevation",
-                            }
-                            
-                            if room_area_lower in generic_room_labels:
+                            if is_generic_room_label(room_area_text):
                                 uncertainty_notes.append(
                                     f"Excluded generic room label: {room_area_text}"
                                 )

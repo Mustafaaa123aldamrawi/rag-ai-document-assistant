@@ -185,6 +185,9 @@ build_drawing_analysis_page = load_function_from_app(
 get_drawing_analysis_pages = load_function_from_app(
     "get_drawing_analysis_pages"
 )
+is_generic_room_label = load_function_from_app(
+    "is_generic_room_label"
+)
 extract_primary_drawing_number.__globals__["re"] = re
 validate_structured_drawing_number.__globals__["re"] = re
 deduplicate_references.__globals__["re"] = re
@@ -623,3 +626,15 @@ def test_get_drawing_analysis_pages():
 )
 def test_detect_follow_up_question(question, expected):
     assert detect_follow_up_question(question) is expected
+
+@pytest.mark.parametrize(
+    "room_area,expected",
+    [
+        ("AREA", True),
+        ("VIEW", True),
+        ("ENCLOSED HUDDLE AREA", False),
+        ("BOARD ROOM", False),
+    ],
+)
+def test_is_generic_room_label(room_area, expected):
+    assert is_generic_room_label(room_area) is expected

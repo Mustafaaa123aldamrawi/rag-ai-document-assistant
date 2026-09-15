@@ -2630,7 +2630,13 @@ if uploaded_files:
                             equipment_name = str(
                                 equipment_item.get("name") or ""
                             ).strip()
-                        
+
+                            if is_ambiguous_equipment_annotation(equipment_item):
+                                uncertainty_notes.append(
+                                    f"Excluded ambiguous equipment annotation: {equipment_name}"
+                                )
+                                continue
+                                
                             if (
                                 equipment_name.lower() in ambiguous_equipment_names
                                 or any(

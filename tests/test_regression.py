@@ -188,6 +188,9 @@ get_drawing_analysis_pages = load_function_from_app(
 is_generic_room_label = load_function_from_app(
     "is_generic_room_label"
 )
+is_ambiguous_equipment_annotation = load_function_from_app(
+    "is_ambiguous_equipment_annotation"
+)
 extract_primary_drawing_number.__globals__["re"] = re
 validate_structured_drawing_number.__globals__["re"] = re
 deduplicate_references.__globals__["re"] = re
@@ -638,3 +641,47 @@ def test_detect_follow_up_question(question, expected):
 )
 def test_is_generic_room_label(room_area, expected):
     assert is_generic_room_label(room_area) is expected
+
+@pytest.mark.parametrize(
+    "equipment_item,expected",
+    [
+        (
+            {
+                "name": "Speaker Icon",
+                "manufacturer": None,
+                "model": None,
+                "confidence": "medium",
+            },
+            True,
+        ),
+        (
+            {
+                "name": "Label/Floor Box N 1",
+                "manufacturer": None,
+                "model": None,
+                "confidence": "low",
+            },
+            True,
+        ),
+        (
+            {
+                "name": "JBL Ceiling Speaker",
+                "manufacturer": "JBL",
+                "model": "Control 26CT",
+                "confidence": "high",
+            },
+            False,
+        ),
+        (
+            {
+                "name": "Speaker Icon",
+                "manufacturer": None,
+                "model": None,
+                "confidence": "high",
+            },
+            False,
+        ),
+    ],
+)
+def test_is_ambiguous_equipment_annotation(equipment_item, expected):
+    assert is_ambiguous_equipment_annotation(equipment_item) is expected

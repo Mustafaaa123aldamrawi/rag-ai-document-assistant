@@ -1240,6 +1240,36 @@ def is_generic_room_label(room_area):
 
     return room_area_text in generic_room_labels
 
+def is_ambiguous_equipment_annotation(equipment_item):
+    if not isinstance(equipment_item, dict):
+        return False
+
+    name = str(equipment_item.get("name") or "").strip().lower()
+    manufacturer = equipment_item.get("manufacturer")
+    model = equipment_item.get("model")
+    confidence = str(
+        equipment_item.get("confidence") or ""
+    ).strip().lower()
+
+    annotation_terms = (
+        " icon",
+        "label/",
+        "label ",
+    )
+
+    looks_like_annotation = any(
+        term in name
+        for term in annotation_terms
+    )
+
+    has_product_identity = bool(manufacturer or model)
+
+    return (
+        looks_like_annotation
+        and not has_product_identity
+        and confidence != "high"
+    )
+
 def is_official_domain(url, official_domains):
     try:
         domain = url.lower().split("/")[2]

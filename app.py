@@ -2478,6 +2478,22 @@ if uploaded_files:
                         
                             if not room_area_text:
                                 continue
+
+                            generic_room_labels = {
+                                "area",
+                                "room",
+                                "space",
+                                "zone",
+                                "view",
+                                "layout",
+                                "elevation",
+                            }
+                            
+                            if room_area_lower in generic_room_labels:
+                                uncertainty_notes.append(
+                                    f"Excluded generic room label: {room_area_text}"
+                                )
+                                continue
                         
                             if any(
                                 pattern in room_area_lower

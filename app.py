@@ -2868,6 +2868,12 @@ if uploaded_files:
                                     f"{equipment_name}: model/manufacturer is not directly supported "
                                     "by the raw region analyses."
                                 )
+
+                                structured_drawing_data["equipment"] = [
+                                    simplify_composite_equipment_name(item)
+                                    for item in structured_drawing_data.get("equipment", [])
+                                ]
+                                
                         st.markdown("### Drawing Analysis")
 
                         drawing_number = structured_drawing_data.get("drawing_number")

@@ -716,8 +716,17 @@ def test_is_ambiguous_equipment_annotation(equipment_item, expected):
             },
             "SURGEX SX-DPP-102I",
         ),
+        (
+            {
+                "name": "CHIEF MTM1U WALL MOUNT",
+                "manufacturer": "Chief",
+                "model": "MTM1U",
+            },
+            "CHIEF MTM1U WALL MOUNT",
+        ),
     ],
 )
+
 def test_simplify_composite_equipment_name(
     equipment_item,
     expected_name,
@@ -725,3 +734,4 @@ def test_simplify_composite_equipment_name(
     result = simplify_composite_equipment_name(equipment_item)
 
     assert result["name"] == expected_name
+

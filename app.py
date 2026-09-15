@@ -1303,8 +1303,17 @@ def simplify_composite_equipment_name(equipment_item):
 
     for term in mount_terms + accessory_terms:
         position = name_lower.find(term)
-        if position > 0:
-            cutoff_positions.append(position)
+    
+        if position <= 0:
+            continue
+    
+        if (
+            term == " wall mount"
+            and name_lower.endswith(" wall mount")
+        ):
+            continue
+    
+        cutoff_positions.append(position)
 
     if not cutoff_positions:
         return equipment_item

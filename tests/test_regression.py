@@ -191,6 +191,9 @@ is_generic_room_label = load_function_from_app(
 is_ambiguous_equipment_annotation = load_function_from_app(
     "is_ambiguous_equipment_annotation"
 )
+simplify_composite_equipment_name = load_function_from_app(
+    "simplify_composite_equipment_name"
+)
 extract_primary_drawing_number.__globals__["re"] = re
 validate_structured_drawing_number.__globals__["re"] = re
 deduplicate_references.__globals__["re"] = re
@@ -685,3 +688,40 @@ def test_is_generic_room_label(room_area, expected):
 )
 def test_is_ambiguous_equipment_annotation(equipment_item, expected):
     assert is_ambiguous_equipment_annotation(equipment_item) is expected
+
+@pytest.mark.parametrize(
+    "equipment_item,expected_name",
+    [
+        (
+            {
+                "name": 'SAMSUNG QMC 55" DISPLAY MTM1U WALL MOUNT WITH FCAV1U',
+                "manufacturer": "Samsung",
+                "model": 'QMC 55" DISPLAY MTM1U',
+            },
+            'SAMSUNG QMC 55" DISPLAY MTM1U',
+        ),
+        (
+            {
+                "name": "CISCO VIDEO-BAR CS-BAR-T-K9 WITH WALL MOUNT",
+                "manufacturer": "Cisco",
+                "model": "CS-BAR-T-K9",
+            },
+            "CISCO VIDEO-BAR CS-BAR-T-K9",
+        ),
+        (
+            {
+                "name": "SURGEX SX-DPP-102I",
+                "manufacturer": "Surgex",
+                "model": "SX-DPP-102I",
+            },
+            "SURGEX SX-DPP-102I",
+        ),
+    ],
+)
+def test_simplify_composite_equipment_name(
+    equipment_item,
+    expected_name,
+):
+    result = simplify_composite_equipment_name(equipment_item)
+
+    assert result["name"] == expected_name

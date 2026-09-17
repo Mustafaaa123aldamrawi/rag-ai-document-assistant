@@ -2341,11 +2341,16 @@ if uploaded_files:
                         )
                 
                         vision_messages[1]["content"][1]["image_url"]["url"] = region_data_url
+                        region_vision_span = None
                         try:
                             region_vision_span = langfuse.start_observation(
                                 name="drawing-region-vision",
                                 as_type="generation",
-                                input=vision_messages,
+                                input={
+                                    "region_number": region["region_number"],
+                                    "box": region["box"],
+                                    "messages": vision_messages,
+                                },
                             )
                             
                             region_answer = call_conversation_llm(
@@ -2366,6 +2371,14 @@ if uploaded_files:
                                     f"### Region {region['region_number']}\n{region_answer}"
                                 )
                         except Exception as region_error:
+                            if region_vision_span is not None:
+                                region_vision_span.update(
+                                    output={
+                                        "error": str(region_error),
+                                        "region_number": region["region_number"],
+                                    }
+                                )
+                                region_vision_span.end()
                             st.warning(
                                 f"Region {region['region_number']} analysis skipped: {region_error}"
                             )

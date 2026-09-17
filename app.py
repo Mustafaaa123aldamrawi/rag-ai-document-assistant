@@ -2342,6 +2342,12 @@ if uploaded_files:
                 
                         vision_messages[1]["content"][1]["image_url"]["url"] = region_data_url
                         try:
+                            region_vision_span = langfuse.start_observation(
+                                name="drawing-region-vision",
+                                as_type="generation",
+                                input=vision_messages,
+                            )
+                            
                             region_answer = call_conversation_llm(
                                 messages=vision_messages,
                                 temperature=0.2,
@@ -2349,6 +2355,11 @@ if uploaded_files:
                                     "zai-org/GLM-4.5V",
                                 ]
                             )
+
+                            region_vision_span.update(
+                                output=region_answer
+                            )
+                            region_vision_span.end()
                 
                             if region_answer:
                                 region_answers.append(

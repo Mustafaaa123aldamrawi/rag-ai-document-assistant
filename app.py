@@ -825,6 +825,7 @@ def detect_follow_up_question(question):
         or starts_like_follow_up
     )
 
+@observe(name="query-router")
 def decide_query_route(
     question,
     search_mode,

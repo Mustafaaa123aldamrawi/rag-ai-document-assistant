@@ -5818,10 +5818,24 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
                 st.stop()
         else:
             with st.spinner("Analyzing sources and preparing your answer..."):
+                final_answer_span = langfuse.start_observation(
+                    name="final-answer-generation",
+                    as_type="generation",
+                    input={
+                        "question": question,
+                        "query_route": query_route,
+                        "context": context,
+                        "prompt": prompt,
+                    },
+                )
                 try:
                     answer = call_qwen_llm(prompt)
                 except Exception as e:
                     answer = f"AI model error: {e}"
+                    final_answer_span.update(
+                        output=answer
+                    )
+                    final_answer_span.end()
         # Ensure technical comparison answers cover both concepts and their difference
         if (
             is_technical_comparison

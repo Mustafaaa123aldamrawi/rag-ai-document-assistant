@@ -16,7 +16,11 @@ def load_function_from_app(function_name):
     for node in tree.body:
         if isinstance(node, ast.FunctionDef) and node.name == function_name:
             module = ast.Module(body=[node], type_ignores=[])
-            namespace = {}
+            namespace = {
+                "observe": lambda *args, **kwargs: (
+                    lambda func: func
+                ),
+            }
             exec(compile(module, str(APP_FILE), "exec"), namespace)
             return namespace[function_name]
 

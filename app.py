@@ -2496,10 +2496,21 @@ if uploaded_files:
                         )
                         structured_json_text = structured_vision_answer.strip()
                         structured_json_text = re.sub(r"^```json\s*|\s*```$", "", structured_json_text).strip()
+                        structured_extraction_span = langfuse.start_observation(
+                            name="structured-drawing-extraction",
+                            as_type="span",
+                            input={
+                                "structured_json_text": structured_json_text,
+                            },
+                        )
                         structured_drawing_data = json.loads(structured_json_text)
                         structured_drawing_data = normalize_equipment_quantities(
                             structured_drawing_data
                         )
+                        structured_extraction_span.update(
+                            output=structured_drawing_data
+                        )
+                        structured_extraction_span.end()
                         raw_region_text = "\n".join(region_answers).lower()
 
                         uncertainty_notes = structured_drawing_data.setdefault(

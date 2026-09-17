@@ -11,7 +11,7 @@ from PIL import Image
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
-from langfuse import get_client
+from langfuse import get_client, observe
 
 import os
 
@@ -125,6 +125,7 @@ def call_qwen_llm(prompt, preferred_models_override=None):
    
     return data["choices"][0]["message"].get("content", "")
 
+@observe(name="conversation-llm", as_type="generation")
 def call_conversation_llm(
     prompt=None,
     temperature=0.85,

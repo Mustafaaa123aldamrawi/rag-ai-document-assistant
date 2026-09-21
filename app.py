@@ -940,6 +940,22 @@ def decide_query_route(
             return "WEB"
 
     return "GENERAL"
+
+def should_show_document_not_found(
+    relevant_documents,
+    is_summary_question,
+    search_mode,
+    is_casual_chat,
+    has_additional_context=False,
+):
+    return (
+        not relevant_documents
+        and not has_additional_context
+        and not is_summary_question
+        and search_mode == "Documents Only"
+        and not is_casual_chat
+    )
+
 def should_run_drawing_vision(
     content_type,
     pending_question,

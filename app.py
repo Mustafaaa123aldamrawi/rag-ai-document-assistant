@@ -941,6 +941,9 @@ def decide_query_route(
 
     return "GENERAL"
 
+def get_follow_up_state(question):
+    return detect_follow_up_question(question)
+
 def should_show_document_not_found(
     relevant_documents,
     is_summary_question,

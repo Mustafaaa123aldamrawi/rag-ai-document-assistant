@@ -979,7 +979,7 @@ def should_run_drawing_vision(
         has_document=True,
         content_type="DRAWING",
         document_scope_active=document_scope_active,
-        is_follow_up=False,
+        is_follow_up=get_follow_up_state(pending_question),
     )
 
     return route in {"DRAWING", "HYBRID"}

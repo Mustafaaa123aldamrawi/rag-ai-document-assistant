@@ -3963,33 +3963,7 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
         "هذي",
         }
         
-        retrieval_question_words = set(
-            question_lower
-            .replace("?", "")
-            .replace(",", "")
-            .replace(".", "")
-            .split()
-        )
-        retrieval_follow_up_starters = (
-            "if ",
-            "what happens",
-            "what about",
-            "how about",
-            "and ",
-            "then ",
-        "طيب",
-        "وإذا",
-        "اذا",
-        "إذا",
-        )
-        
-        retrieval_starts_like_follow_up = question_lower.strip().startswith(
-            retrieval_follow_up_starters
-        )
-        retrieval_is_follow_up = (
-            bool(retrieval_question_words & retrieval_follow_up_references)
-            or retrieval_starts_like_follow_up
-        )
+        retrieval_is_follow_up = get_follow_up_state(question)
         
         if retrieval_is_follow_up:
             previous_user_questions = [

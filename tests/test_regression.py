@@ -153,6 +153,9 @@ decide_query_route = load_function_from_app(
 detect_follow_up_question = load_function_from_app(
     "detect_follow_up_question"
 )
+should_show_document_not_found = load_function_from_app(
+    "should_show_document_not_found"
+)
 should_run_drawing_vision = load_function_from_app(
     "should_run_drawing_vision"
 )
@@ -739,3 +742,21 @@ def test_simplify_composite_equipment_name(
 
     assert result["name"] == expected_name
 
+def test_not_found_guard_does_not_stop_when_structured_drawing_context_exists():
+    assert should_show_document_not_found(
+        relevant_documents=[],
+        is_summary_question=False,
+        search_mode="Documents Only",
+        is_casual_chat=False,
+        has_additional_context=True,
+    ) is False
+
+
+def test_not_found_guard_stops_when_no_document_evidence_exists():
+    assert should_show_document_not_found(
+        relevant_documents=[],
+        is_summary_question=False,
+        search_mode="Documents Only",
+        is_casual_chat=False,
+        has_additional_context=False,
+    ) is True

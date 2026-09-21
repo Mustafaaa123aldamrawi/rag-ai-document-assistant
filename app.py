@@ -3944,24 +3944,6 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
                 matched_source = source_name
                 break
         search_query = question
-
-        retrieval_follow_up_references = {
-            "it",
-            "its",
-            "this",
-            "that",
-            "they",
-            "their",
-            "them",
-        "تبعتو",
-        "تبعو",
-        "تبعها",
-        "تبعهم",
-        "هاد",
-        "هاي",
-        "هيدا",
-        "هذي",
-        }
         
         retrieval_is_follow_up = get_follow_up_state(question)
         

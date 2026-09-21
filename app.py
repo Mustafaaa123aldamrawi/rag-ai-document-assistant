@@ -4402,11 +4402,17 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
                 )
             )
         
-        if (
-            not relevant_documents
-            and not is_summary_question
-            and search_mode == "Documents Only"
-            and not is_casual_chat
+        has_additional_context = bool(
+            query_route in {"DRAWING", "HYBRID"}
+            and get_drawing_analysis_pages(document_pages)
+        )
+        
+        if should_show_document_not_found(
+            relevant_documents=relevant_documents,
+            is_summary_question=is_summary_question,
+            search_mode=search_mode,
+            is_casual_chat=is_casual_chat,
+            has_additional_context=has_additional_context,
         ):
             st.subheader("🤖 AI Answer")
             st.write("The information was not found in the document.")

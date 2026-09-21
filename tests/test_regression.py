@@ -153,6 +153,9 @@ decide_query_route = load_function_from_app(
 detect_follow_up_question = load_function_from_app(
     "detect_follow_up_question"
 )
+get_follow_up_state = load_function_from_app(
+    "get_follow_up_state"
+)
 should_show_document_not_found = load_function_from_app(
     "should_show_document_not_found"
 )
@@ -760,3 +763,27 @@ def test_not_found_guard_stops_when_no_document_evidence_exists():
         is_casual_chat=False,
         has_additional_context=False,
     ) is True
+
+def test_follow_up_detection_is_consistent_for_explicit_source_question():
+    question = "What equipment is shown in this drawing?"
+
+    assert detect_follow_up_question(question) is False
+
+
+def test_follow_up_detection_is_consistent_for_real_follow_up():
+    question = "What about its quantities?"
+
+    assert detect_follow_up_question(question) is True
+
+@pytest.mark.parametrize(
+    "question,expected",
+    [
+        ("What equipment is shown in this drawing?", False),
+        ("What is the drawing number and title?", False),
+        ("What about its quantities?", True),
+        ("And what are the quantities?", True),
+        ("طيب شو الكميات؟", True),
+    ],
+)
+def test_get_follow_up_state(question, expected):
+    assert get_follow_up_state(question) is expected

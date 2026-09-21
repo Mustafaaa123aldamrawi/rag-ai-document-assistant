@@ -165,6 +165,12 @@ should_show_document_not_found = load_function_from_app(
 should_run_drawing_vision = load_function_from_app(
     "should_run_drawing_vision"
 )
+should_run_drawing_vision.__globals__["decide_query_route"] = (
+    decide_query_route
+)
+should_run_drawing_vision.__globals__["get_follow_up_state"] = (
+    get_follow_up_state
+)
 normalize_equipment_quantities = load_function_from_app(
     "normalize_equipment_quantities"
 )

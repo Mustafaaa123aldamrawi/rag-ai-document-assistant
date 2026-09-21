@@ -156,6 +156,9 @@ detect_follow_up_question = load_function_from_app(
 get_follow_up_state = load_function_from_app(
     "get_follow_up_state"
 )
+get_follow_up_state.__globals__["detect_follow_up_question"] = (
+    detect_follow_up_question
+)
 should_show_document_not_found = load_function_from_app(
     "should_show_document_not_found"
 )

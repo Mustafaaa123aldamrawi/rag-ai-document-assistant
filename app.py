@@ -944,6 +944,117 @@ def decide_query_route(
 def get_follow_up_state(question):
     return detect_follow_up_question(question)
 
+def classify_drawing_fact_question(question):
+    question_text = str(question or "").strip().lower()
+
+    if not question_text:
+        return None
+
+    explanation_cues = (
+        "explain",
+        "why",
+        "how should",
+        "how does",
+        "compare",
+        "latest",
+        "current",
+        "price",
+        "firmware",
+        "procedure",
+        "troubleshoot",
+    )
+
+    if any(cue in question_text for cue in explanation_cues):
+        return None
+
+    quantity_cues = (
+        "quantity",
+        "quantities",
+        "how many",
+        "كم",
+        "الكميات",
+        "الكمية",
+    )
+
+    if any(cue in question_text for cue in quantity_cues):
+        return "quantity"
+
+    equipment_cues = (
+        "equipment",
+        "device",
+        "devices",
+        "what is shown",
+        "what's shown",
+        "الأجهزة",
+        "المعدات",
+    )
+
+    if any(cue in question_text for cue in equipment_cues):
+        return "equipment"
+
+    drawing_id_cues = (
+        "drawing number",
+        "drawing title",
+        "number and title",
+        "رقم المخطط",
+        "عنوان المخطط",
+    )
+
+    if any(cue in question_text for cue in drawing_id_cues):
+        return "drawing_identity"
+
+    room_cues = (
+        "room",
+        "rooms",
+        "area",
+        "areas",
+        "الغرفة",
+        "الغرف",
+        "المنطقة",
+        "المناطق",
+    )
+
+    if any(cue in question_text for cue in room_cues):
+        return "rooms"
+
+    installation_cues = (
+        "installation note",
+        "installation notes",
+        "note",
+        "notes",
+        "ملاحظات التركيب",
+    )
+
+    if any(cue in question_text for cue in installation_cues):
+        return "installation_notes"
+
+    return None
+
+def format_equipment_item_for_answer(item):
+    if not isinstance(item, dict):
+        return ""
+
+    name = str(item.get("name") or "").strip()
+    manufacturer = item.get("manufacturer")
+    model = item.get("model")
+    quantity = item.get("quantity")
+
+    parts = []
+
+    if name:
+        parts.append(name)
+
+    if manufacturer:
+        parts.append(f"Manufacturer: {manufacturer}")
+
+    if model:
+        parts.append(f"Model: {model}")
+
+    if quantity is not None:
+        parts.append(f"Quantity: {quantity}")
+
+    return " | ".join(parts)
+
 def should_show_document_not_found(
     relevant_documents,
     is_summary_question,

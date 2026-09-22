@@ -223,12 +223,22 @@ classify_drawing_fact_question = load_function_from_app(
 format_equipment_item_for_answer = load_function_from_app(
     "format_equipment_item_for_answer"
 )
+generate_deterministic_drawing_answer = load_function_from_app(
+    "generate_deterministic_drawing_answer"
+)
 extract_primary_drawing_number.__globals__["re"] = re
 validate_structured_drawing_number.__globals__["re"] = re
 deduplicate_references.__globals__["re"] = re
 deduplicate_installation_notes.__globals__["re"] = re
 build_drawing_analysis_page.__globals__["json"] = json
 should_run_drawing_vision.__globals__["decide_query_route"] = decide_query_route
+generate_deterministic_drawing_answer.__globals__[
+    "classify_drawing_fact_question"
+] = classify_drawing_fact_question
+
+generate_deterministic_drawing_answer.__globals__[
+    "format_equipment_item_for_answer"
+] = format_equipment_item_for_answer
 
 @pytest.mark.parametrize(
     "question,search_mode,has_document,content_type,document_scope_active,is_follow_up,expected",
@@ -883,6 +893,103 @@ def test_quantity_follow_up_is_deterministic_lookup():
 def test_explanation_question_stays_llm_driven():
     result = classify_drawing_fact_question(
         "Explain how this rack should be installed"
+    )
+
+    assert result is None
+
+def test_generate_deterministic_drawing_answer_preserves_equipment_identity():
+    structured_data = {
+        "drawing_number": "AV-209.1",
+        "drawing_title": "AV RACK ROOM",
+        "room_areas": ["AV RACK ROOM"],
+        "equipment": [
+            {
+                "name": "45U HIGH AV RACK",
+                "manufacturer": "PANDUIT",
+                "model": "XG64512WS0001",
+                "quantity": 2,
+            }
+        ],
+        "installation_notes": [],
+    }
+
+    result = generate_deterministic_drawing_answer(
+        "What equipment is shown in this drawing?",
+        structured_data,
+        "[DOC 1]",
+    )
+
+    assert "45U HIGH AV RACK" in result
+    assert "PANDUIT" in result
+    assert "XG64512WS0001" in result
+    assert "Quantity: 2" in result
+    assert "[DOC 1]" in result
+
+    lowered = result.lower()
+    assert "video game" not in lowered
+    assert "shelf" not in lowered
+    assert "45 units" not in lowered
+
+
+def test_generate_deterministic_quantity_answer():
+    structured_data = {
+        "equipment": [
+            {
+                "name": "45U HIGH AV RACK",
+                "manufacturer": "PANDUIT",
+                "model": "XG64512WS0001",
+                "quantity": 2,
+            }
+        ]
+    }
+
+    result = generate_deterministic_drawing_answer(
+        "What about its quantities?",
+        structured_data,
+        "[DOC 1]",
+    )
+
+    assert result == "- 45U HIGH AV RACK | Quantity: 2 [DOC 1]"
+
+
+def test_generate_deterministic_answer_does_not_invent_missing_quantity():
+    structured_data = {
+        "equipment": [
+            {
+                "name": "TOUCH PANEL",
+                "manufacturer": "CRESTRON",
+                "model": "TS-1070",
+                "quantity": None,
+            }
+        ]
+    }
+
+    result = generate_deterministic_drawing_answer(
+        "What are the quantities?",
+        structured_data,
+        "[DOC 1]",
+    )
+
+    assert "TOUCH PANEL" in result
+    assert "Quantity: unspecified" in result
+
+
+def test_generate_deterministic_answer_returns_none_for_explanation():
+    structured_data = {
+        "equipment": [
+            {
+                "name": "45U HIGH AV RACK",
+                "manufacturer": "PANDUIT",
+                "model": "XG64512WS0001",
+                "quantity": 2,
+            }
+        ]
+    }
+
+    result = generate_deterministic_drawing_answer(
+        "Explain how this rack should be installed",
+        structured_data,
+        "[DOC 1]",
     )
 
     assert result is None

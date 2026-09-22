@@ -1055,6 +1055,104 @@ def format_equipment_item_for_answer(item):
 
     return " | ".join(parts)
 
+def generate_deterministic_drawing_answer(
+    question,
+    structured_drawing_data,
+    citation_label="[DOC 1]",
+):
+    if not isinstance(structured_drawing_data, dict):
+        return None
+
+    fact_type = classify_drawing_fact_question(question)
+
+    if fact_type is None:
+        return None
+
+    drawing_number = structured_drawing_data.get("drawing_number")
+    drawing_title = structured_drawing_data.get("drawing_title")
+    room_areas = structured_drawing_data.get("room_areas", [])
+    equipment = structured_drawing_data.get("equipment", [])
+    installation_notes = structured_drawing_data.get(
+        "installation_notes",
+        [],
+    )
+
+    if fact_type == "equipment":
+        if not equipment:
+            return None
+
+        lines = [
+            format_equipment_item_for_answer(item)
+            for item in equipment
+        ]
+        lines = [line for line in lines if line]
+
+        if not lines:
+            return None
+
+        return "\n".join(
+            f"- {line} {citation_label}"
+            for line in lines
+        )
+
+    if fact_type == "quantity":
+        if not equipment:
+            return None
+
+        lines = []
+
+        for item in equipment:
+            name = str(item.get("name") or "").strip()
+            quantity = item.get("quantity")
+
+            if not name:
+                continue
+
+            if quantity is None:
+                lines.append(
+                    f"- {name} | Quantity: unspecified {citation_label}"
+                )
+            else:
+                lines.append(
+                    f"- {name} | Quantity: {quantity} {citation_label}"
+                )
+
+        return "\n".join(lines) if lines else None
+
+    if fact_type == "drawing_identity":
+        parts = []
+
+        if drawing_number:
+            parts.append(f"Drawing Number: {drawing_number}")
+
+        if drawing_title:
+            parts.append(f"Drawing Title: {drawing_title}")
+
+        if not parts:
+            return None
+
+        return " | ".join(parts) + f" {citation_label}"
+
+    if fact_type == "rooms":
+        if not room_areas:
+            return None
+
+        return "\n".join(
+            f"- {room} {citation_label}"
+            for room in room_areas
+        )
+
+    if fact_type == "installation_notes":
+        if not installation_notes:
+            return None
+
+        return "\n".join(
+            f"- {note} {citation_label}"
+            for note in installation_notes
+        )
+
+    return None
+    
 def should_show_document_not_found(
     relevant_documents,
     is_summary_question,

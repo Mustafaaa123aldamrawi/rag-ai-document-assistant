@@ -213,6 +213,9 @@ is_ambiguous_equipment_annotation = load_function_from_app(
 simplify_composite_equipment_name = load_function_from_app(
     "simplify_composite_equipment_name"
 )
+merge_split_equipment_items = load_function_from_app(
+    "merge_split_equipment_items"
+)
 extract_primary_drawing_number.__globals__["re"] = re
 validate_structured_drawing_number.__globals__["re"] = re
 deduplicate_references.__globals__["re"] = re
@@ -754,6 +757,33 @@ def test_simplify_composite_equipment_name(
 
     assert result["name"] == expected_name
 
+def test_merge_split_equipment_items_merges_identity_and_description():
+    equipment_items = [
+        {
+            "name": "PANDUIT",
+            "manufacturer": "PANDUIT",
+            "model": "XG64512WS0001",
+            "quantity": 2,
+            "confidence": "high",
+        },
+        {
+            "name": "45U HIGH AV RACK",
+            "manufacturer": None,
+            "model": "45U HIGH AV RACK",
+            "quantity": None,
+            "confidence": "high",
+        },
+    ]
+
+    result = merge_split_equipment_items(equipment_items)
+
+    assert len(result) == 1
+    assert result[0]["name"] == "45U HIGH AV RACK"
+    assert result[0]["manufacturer"] == "PANDUIT"
+    assert result[0]["model"] == "XG64512WS0001"
+    assert result[0]["quantity"] == 2
+
+
 def test_not_found_guard_does_not_stop_when_structured_drawing_context_exists():
     assert should_show_document_not_found(
         relevant_documents=[],
@@ -796,3 +826,4 @@ def test_follow_up_detection_is_consistent_for_real_follow_up():
 )
 def test_get_follow_up_state(question, expected):
     assert get_follow_up_state(question) is expected
+

@@ -1362,6 +1362,82 @@ def simplify_composite_equipment_name(equipment_item):
 
     return updated_item
 
+def merge_split_equipment_items(equipment_items):
+    if not isinstance(equipment_items, list):
+        return equipment_items
+
+    merged_items = []
+    used_indexes = set()
+
+    for index, item in enumerate(equipment_items):
+        if index in used_indexes or not isinstance(item, dict):
+            continue
+
+        current_item = dict(item)
+
+        current_name = str(current_item.get("name") or "").strip()
+        current_manufacturer = str(
+            current_item.get("manufacturer") or ""
+        ).strip()
+        current_model = str(
+            current_item.get("model") or ""
+        ).strip()
+
+        for other_index, other_item in enumerate(equipment_items):
+            if (
+                other_index == index
+                or other_index in used_indexes
+                or not isinstance(other_item, dict)
+            ):
+                continue
+
+            other_name = str(other_item.get("name") or "").strip()
+            other_manufacturer = str(
+                other_item.get("manufacturer") or ""
+            ).strip()
+            other_model = str(
+                other_item.get("model") or ""
+            ).strip()
+
+            current_is_identity_only = (
+                current_name
+                and current_manufacturer
+                and current_name.lower() == current_manufacturer.lower()
+                and current_model
+            )
+
+            other_is_description_only = (
+                other_name
+                and not other_manufacturer
+                and (
+                    not other_model
+                    or other_model.lower() == other_name.lower()
+                )
+            )
+
+            if current_is_identity_only and other_is_description_only:
+                current_item["name"] = other_name
+
+                if (
+                    not current_item.get("model")
+                    and other_item.get("model")
+                ):
+                    current_item["model"] = other_item.get("model")
+
+                if (
+                    current_item.get("quantity") is None
+                    and other_item.get("quantity") is not None
+                ):
+                    current_item["quantity"] = other_item.get("quantity")
+
+                used_indexes.add(other_index)
+                break
+
+        merged_items.append(current_item)
+        used_indexes.add(index)
+
+    return merged_items
+
 def is_official_domain(url, official_domains):
     try:
         domain = url.lower().split("/")[2]

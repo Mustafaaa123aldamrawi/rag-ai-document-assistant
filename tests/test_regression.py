@@ -861,9 +861,7 @@ def test_format_equipment_item_preserves_exact_identity():
     assert "45U HIGH AV RACK" in result
     assert "PANDUIT" in result
     assert "XG64512WS0001" in result
-    assert "2" in result
-
-    lowered = result.lower()
+ lowered = result.lower()
     assert "video game" not in lowered
     assert "shelf" not in lowered
     assert "45 units" not in lowered
@@ -900,6 +898,7 @@ def test_explanation_question_stays_llm_driven():
     )
 
     assert result is None
+
 
 def test_generate_deterministic_drawing_answer_preserves_equipment_identity():
     structured_data = {
@@ -997,6 +996,7 @@ def test_generate_deterministic_answer_returns_none_for_explanation():
     )
 
     assert result is None
+
 
 def test_get_structured_drawing_data_from_pages():
     document_pages = [

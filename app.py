@@ -1465,6 +1465,37 @@ def get_drawing_analysis_pages(document_pages):
         and page.get("text")
     ]
 
+def get_structured_drawing_data_from_pages(document_pages):
+    structured_items = []
+
+    for page in document_pages or []:
+        if not isinstance(page, dict):
+            continue
+
+        if not page.get("is_drawing_analysis"):
+            continue
+
+        page_text = page.get("text")
+
+        if not page_text:
+            continue
+
+        try:
+            structured_data = json.loads(page_text)
+        except (TypeError, json.JSONDecodeError):
+            continue
+
+        if isinstance(structured_data, dict):
+            structured_items.append(
+                {
+                    "data": structured_data,
+                    "source": page.get("source"),
+                    "page_number": page.get("page_number"),
+                }
+            )
+
+    return structured_items
+
 def is_generic_room_label(room_area):
     generic_room_labels = {
         "area",

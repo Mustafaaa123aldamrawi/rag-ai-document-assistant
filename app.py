@@ -2258,6 +2258,7 @@ if uploaded_files:
                 f"detected as: {content_type}"
             )
             rendered_drawing_pages = []
+            structured_drawing_data = None
             
             pending_drawing_question = st.session_state.get(
                 "pending_question",

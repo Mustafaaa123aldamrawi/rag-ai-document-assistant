@@ -3021,6 +3021,9 @@ if uploaded_files:
                                     simplify_composite_equipment_name(item)
                                     for item in structured_drawing_data.get("equipment", [])
                                 ]
+                                structured_drawing_data["equipment"] = merge_split_equipment_items(
+                                    structured_drawing_data.get("equipment", [])
+                                )
                                 
                         st.markdown("### Drawing Analysis")
 

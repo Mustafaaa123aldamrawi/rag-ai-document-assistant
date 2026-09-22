@@ -226,11 +226,15 @@ format_equipment_item_for_answer = load_function_from_app(
 generate_deterministic_drawing_answer = load_function_from_app(
     "generate_deterministic_drawing_answer"
 )
+get_structured_drawing_data_from_pages = load_function_from_app(
+    "get_structured_drawing_data_from_pages"
+)
 extract_primary_drawing_number.__globals__["re"] = re
 validate_structured_drawing_number.__globals__["re"] = re
 deduplicate_references.__globals__["re"] = re
 deduplicate_installation_notes.__globals__["re"] = re
 build_drawing_analysis_page.__globals__["json"] = json
+get_structured_drawing_data_from_pages.__globals__["json"] = json
 should_run_drawing_vision.__globals__["decide_query_route"] = decide_query_route
 generate_deterministic_drawing_answer.__globals__[
     "classify_drawing_fact_question"
@@ -993,3 +997,29 @@ def test_generate_deterministic_answer_returns_none_for_explanation():
     )
 
     assert result is None
+
+def test_get_structured_drawing_data_from_pages():
+    document_pages = [
+        {
+            "page_number": 1,
+            "source": "AV-209.pdf",
+            "text": '{"drawing_number":"AV-209.1","drawing_title":"AV RACK ROOM"}',
+            "content_type": "DRAWING",
+            "is_drawing_analysis": True,
+        },
+        {
+            "page_number": 2,
+            "source": "AV-209.pdf",
+            "text": "normal extracted drawing text",
+            "content_type": "DRAWING",
+            "is_drawing_analysis": False,
+        },
+    ]
+
+    result = get_structured_drawing_data_from_pages(document_pages)
+
+    assert len(result) == 1
+    assert result[0]["data"]["drawing_number"] == "AV-209.1"
+    assert result[0]["data"]["drawing_title"] == "AV RACK ROOM"
+    assert result[0]["source"] == "AV-209.pdf"
+    assert result[0]["page_number"] == 1

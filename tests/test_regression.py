@@ -861,7 +861,7 @@ def test_format_equipment_item_preserves_exact_identity():
     assert "45U HIGH AV RACK" in result
     assert "PANDUIT" in result
     assert "XG64512WS0001" in result
- lowered = result.lower()
+    lowered = result.lower()
     assert "video game" not in lowered
     assert "shelf" not in lowered
     assert "45 units" not in lowered

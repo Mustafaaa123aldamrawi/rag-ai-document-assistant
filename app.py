@@ -2449,6 +2449,11 @@ if uploaded_files:
                     merged_vision_answer = call_conversation_llm(
                         prompt=merge_prompt,
                         temperature=0.1,
+                        preferred_models_override=[
+                            "openai/gpt-oss-20b",
+                            "Qwen/Qwen2.5-32B-Instruct",
+                            "Qwen/Qwen2.5-14B-Instruct",
+                        ],
                     )
                     
                     cleanup_prompt = (

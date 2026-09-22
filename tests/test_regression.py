@@ -216,6 +216,13 @@ simplify_composite_equipment_name = load_function_from_app(
 merge_split_equipment_items = load_function_from_app(
     "merge_split_equipment_items"
 )
+classify_drawing_fact_question = load_function_from_app(
+    "classify_drawing_fact_question"
+)
+
+format_equipment_item_for_answer = load_function_from_app(
+    "format_equipment_item_for_answer"
+)
 extract_primary_drawing_number.__globals__["re"] = re
 validate_structured_drawing_number.__globals__["re"] = re
 deduplicate_references.__globals__["re"] = re
@@ -827,3 +834,55 @@ def test_follow_up_detection_is_consistent_for_real_follow_up():
 def test_get_follow_up_state(question, expected):
     assert get_follow_up_state(question) is expected
 
+def test_format_equipment_item_preserves_exact_identity():
+    item = {
+        "name": "45U HIGH AV RACK",
+        "manufacturer": "PANDUIT",
+        "model": "XG64512WS0001",
+        "quantity": 2,
+    }
+
+    result = format_equipment_item_for_answer(item)
+
+    assert "45U HIGH AV RACK" in result
+    assert "PANDUIT" in result
+    assert "XG64512WS0001" in result
+    assert "2" in result
+
+    lowered = result.lower()
+    assert "video game" not in lowered
+    assert "shelf" not in lowered
+    assert "45 units" not in lowered
+    assert "units per shelf" not in lowered
+
+
+def test_format_equipment_item_does_not_invent_missing_fields():
+    item = {
+        "name": "TOUCH PANEL",
+        "manufacturer": None,
+        "model": None,
+        "quantity": None,
+    }
+
+    result = format_equipment_item_for_answer(item)
+
+    assert "TOUCH PANEL" in result
+    assert "Manufacturer:" not in result
+    assert "Model:" not in result
+    assert "Quantity:" not in result
+
+
+def test_quantity_follow_up_is_deterministic_lookup():
+    result = classify_drawing_fact_question(
+        "What about its quantities?"
+    )
+
+    assert result == "quantity"
+
+
+def test_explanation_question_stays_llm_driven():
+    result = classify_drawing_fact_question(
+        "Explain how this rack should be installed"
+    )
+
+    assert result is None

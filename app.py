@@ -3822,6 +3822,41 @@ if uploaded_files:
                         )
         
                         st.json(site_survey_checklist_data)
+
+                        word_bytes = build_site_survey_checklist_docx(
+                            site_survey_checklist_data
+                        )
+                        
+                        if word_bytes:
+                            project_info = (
+                                site_survey_checklist_data.get("project_info") or {}
+                            )
+                        
+                            project_name = (
+                                project_info.get("project_name")
+                                or "AV_Site_Survey"
+                            )
+                        
+                            safe_project_name = re.sub(
+                                r"[^A-Za-z0-9_-]+",
+                                "_",
+                                str(project_name),
+                            ).strip("_")
+                        
+                            file_name = (
+                                f"{safe_project_name}_Site_Survey_Checklist.docx"
+                            )
+                        
+                            st.download_button(
+                                label="⬇️ Download Word Checklist",
+                                data=word_bytes,
+                                file_name=file_name,
+                                mime=(
+                                    "application/vnd.openxmlformats-officedocument."
+                                    "wordprocessingml.document"
+                                ),
+                                use_container_width=True,
+                            )
         
                     else:
                         st.error(

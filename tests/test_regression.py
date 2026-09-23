@@ -1049,3 +1049,24 @@ def test_merge_split_equipment_items_handles_name_with_manufacturer_and_model():
     assert result[0]["manufacturer"] == "PANDUIT"
     assert result[0]["model"] == "XG64512WS0001"
     assert result[0]["quantity"] == 2
+
+def test_is_ambiguous_equipment_annotation_filters_standalone_current_rating():
+    item = {
+        "name": "32A",
+        "manufacturer": None,
+        "model": None,
+        "confidence": "medium",
+    }
+
+    assert is_ambiguous_equipment_annotation(item) is True
+
+
+def test_is_ambiguous_equipment_annotation_filters_standalone_voltage_rating():
+    item = {
+        "name": "230V",
+        "manufacturer": None,
+        "model": None,
+        "confidence": "high",
+    }
+
+    assert is_ambiguous_equipment_annotation(item) is True

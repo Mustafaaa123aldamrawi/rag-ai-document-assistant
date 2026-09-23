@@ -1911,10 +1911,28 @@ Rules:
 SCOPE OF WORK:
 """ + "\n\n" + scope_context
 
-    response = call_conversation_llm(
-        prompt=prompt,
-        temperature=0.1,
-    )
+    response = None
+    last_error = None
+    
+    for attempt in range(2):
+        try:
+            response = call_conversation_llm(
+                prompt=prompt,
+                temperature=0.1,
+                preferred_models_override=[
+                    "Qwen/Qwen2.5-32B-Instruct",
+                    "Qwen/Qwen2.5-14B-Instruct",
+                    "Qwen/Qwen2.5-72B-Instruct",
+                ],
+            )
+            break
+        except Exception as error:
+            last_error = error
+    
+    if response is None:
+        raise Exception(
+            f"Site survey checklist generation failed after retry: {last_error}"
+        )
 
     response_text = str(response or "").strip()
 

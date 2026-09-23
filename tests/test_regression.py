@@ -1023,3 +1023,29 @@ def test_get_structured_drawing_data_from_pages():
     assert result[0]["data"]["drawing_title"] == "AV RACK ROOM"
     assert result[0]["source"] == "AV-209.pdf"
     assert result[0]["page_number"] == 1
+
+def test_merge_split_equipment_items_handles_name_with_manufacturer_and_model():
+    items = [
+        {
+            "name": "PANDUIT XG64512WS0001",
+            "manufacturer": "PANDUIT",
+            "model": "XG64512WS0001",
+            "quantity": 2,
+            "confidence": "high",
+        },
+        {
+            "name": "45U HIGH AV RACK",
+            "manufacturer": None,
+            "model": None,
+            "quantity": None,
+            "confidence": "high",
+        },
+    ]
+
+    result = merge_split_equipment_items(items)
+
+    assert len(result) == 1
+    assert result[0]["name"] == "45U HIGH AV RACK"
+    assert result[0]["manufacturer"] == "PANDUIT"
+    assert result[0]["model"] == "XG64512WS0001"
+    assert result[0]["quantity"] == 2

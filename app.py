@@ -3659,11 +3659,6 @@ if uploaded_files:
             st.warning(
                 "No readable text was found in this PDF."
             )
-        
-        else:
-            st.warning(
-                "No readable text was found in this PDF."
-            )
 
     except Exception as error:
         st.error(f"Error processing PDF: {error}")

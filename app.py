@@ -1576,6 +1576,44 @@ def simplify_composite_equipment_name(equipment_item):
 
     name_lower = name.lower()
 
+    equipment_description_terms = (
+        "rack",
+        "display",
+        "monitor",
+        "camera",
+        "speaker",
+        "microphone",
+        "touch panel",
+        "projector",
+        "amplifier",
+        "processor",
+        "codec",
+        "switch",
+    )
+
+    model_lower = model.lower()
+
+    model_looks_like_description = (
+        bool(model)
+        and any(
+            term in model_lower
+            for term in equipment_description_terms
+        )
+    )
+
+    identity_parts = name.split(maxsplit=1)
+
+    if (
+        model_looks_like_description
+        and not manufacturer
+        and len(identity_parts) == 2
+    ):
+        updated_item = dict(equipment_item)
+        updated_item["name"] = model
+        updated_item["manufacturer"] = identity_parts[0]
+        updated_item["model"] = identity_parts[1]
+        return updated_item
+    
     mount_terms = (
         " wall mount",
         " with wall mount",

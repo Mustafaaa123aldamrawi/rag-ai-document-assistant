@@ -1548,30 +1548,226 @@ Do not invent room names, equipment, quantities, requirements, or specifications
 
 Convert the Scope of Work into structured JSON using exactly this schema:
 
-{{
-  "project_info": {{
+{
+  "document_meta": {
+    "title": null,
+    "subtitle": null,
+    "purpose": null
+  },
+
+  "project_info": {
     "project_name": null,
+    "client": null,
+    "site": null,
     "location": null,
-    "client": null
-  }},
-  "rooms_areas": [],
-  "existing_equipment": [],
-  "new_equipment": [],
-  "checklist_sections": [
-    {{
-      "section": "",
-      "items": [
-        {{
-          "item": "",
-          "status": "VERIFY",
-          "notes": ""
-        }}
-      ]
-    }}
+    "survey_date": null,
+    "surveyed_by": null,
+    "client_representative": null,
+    "room_reference": null,
+    "drawing_references": [],
+    "access_restrictions": null,
+    "working_hour_restrictions": null
+  },
+
+  "survey_priorities": [
+    {
+      "priority_item": "",
+      "reason": "",
+      "status_options": ["PASS", "RISK", "BLOCKER"]
+    }
   ],
-  "required_photos": [],
-  "open_items": []
-}}
+
+  "measurements": [
+    {
+      "measurement": "",
+      "drawing_value": "",
+      "actual_value": "",
+      "deviation_notes": ""
+    }
+  ],
+
+  "inspection_sections": [
+    {
+      "section_number": 1,
+      "section_title": "",
+      "section_purpose": "",
+      "items": [
+        {
+          "item_number": 1,
+          "inspection_item": "",
+          "status_options": ["YES", "NO", "N/A"],
+          "notes_photo": ""
+        }
+      ]
+    }
+  ],
+
+  "existing_equipment_inventory": [
+    {
+      "device": "",
+      "quantity": null,
+      "manufacturer": null,
+      "model": null,
+      "location": null,
+      "condition_options": ["OK", "FAULT", "N/T"],
+      "keep_remove": null,
+      "photo_notes": ""
+    }
+  ],
+
+  "new_equipment": [
+    {
+      "device": "",
+      "quantity": null,
+      "manufacturer": null,
+      "model": null,
+      "target_location": null,
+      "installation_requirement": "",
+      "feasibility_status": "VERIFY"
+    }
+  ],
+
+  "rack_survey": {
+    "rack_information": [
+      {
+        "item": "",
+        "finding": ""
+      }
+    ],
+    "equipment_inventory": [
+      {
+        "ru_position": "",
+        "equipment": "",
+        "make_model": "",
+        "keep_remove": "",
+        "condition": "",
+        "photo_notes": ""
+      }
+    ]
+  },
+
+  "connection_matrix": [
+    {
+      "connection": "",
+      "existing_cable_port": "",
+      "reusable_options": ["YES", "NO"],
+      "additional_requirement_notes": ""
+    }
+  ],
+
+  "ceiling_survey": {
+    "information": [
+      {
+        "item": "",
+        "finding": ""
+      }
+    ],
+    "checks": []
+  },
+
+  "partition_sensor_survey": {
+    "partition_information": [
+      {
+        "item": "",
+        "finding": ""
+      }
+    ],
+    "checks": [],
+    "control_intent": null
+  },
+
+  "cable_routes": [
+    {
+      "route": "",
+      "approx_distance": "",
+      "existing_pathway": "",
+      "additional_work": "",
+      "photo_notes": ""
+    }
+  ],
+
+  "network_dante_power": {
+    "network_items": [
+      {
+        "item": "",
+        "finding": ""
+      }
+    ],
+    "power_items": [
+      {
+        "item": "",
+        "finding": ""
+      }
+    ],
+    "checks": []
+  },
+
+  "required_photos": [
+    {
+      "photo_subject": "",
+      "location_direction": "",
+      "related_item": ""
+    }
+  ],
+
+  "photo_register": [
+    {
+      "photo_number": "",
+      "subject_equipment": "",
+      "location_direction": "",
+      "finding_related_item": ""
+    }
+  ],
+
+  "deviations_risks_actions": [
+    {
+      "id": "",
+      "deviation_risk_missing_item": "",
+      "impact": "",
+      "required_action": "",
+      "owner": "",
+      "priority_options": ["H", "M", "L"]
+    }
+  ],
+
+  "final_survey_outcome": [
+    {
+      "inspection_item": "",
+      "status_options": ["YES", "NO", "N/A"],
+      "notes_photo": ""
+    }
+  ],
+
+  "conclusion": {
+    "overall_conclusion": "",
+    "critical_blockers": "",
+    "additional_work_required": "",
+    "customer_actions": "",
+    "designer_programmer_actions": "",
+    "next_step_target_date": ""
+  },
+
+  "sign_off": [
+    {
+      "role": "Surveyor",
+      "name": "",
+      "signature": "",
+      "date": ""
+    },
+    {
+      "role": "Client Representative",
+      "name": "",
+      "signature": "",
+      "date": ""
+    },
+    {
+      "role": "Project Representative",
+      "name": "",
+      "signature": "",
+      "date": ""
+    }
+  ]
+}
 
 Checklist sections should be created only when relevant to the Scope of Work.
 

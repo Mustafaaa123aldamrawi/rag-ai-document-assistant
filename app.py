@@ -1496,6 +1496,38 @@ def get_structured_drawing_data_from_pages(document_pages):
 
     return structured_items
 
+def build_scope_of_work_context(document_pages):
+    scope_sections = []
+
+    for page in document_pages or []:
+        if not isinstance(page, dict):
+            continue
+
+        if page.get("is_drawing_analysis"):
+            continue
+
+        page_text = str(page.get("text") or "").strip()
+
+        if not page_text:
+            continue
+
+        source_name = str(
+            page.get("source") or "Uploaded document"
+        ).strip()
+
+        page_number = page.get("page_number")
+
+        header = source_name
+
+        if page_number is not None:
+            header += f" - Page {page_number}"
+
+        scope_sections.append(
+            f"--- {header} ---\n{page_text}"
+        )
+
+    return "\n\n".join(scope_sections)
+
 def is_generic_room_label(room_area):
     generic_room_labels = {
         "area",

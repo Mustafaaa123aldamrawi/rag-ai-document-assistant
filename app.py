@@ -1790,13 +1790,121 @@ Typical AV survey sections may include:
 - Required site photos
 
 Rules:
-- Every checklist item must be actionable on site.
-- Keep manufacturer names, model numbers, quantities, room names, and technical
-  terminology exactly as written in the source.
-- If something must be checked but is not confirmed in the Scope, use status VERIFY.
-- Do not claim PASS or FAIL before the site survey.
-- Do not infer missing equipment.
-- Required photos should be specific and useful.
+- Build a professional field-ready AV/UC site survey, not a generic checklist.
+- Use ONLY facts supported by the Scope of Work.
+- Never invent room names, equipment, manufacturer names, model numbers,
+  quantities, locations, dimensions, network details, power details, or requirements.
+- Preserve manufacturer names, model numbers, quantities, room names,
+  technical terminology, and stated design intent exactly as written in the source.
+
+- Treat the Scope of Work as the design intent, not as proof of existing site conditions.
+- Anything that must be confirmed physically on site must remain an inspection,
+  measurement, finding, or verification field.
+- Do not pre-fill site findings, actual measurements, equipment condition,
+  operational status, cable availability, network availability, power availability,
+  feasibility, PASS/FAIL results, or final conclusions unless explicitly confirmed
+  by the source.
+
+- Create only sections relevant to this project.
+- Do not create empty or irrelevant specialist sections merely because they exist
+  in the schema.
+- Organize the survey in a logical field-work sequence.
+
+- survey_priorities:
+  Identify the most important potential installation blockers or high-risk
+  verification points supported by the Scope of Work.
+  Examples may include ceiling coordination, rack capacity, cable routes,
+  partition interfaces, network availability, power, structural access,
+  or equipment reuse.
+  Do not invent a blocker that is unrelated to the project.
+
+- measurements:
+  Create measurement rows for physical dimensions, positions, clearances,
+  heights, rack dimensions, furniture positions, cable-route distances,
+  or other site measurements that are important to validating the design.
+  Leave actual_value and deviation_notes blank for the surveyor.
+
+- inspection_sections:
+  Build detailed actionable inspection steps.
+  Each inspection item must represent one clear field verification action.
+  Avoid duplicate checks across multiple sections unless the second check
+  verifies a genuinely different requirement.
+
+- existing_equipment_inventory:
+  Extract each existing AV/UC device separately when supported.
+  Preserve exact manufacturer, model, and quantity when provided.
+  Leave unknown fields null rather than guessing.
+  Equipment condition and operational status must remain for site verification.
+
+- new_equipment:
+  Extract proposed/new devices separately from existing equipment.
+  Include target location and installation requirement only when supported.
+
+- rack_survey:
+  Include rack capacity, available RU, usable depth, ventilation,
+  service clearance, PDU, available outlets, cable management,
+  equipment labels, cable labels, earthing, and equipment inventory
+  only when relevant to the project.
+  Do not assume these conditions are acceptable before inspection.
+
+- connection_matrix:
+  Create one row per important AV, USB, HDMI, network, audio, control,
+  Dante, camera, display, or power connection that must be verified
+  for the proposed design.
+
+- ceiling_survey:
+  Use when ceiling-mounted AV equipment or above-ceiling routing is relevant.
+  Include ceiling type, tile size, height, void depth, accessibility,
+  mounting feasibility, and potential coordination conflicts such as HVAC,
+  lighting, sprinklers, smoke detectors, or structural obstructions
+  when these checks are relevant.
+
+- partition_sensor_survey:
+  Use only when a divisible room, partition, sensor, dry contact,
+  contact closure, or room-combine logic is relevant.
+  Clearly preserve the intended control logic when the source provides it.
+
+- cable_routes:
+  Create route-specific rows for every important pathway that must be surveyed.
+  Leave actual distance, pathway condition, and additional work blank
+  unless explicitly known from the source.
+
+- network_dante_power:
+  Include project-relevant network, PoE, Dante, switch capacity,
+  VLAN, client IT coordination, PDU, UPS, and electrical checks.
+  Do not invent VLAN IDs, IP addresses, switch ports, PoE budgets,
+  or available outlets.
+
+- required_photos:
+  Generate a project-specific photo plan.
+  Include overview photos plus photos needed to prove equipment condition,
+  mounting feasibility, rack condition, cable routes, ceiling conditions,
+  labels, ports, partition interfaces, power, and network details.
+
+- photo_register:
+  Create blank numbered rows suitable for recording site photos.
+  Generate enough rows for a practical survey, based on project complexity.
+
+- deviations_risks_actions:
+  Create blank rows for field-discovered deviations, risks, missing items,
+  required actions, owners, and priority.
+  Do not invent actual deviations before the survey.
+
+- final_survey_outcome:
+  Include professional completion criteria such as design feasibility,
+  design revision requirement, customer infrastructure work,
+  installation blockers, and RFI/design clarification requirements.
+  These must remain unanswered until the survey is completed.
+
+- conclusion:
+  Leave survey-result fields blank unless the Scope explicitly provides
+  a confirmed result. These fields are intended to be completed after
+  the physical site survey.
+
+- sign_off:
+  Keep Surveyor, Client Representative, and Project Representative rows.
+  Do not invent names unless explicitly provided.
+
 - Return ONLY valid JSON.
 - Do not use Markdown code fences.
 

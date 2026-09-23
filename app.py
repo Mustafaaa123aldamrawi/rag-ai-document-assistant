@@ -4510,11 +4510,18 @@ if uploaded_files:
                     with st.spinner(
                         "Creating site survey checklist..."
                     ):
-                        site_survey_checklist_data = (
-                            generate_site_survey_checklist_data(
-                                scope_context
-                            )
+                        site_survey_blueprint = generate_site_survey_blueprint(
+                            scope_context
                         )
+                        
+                        if site_survey_blueprint:
+                            site_survey_checklist_data = (
+                                build_professional_site_survey_data(
+                                    site_survey_blueprint
+                                )
+                            )
+                        else:
+                            site_survey_checklist_data = None
         
                     if site_survey_checklist_data:
                         st.session_state[

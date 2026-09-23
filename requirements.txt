@@ -12,3 +12,4 @@ torchvision
 PyMuPDF
 Pillow
 langfuse
+python-docx

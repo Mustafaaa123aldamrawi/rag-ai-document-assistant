@@ -1535,10 +1535,28 @@ def is_ambiguous_equipment_annotation(equipment_item):
 
     has_product_identity = bool(manufacturer or model)
 
+    compact_name = name.replace(" ", "")
+
+    looks_like_electrical_callout = False
+
+    for suffix in ("a", "v", "w", "kw", "hz"):
+        if compact_name.endswith(suffix):
+            numeric_part = compact_name[:-len(suffix)]
+
+            if numeric_part.replace(".", "", 1).isdigit():
+                looks_like_electrical_callout = True
+                break
+    
     return (
-        looks_like_annotation
-        and not has_product_identity
-        and confidence != "high"
+        (
+            looks_like_annotation
+            and not has_product_identity
+            and confidence != "high"
+        )
+        or (
+            looks_like_electrical_callout
+            and not has_product_identity
+        )
     )
 
 def simplify_composite_equipment_name(equipment_item):

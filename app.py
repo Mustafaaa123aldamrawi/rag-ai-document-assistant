@@ -1528,6 +1528,106 @@ def build_scope_of_work_context(document_pages):
 
     return "\n\n".join(scope_sections)
 
+def generate_site_survey_checklist_data(scope_context):
+    scope_context = str(scope_context or "").strip()
+
+    if not scope_context:
+        return None
+
+    prompt = f"""
+You are an AV/UC project engineer preparing a practical site survey checklist
+from an uploaded Scope of Work.
+
+Use ONLY information supported by the Scope of Work.
+Do not invent room names, equipment, quantities, requirements, or specifications.
+
+Convert the Scope of Work into structured JSON using exactly this schema:
+
+{{
+  "project_info": {{
+    "project_name": null,
+    "location": null,
+    "client": null
+  }},
+  "rooms_areas": [],
+  "existing_equipment": [],
+  "new_equipment": [],
+  "checklist_sections": [
+    {{
+      "section": "",
+      "items": [
+        {{
+          "item": "",
+          "status": "VERIFY",
+          "notes": ""
+        }}
+      ]
+    }}
+  ],
+  "required_photos": [],
+  "open_items": []
+}}
+
+Checklist sections should be created only when relevant to the Scope of Work.
+
+Typical AV survey sections may include:
+- Room / layout verification
+- Existing AV equipment
+- New AV equipment
+- Displays
+- Cameras
+- Microphones
+- Speakers
+- AV rack / UPS
+- Control system / GUI
+- Network / VLAN / Dante / AVB
+- Power
+- Cabling / containment / cable routes
+- Partition / sensors
+- Furniture / table connectivity
+- Testing / commissioning
+- Required site photos
+
+Rules:
+- Every checklist item must be actionable on site.
+- Keep manufacturer names, model numbers, quantities, room names, and technical
+  terminology exactly as written in the source.
+- If something must be checked but is not confirmed in the Scope, use status VERIFY.
+- Do not claim PASS or FAIL before the site survey.
+- Do not infer missing equipment.
+- Required photos should be specific and useful.
+- Return ONLY valid JSON.
+- Do not use Markdown code fences.
+
+SCOPE OF WORK:
+
+{scope_context}
+"""
+
+    response = call_conversation_llm(
+        prompt=prompt,
+        temperature=0.1,
+    )
+
+    response_text = str(response or "").strip()
+
+    if not response_text:
+        return None
+
+    try:
+        return json.loads(response_text)
+    except json.JSONDecodeError:
+        start = response_text.find("{")
+        end = response_text.rfind("}")
+
+        if start == -1 or end == -1 or end <= start:
+            return None
+
+        try:
+            return json.loads(response_text[start:end + 1])
+        except json.JSONDecodeError:
+            return None
+
 def is_generic_room_label(room_area):
     generic_room_labels = {
         "area",

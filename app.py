@@ -6125,6 +6125,33 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
                     ).strip()
             except Exception as e:
                 direct_answer = f"AI model error: {e}"
+
+            deterministic_drawing_answer = None
+
+            if query_route in {"DRAWING", "HYBRID"}:
+                structured_drawing_items = get_structured_drawing_data_from_pages(
+                    document_pages
+                )
+            
+                deterministic_parts = []
+            
+                for structured_item in structured_drawing_items:
+                    part = generate_deterministic_drawing_answer(
+                        question=question,
+                        structured_drawing_data=structured_item["data"],
+                        citation_label="",
+                    )
+            
+                    if part:
+                        deterministic_parts.append(part)
+            
+                if deterministic_parts:
+                    deterministic_drawing_answer = "\n\n".join(
+                        deterministic_parts
+                    )
+            
+            if deterministic_drawing_answer:
+                direct_answer = deterministic_drawing_answer
             
             if direct_answer is not None:
                 answer = direct_answer.strip()

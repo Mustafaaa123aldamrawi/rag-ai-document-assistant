@@ -6,7 +6,12 @@ import json
 from pypdf import PdfReader
 import fitz
 import io
+from io import BytesIO
+from docx import Document
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Inches, Pt
 import base64
+
 from PIL import Image
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -1627,6 +1632,174 @@ SCOPE OF WORK:
             return json.loads(response_text[start:end + 1])
         except json.JSONDecodeError:
             return None
+
+def build_site_survey_checklist_docx(checklist_data):
+    if not isinstance(checklist_data, dict):
+        return None
+
+    buffer = BytesIO()
+    document = Document()
+
+    section = document.sections[0]
+    section.top_margin = Inches(0.6)
+    section.bottom_margin = Inches(0.6)
+    section.left_margin = Inches(0.65)
+    section.right_margin = Inches(0.65)
+
+    project_info = checklist_data.get("project_info") or {}
+
+    project_name = (
+        project_info.get("project_name")
+        or "AV Site Survey"
+    )
+
+    title = document.add_paragraph()
+    title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+    title_run = title.add_run(
+        f"{project_name} – Site Survey Checklist"
+    )
+    title_run.bold = True
+    title_run.font.size = Pt(18)
+
+    info_rows = [
+        ("Project", project_info.get("project_name")),
+        ("Client", project_info.get("client")),
+        ("Location", project_info.get("location")),
+        (
+            "Rooms / Areas",
+            ", ".join(
+                str(item)
+                for item in checklist_data.get(
+                    "rooms_areas", []
+                )
+                if item
+            ),
+        ),
+    ]
+
+    info_table = document.add_table(
+        rows=0,
+        cols=2,
+    )
+    info_table.style = "Table Grid"
+
+    for label, value in info_rows:
+        if not value:
+            continue
+
+        cells = info_table.add_row().cells
+        cells[0].text = str(label)
+        cells[1].text = str(value)
+
+        cells[0].paragraphs[0].runs[0].bold = True
+
+    document.add_paragraph()
+
+    for section_data in checklist_data.get(
+        "checklist_sections", []
+    ):
+        if not isinstance(section_data, dict):
+            continue
+
+        section_name = str(
+            section_data.get("section") or ""
+        ).strip()
+
+        items = section_data.get("items") or []
+
+        if not section_name or not items:
+            continue
+
+        heading = document.add_paragraph()
+        heading_run = heading.add_run(section_name)
+        heading_run.bold = True
+        heading_run.font.size = Pt(13)
+
+        table = document.add_table(
+            rows=1,
+            cols=4,
+        )
+        table.style = "Table Grid"
+
+        headers = table.rows[0].cells
+        headers[0].text = "Check"
+        headers[1].text = "Site Survey Item"
+        headers[2].text = "Status"
+        headers[3].text = "Notes"
+
+        for cell in headers:
+            for run in cell.paragraphs[0].runs:
+                run.bold = True
+
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+
+            row = table.add_row().cells
+
+            row[0].text = "☐"
+            row[1].text = str(
+                item.get("item") or ""
+            )
+            row[2].text = str(
+                item.get("status") or "VERIFY"
+            )
+            row[3].text = str(
+                item.get("notes") or ""
+            )
+
+        document.add_paragraph()
+
+    required_photos = checklist_data.get(
+        "required_photos", []
+    )
+
+    if required_photos:
+        heading = document.add_paragraph()
+        heading_run = heading.add_run(
+            "Required Site Photos"
+        )
+        heading_run.bold = True
+        heading_run.font.size = Pt(13)
+
+        for photo in required_photos:
+            document.add_paragraph(
+                f"☐ {photo}"
+            )
+
+    open_items = checklist_data.get(
+        "open_items", []
+    )
+
+    if open_items:
+        heading = document.add_paragraph()
+        heading_run = heading.add_run(
+            "Open Items / Follow-up"
+        )
+        heading_run.bold = True
+        heading_run.font.size = Pt(13)
+
+        for item in open_items:
+            document.add_paragraph(
+                f"☐ {item}"
+            )
+
+    document.add_paragraph()
+    document.add_paragraph(
+        "Surveyed By: __________________________"
+    )
+    document.add_paragraph(
+        "Date: _________________________________"
+    )
+    document.add_paragraph(
+        "Client Representative: __________________"
+    )
+
+    document.save(buffer)
+    buffer.seek(0)
+
+    return buffer.getvalue()
 
 def is_generic_room_label(room_area):
     generic_room_labels = {

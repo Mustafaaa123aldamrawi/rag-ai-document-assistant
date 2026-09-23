@@ -1539,7 +1539,7 @@ def generate_site_survey_checklist_data(scope_context):
     if not scope_context:
         return None
 
-    prompt = f"""
+    prompt = """
 You are an AV/UC project engineer preparing a practical site survey checklist
 from an uploaded Scope of Work.
 
@@ -1801,9 +1801,7 @@ Rules:
 - Do not use Markdown code fences.
 
 SCOPE OF WORK:
-
-{scope_context}
-"""
+""" + "\n\n" + scope_context
 
     response = call_conversation_llm(
         prompt=prompt,

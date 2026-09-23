@@ -1533,6 +1533,88 @@ def build_scope_of_work_context(document_pages):
 
     return "\n\n".join(scope_sections)
 
+def build_site_survey_blueprint_prompt(scope_context):
+    scope_context = str(scope_context or "").strip()
+
+    if not scope_context:
+        return None
+
+    prompt = """
+You are an AV/UC project engineer extracting a compact site-survey blueprint
+from an uploaded Scope of Work.
+
+Use ONLY information supported by the Scope of Work.
+Do not invent room names, equipment, quantities, manufacturers, models,
+locations, requirements, connections, or project features.
+
+Return ONLY valid JSON using exactly this schema:
+
+{
+  "project": {
+    "name": null,
+    "client": null,
+    "location": null,
+    "rooms": [],
+    "drawing_references": []
+  },
+
+  "existing_equipment": [
+    {
+      "device": "",
+      "quantity": null,
+      "manufacturer": null,
+      "model": null,
+      "location": null
+    }
+  ],
+
+  "new_equipment": [
+    {
+      "device": "",
+      "quantity": null,
+      "manufacturer": null,
+      "model": null,
+      "location": null
+    }
+  ],
+
+  "project_features": {
+    "divisible_room": false,
+    "partition_sensor": false,
+    "rack_work": false,
+    "ceiling_work": false,
+    "dante": false,
+    "network_work": false,
+    "power_work": false,
+    "cable_route_work": false,
+    "equipment_relocation": false,
+    "equipment_removal": false
+  },
+
+  "critical_requirements": [],
+  "connections_to_verify": [],
+  "cable_routes_to_verify": [],
+  "relocations": [],
+  "removals": [],
+  "design_intent": []
+}
+
+Rules:
+- Preserve exact manufacturer names, model numbers, quantities, and room names.
+- Existing and new equipment must remain separate.
+- Set a project feature to true only when supported by the Scope of Work.
+- Keep unknown values null.
+- Keep lists empty when the Scope does not support an item.
+- Do not create inspection results.
+- Do not create PASS or FAIL results.
+- Do not use Markdown code fences.
+- Return only valid JSON.
+
+SCOPE OF WORK:
+""" + "\n\n" + scope_context
+
+    return prompt
+
 def generate_site_survey_checklist_data(scope_context):
     scope_context = str(scope_context or "").strip()
 

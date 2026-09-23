@@ -207,6 +207,9 @@ build_scope_of_work_context = load_function_from_app(
 build_site_survey_blueprint_prompt = load_function_from_app(
     "build_site_survey_blueprint_prompt"
 )
+build_professional_site_survey_data = load_function_from_app(
+    "build_professional_site_survey_data"
+)
 get_drawing_analysis_pages = load_function_from_app(
     "get_drawing_analysis_pages"
 )
@@ -1209,3 +1212,100 @@ def test_generate_site_survey_blueprint_parses_valid_json():
     assert result["project"]["name"] == "Mastercard Riyadh"
     assert result["project_features"]["divisible_room"] is True
     assert result["project_features"]["partition_sensor"] is True
+
+def test_build_professional_site_survey_data_builds_dynamic_structure():
+    blueprint = {
+        "project": {
+            "name": "Mastercard Riyadh",
+            "client": "Mastercard",
+            "location": "3rd Floor - Hamad Tower",
+            "rooms": ["Divisible Meeting Rooms"],
+            "drawing_references": [
+                "DE Layout",
+                "DE Schematics",
+            ],
+        },
+        "existing_equipment": [
+            {
+                "device": "Display",
+                "quantity": 2,
+                "manufacturer": "Samsung",
+                "model": "QB65H",
+                "location": "Room 1",
+            }
+        ],
+        "new_equipment": [
+            {
+                "device": "Codec",
+                "quantity": 1,
+                "manufacturer": "Poly",
+                "model": "Studio G62",
+                "location": "AV Rack",
+            }
+        ],
+        "project_features": {
+            "divisible_room": True,
+            "partition_sensor": True,
+            "rack_work": True,
+            "ceiling_work": True,
+            "dante": True,
+            "network_work": True,
+            "power_work": True,
+            "cable_route_work": True,
+            "equipment_relocation": True,
+            "equipment_removal": True,
+        },
+        "critical_requirements": [
+            "Verify partition sensor dry contact availability"
+        ],
+        "connections_to_verify": [
+            "Poly Studio G62 to network",
+            "Poly Studio G62 to displays",
+        ],
+        "cable_routes_to_verify": [
+            "AV rack to ceiling microphone"
+        ],
+        "relocations": [],
+        "removals": [],
+        "design_intent": [],
+    }
+
+    result = build_professional_site_survey_data(
+        blueprint
+    )
+
+    assert result is not None
+
+    assert (
+        result["document_meta"]["title"]
+        == "Mastercard Riyadh Site Survey Checklist"
+    )
+
+    assert (
+        result["project_info"]["client"]
+        == "Mastercard"
+    )
+
+    assert (
+        result["existing_equipment_inventory"][0]["model"]
+        == "QB65H"
+    )
+
+    priority_names = [
+        item["priority_item"]
+        for item in result["survey_priorities"]
+    ]
+
+    assert "Ceiling coordination" in priority_names
+    assert "Partition sensor / interface" in priority_names
+    assert "Cable routes" in priority_names
+    assert "AV rack capacity" in priority_names
+
+    assert len(result["connection_matrix"]) == 2
+    assert len(result["cable_routes"]) == 1
+
+    assert len(result["photo_register"]) == 24
+    assert len(result["deviations_risks_actions"]) == 8
+
+    assert len(result["final_survey_outcome"]) == 6
+    assert len(result["sign_off"]) == 3

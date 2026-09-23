@@ -1086,3 +1086,13 @@ def test_simplify_composite_equipment_name_repairs_swapped_identity_fields():
     assert result["manufacturer"] == "PANDUIT"
     assert result["model"] == "XG64512WS0001"
     assert result["quantity"] == 2
+
+def test_is_ambiguous_equipment_annotation_filters_descriptive_electrical_callout():
+    item = {
+        "name": "32A power outlet rating",
+        "manufacturer": None,
+        "model": None,
+        "confidence": "low",
+    }
+
+    assert is_ambiguous_equipment_annotation(item) is True

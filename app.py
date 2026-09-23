@@ -1662,6 +1662,269 @@ def generate_site_survey_blueprint(scope_context):
         except json.JSONDecodeError:
             return None
 
+def build_professional_site_survey_data(blueprint):
+    if not isinstance(blueprint, dict):
+        return None
+
+    project = blueprint.get("project") or {}
+    features = blueprint.get("project_features") or {}
+
+    existing_equipment = blueprint.get("existing_equipment") or []
+    new_equipment = blueprint.get("new_equipment") or []
+
+    project_name = project.get("name")
+    rooms = project.get("rooms") or []
+
+    checklist = {
+        "document_meta": {
+            "title": (
+                f"{project_name} Site Survey Checklist"
+                if project_name
+                else "AV Site Survey Checklist"
+            ),
+            "subtitle": "Professional AV/UC Site Survey",
+            "purpose": (
+                "Verify the proposed AV design against actual site conditions, "
+                "identify deviations, installation blockers, infrastructure gaps, "
+                "and any additional work required before installation."
+            ),
+        },
+
+        "project_info": {
+            "project_name": project_name,
+            "client": project.get("client"),
+            "site": project_name,
+            "location": project.get("location"),
+            "rooms": rooms,
+            "drawing_references": project.get(
+                "drawing_references", []
+            ),
+        },
+
+        "survey_priorities": [],
+
+        "measurements": [
+            {
+                "measurement": "Overall room dimensions",
+                "drawing_value": "",
+                "actual_value": "",
+                "deviation_notes": "",
+            },
+            {
+                "measurement": "Finished ceiling height",
+                "drawing_value": "",
+                "actual_value": "",
+                "deviation_notes": "",
+            },
+        ],
+
+        "inspection_sections": [],
+
+        "existing_equipment_inventory": existing_equipment,
+
+        "new_equipment": new_equipment,
+
+        "rack_survey": {
+            "rack_information": [],
+            "equipment_inventory": [],
+        },
+
+        "connection_matrix": [],
+
+        "ceiling_survey": {
+            "information": [],
+            "checks": [],
+        },
+
+        "partition_sensor_survey": {
+            "partition_information": [],
+            "checks": [],
+            "control_intent": None,
+        },
+
+        "cable_routes": [],
+
+        "network_dante_power": {
+            "network_items": [],
+            "power_items": [],
+            "checks": [],
+        },
+
+        "required_photos": [],
+
+        "photo_register": [],
+
+        "deviations_risks_actions": [],
+
+        "final_survey_outcome": [
+            {
+                "inspection_item": "Proposed design is feasible as designed",
+                "status_options": ["YES", "NO", "N/A"],
+                "notes_photo": "",
+            },
+            {
+                "inspection_item": "Proposed design is feasible with minor deviations",
+                "status_options": ["YES", "NO", "N/A"],
+                "notes_photo": "",
+            },
+            {
+                "inspection_item": "Design revision is required before installation",
+                "status_options": ["YES", "NO", "N/A"],
+                "notes_photo": "",
+            },
+            {
+                "inspection_item": "Customer infrastructure work is required before installation",
+                "status_options": ["YES", "NO", "N/A"],
+                "notes_photo": "",
+            },
+            {
+                "inspection_item": "Installation blocker exists",
+                "status_options": ["YES", "NO", "N/A"],
+                "notes_photo": "",
+            },
+            {
+                "inspection_item": "Design clarification / RFI is required",
+                "status_options": ["YES", "NO", "N/A"],
+                "notes_photo": "",
+            },
+        ],
+
+        "conclusion": {
+            "overall_conclusion": "",
+            "critical_blockers": "",
+            "additional_work_required": "",
+            "customer_actions": "",
+            "designer_programmer_actions": "",
+            "next_step_target_date": "",
+        },
+
+        "sign_off": [
+            {
+                "role": "Surveyor",
+                "name": "",
+                "signature": "",
+                "date": "",
+            },
+            {
+                "role": "Client Representative",
+                "name": "",
+                "signature": "",
+                "date": "",
+            },
+            {
+                "role": "Project Representative",
+                "name": "",
+                "signature": "",
+                "date": "",
+            },
+        ],
+    }
+
+    if features.get("ceiling_work"):
+        checklist["survey_priorities"].append(
+            {
+                "priority_item": "Ceiling coordination",
+                "reason": "Verify mounting feasibility and above-ceiling coordination.",
+                "status_options": ["PASS", "RISK", "BLOCKER"],
+            }
+        )
+
+    if features.get("partition_sensor"):
+        checklist["survey_priorities"].append(
+            {
+                "priority_item": "Partition sensor / interface",
+                "reason": "Verify sensor location, partition status detection, and control interface.",
+                "status_options": ["PASS", "RISK", "BLOCKER"],
+            }
+        )
+
+    if features.get("cable_route_work"):
+        checklist["survey_priorities"].append(
+            {
+                "priority_item": "Cable routes",
+                "reason": "Verify pathway availability, accessibility, distance, and additional containment requirements.",
+                "status_options": ["PASS", "RISK", "BLOCKER"],
+            }
+        )
+
+    if features.get("rack_work"):
+        checklist["survey_priorities"].append(
+            {
+                "priority_item": "AV rack capacity",
+                "reason": "Verify available rack space, power, ventilation, and network capacity.",
+                "status_options": ["PASS", "RISK", "BLOCKER"],
+            }
+        )
+
+    for index, requirement in enumerate(
+        blueprint.get("critical_requirements") or [],
+        start=1,
+    ):
+        checklist["inspection_sections"].append(
+            {
+                "section_number": index,
+                "section_title": "Critical project verification",
+                "section_purpose": "",
+                "items": [
+                    {
+                        "item_number": 1,
+                        "inspection_item": str(requirement),
+                        "status_options": ["YES", "NO", "N/A"],
+                        "notes_photo": "",
+                    }
+                ],
+            }
+        )
+
+    for connection in blueprint.get(
+        "connections_to_verify"
+    ) or []:
+        checklist["connection_matrix"].append(
+            {
+                "connection": str(connection),
+                "existing_cable_port": "",
+                "reusable_options": ["YES", "NO"],
+                "additional_requirement_notes": "",
+            }
+        )
+
+    for route in blueprint.get(
+        "cable_routes_to_verify"
+    ) or []:
+        checklist["cable_routes"].append(
+            {
+                "route": str(route),
+                "approx_distance": "",
+                "existing_pathway": "",
+                "additional_work": "",
+                "photo_notes": "",
+            }
+        )
+
+    for index in range(1, 25):
+        checklist["photo_register"].append(
+            {
+                "photo_number": f"Photo {index:02d}",
+                "subject_equipment": "",
+                "location_direction": "",
+                "finding_related_item": "",
+            }
+        )
+
+    for index in range(1, 9):
+        checklist["deviations_risks_actions"].append(
+            {
+                "id": f"{index:02d}",
+                "deviation_risk_missing_item": "",
+                "impact": "",
+                "required_action": "",
+                "owner": "",
+                "priority_options": ["H", "M", "L"],
+            }
+        )
+
+    return checklist
+
 def generate_site_survey_checklist_data(scope_context):
     scope_context = str(scope_context or "").strip()
 

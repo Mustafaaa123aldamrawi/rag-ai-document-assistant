@@ -1546,7 +1546,18 @@ def is_ambiguous_equipment_annotation(equipment_item):
             if numeric_part.replace(".", "", 1).isdigit():
                 looks_like_electrical_callout = True
                 break
-    
+    electrical_annotation_terms = (
+        "power outlet",
+        "outlet rating",
+        "power rating",
+        "electrical rating",
+        "socket rating",
+    )
+
+    looks_like_extended_electrical_callout = (
+        any(term in name for term in electrical_annotation_terms)
+        and not has_product_identity
+    )
     return (
         (
             looks_like_annotation
@@ -1557,6 +1568,7 @@ def is_ambiguous_equipment_annotation(equipment_item):
             looks_like_electrical_callout
             and not has_product_identity
         )
+        or looks_like_extended_electrical_callout
     )
 
 def simplify_composite_equipment_name(equipment_item):

@@ -201,6 +201,9 @@ build_drawing_cache_key = load_function_from_app(
 build_drawing_analysis_page = load_function_from_app(
     "build_drawing_analysis_page"
 )
+build_scope_of_work_context = load_function_from_app(
+    "build_scope_of_work_context"
+)
 get_drawing_analysis_pages = load_function_from_app(
     "get_drawing_analysis_pages"
 )
@@ -1096,3 +1099,34 @@ def test_is_ambiguous_equipment_annotation_filters_descriptive_electrical_callou
     }
 
     assert is_ambiguous_equipment_annotation(item) is True
+
+def test_build_scope_of_work_context_uses_original_pages_only():
+    document_pages = [
+        {
+            "page_number": 1,
+            "source": "Scope_of_Work.pdf",
+            "text": "Install AV equipment in Meeting Room A.",
+            "is_drawing_analysis": False,
+        },
+        {
+            "page_number": 2,
+            "source": "Scope_of_Work.pdf",
+            "text": "Verify rack power, network, and cable routes.",
+            "is_drawing_analysis": False,
+        },
+        {
+            "page_number": 1,
+            "source": "Scope_of_Work.pdf",
+            "text": '{"drawing_number":"AV-101"}',
+            "is_drawing_analysis": True,
+        },
+    ]
+
+    result = build_scope_of_work_context(document_pages)
+
+    assert "Scope_of_Work.pdf - Page 1" in result
+    assert "Install AV equipment in Meeting Room A." in result
+    assert "Scope_of_Work.pdf - Page 2" in result
+    assert "Verify rack power, network, and cable routes." in result
+    assert '"drawing_number":"AV-101"' not in result
+    

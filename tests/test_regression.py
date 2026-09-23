@@ -232,9 +232,19 @@ format_equipment_item_for_answer = load_function_from_app(
 generate_deterministic_drawing_answer = load_function_from_app(
     "generate_deterministic_drawing_answer"
 )
+generate_site_survey_blueprint = load_function_from_app(
+    "generate_site_survey_blueprint"
+)
 get_structured_drawing_data_from_pages = load_function_from_app(
     "get_structured_drawing_data_from_pages"
 )
+generate_site_survey_blueprint.__globals__[
+    "build_site_survey_blueprint_prompt"
+] = build_site_survey_blueprint_prompt
+
+generate_site_survey_blueprint.__globals__[
+    "json"
+] = json
 extract_primary_drawing_number.__globals__["re"] = re
 validate_structured_drawing_number.__globals__["re"] = re
 deduplicate_references.__globals__["re"] = re
@@ -1153,3 +1163,49 @@ def test_build_site_survey_blueprint_prompt_is_compact_and_grounded():
 
     assert "Return ONLY valid JSON" in prompt
     assert "Do not invent" in prompt
+
+def test_generate_site_survey_blueprint_parses_valid_json():
+    def fake_llm(prompt, temperature=0.1):
+        return """
+        {
+          "project": {
+            "name": "Mastercard Riyadh",
+            "client": "Mastercard",
+            "location": "3rd Floor - Hamad Tower",
+            "rooms": ["Divisible Meeting Rooms"],
+            "drawing_references": []
+          },
+          "existing_equipment": [],
+          "new_equipment": [],
+          "project_features": {
+            "divisible_room": true,
+            "partition_sensor": true,
+            "rack_work": false,
+            "ceiling_work": false,
+            "dante": false,
+            "network_work": false,
+            "power_work": false,
+            "cable_route_work": false,
+            "equipment_relocation": false,
+            "equipment_removal": false
+          },
+          "critical_requirements": [],
+          "connections_to_verify": [],
+          "cable_routes_to_verify": [],
+          "relocations": [],
+          "removals": [],
+          "design_intent": []
+        }
+        """
+
+    generate_site_survey_blueprint.__globals__[
+        "call_conversation_llm"
+    ] = fake_llm
+
+    result = generate_site_survey_blueprint(
+        "Mastercard Riyadh divisible meeting room with partition sensor."
+    )
+
+    assert result["project"]["name"] == "Mastercard Riyadh"
+    assert result["project_features"]["divisible_room"] is True
+    assert result["project_features"]["partition_sensor"] is True

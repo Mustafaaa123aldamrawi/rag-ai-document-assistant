@@ -1615,6 +1615,53 @@ SCOPE OF WORK:
 
     return prompt
 
+def generate_site_survey_blueprint(scope_context):
+    prompt = build_site_survey_blueprint_prompt(
+        scope_context
+    )
+
+    if not prompt:
+        return None
+
+    response = None
+    last_error = None
+
+    for attempt in range(2):
+        try:
+            response = call_conversation_llm(
+                prompt=prompt,
+                temperature=0.1,
+            )
+            break
+        except Exception as error:
+            last_error = error
+
+    if response is None:
+        raise Exception(
+            f"Site survey blueprint generation failed after retry: {last_error}"
+        )
+
+    response_text = str(response or "").strip()
+
+    if not response_text:
+        return None
+
+    try:
+        return json.loads(response_text)
+    except json.JSONDecodeError:
+        start = response_text.find("{")
+        end = response_text.rfind("}")
+
+        if start == -1 or end == -1 or end <= start:
+            return None
+
+        try:
+            return json.loads(
+                response_text[start:end + 1]
+            )
+        except json.JSONDecodeError:
+            return None
+
 def generate_site_survey_checklist_data(scope_context):
     scope_context = str(scope_context or "").strip()
 

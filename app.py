@@ -2593,7 +2593,25 @@ with st.sidebar:
     type=["pdf"],
     accept_multiple_files=True
 )
+    st.markdown(
+        """
+        <div style="font-size:13px; opacity:0.70; margin:8px 0 6px 0;">
+            Turn an uploaded Scope of Work into a practical AV site survey checklist.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
+    create_site_survey_checklist = st.button(
+        "📋 Create Site Survey Checklist",
+        use_container_width=True,
+        disabled=not uploaded_files,
+    )
+
+    if create_site_survey_checklist:
+        st.session_state["requested_document_action"] = (
+            "site_survey_checklist"
+        )
     st.divider()
     
     st.markdown(

@@ -1070,3 +1070,19 @@ def test_is_ambiguous_equipment_annotation_filters_standalone_voltage_rating():
     }
 
     assert is_ambiguous_equipment_annotation(item) is True
+
+def test_simplify_composite_equipment_name_repairs_swapped_identity_fields():
+    item = {
+        "name": "PANDUIT XG64512WS0001",
+        "manufacturer": None,
+        "model": "45U HIGH AV RACK",
+        "quantity": 2,
+        "confidence": "high",
+    }
+
+    result = simplify_composite_equipment_name(item)
+
+    assert result["name"] == "45U HIGH AV RACK"
+    assert result["manufacturer"] == "PANDUIT"
+    assert result["model"] == "XG64512WS0001"
+    assert result["quantity"] == 2

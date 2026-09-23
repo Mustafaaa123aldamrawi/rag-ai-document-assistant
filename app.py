@@ -1639,11 +1639,21 @@ def merge_split_equipment_items(equipment_items):
                 other_item.get("model") or ""
             ).strip()
 
+            current_name_lower = current_name.lower()
+            current_manufacturer_lower = current_manufacturer.lower()
+            current_model_lower = current_model.lower()
+            
             current_is_identity_only = (
                 current_name
                 and current_manufacturer
-                and current_name.lower() == current_manufacturer.lower()
                 and current_model
+                and (
+                    current_name_lower == current_manufacturer_lower
+                    or (
+                        current_manufacturer_lower in current_name_lower
+                        and current_model_lower in current_name_lower
+                    )
+                )
             )
 
             other_is_description_only = (

@@ -3599,6 +3599,67 @@ if uploaded_files:
             st.success(
                 f"✅ {len(uploaded_files)} document(s) ready for AI analysis."
             )
+
+        if document_pages:
+            text_chunks = split_text_into_chunks(document_pages)
+        
+            vector_store = create_vector_store(text_chunks)
+        
+            st.success(
+                f"✅ {len(uploaded_files)} document(s) ready for AI analysis."
+            )
+        
+            if (
+                st.session_state.get("requested_document_action")
+                == "site_survey_checklist"
+            ):
+                scope_context = build_scope_of_work_context(
+                    document_pages
+                )
+        
+                if not scope_context:
+                    st.warning(
+                        "No readable Scope of Work content was found."
+                    )
+                else:
+                    with st.spinner(
+                        "Creating site survey checklist..."
+                    ):
+                        site_survey_checklist_data = (
+                            generate_site_survey_checklist_data(
+                                scope_context
+                            )
+                        )
+        
+                    if site_survey_checklist_data:
+                        st.session_state[
+                            "site_survey_checklist_data"
+                        ] = site_survey_checklist_data
+        
+                        st.session_state[
+                            "requested_document_action"
+                        ] = None
+        
+                        st.success(
+                            "Site survey checklist generated successfully."
+                        )
+        
+                        st.markdown(
+                            "### 📋 Site Survey Checklist Preview"
+                        )
+        
+                        st.json(site_survey_checklist_data)
+        
+                    else:
+                        st.error(
+                            "The checklist could not be generated from this Scope of Work."
+                        )
+        
+        else:
+            st.warning(
+                "No readable text was found in this PDF."
+            )
+        
         else:
             st.warning(
                 "No readable text was found in this PDF."

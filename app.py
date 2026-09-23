@@ -5905,6 +5905,54 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
         Use the related facts in the context to answer the question.
         Do not say the information was not found when the subject is detected.
         """
+
+        deterministic_drawing_answer = None
+
+        if query_route in {"DRAWING", "HYBRID"}:
+            structured_drawing_items = get_structured_drawing_data_from_pages(
+                document_pages
+            )
+        
+            deterministic_parts = []
+        
+            for structured_item in structured_drawing_items:
+                part = generate_deterministic_drawing_answer(
+                    question=question,
+                    structured_drawing_data=structured_item["data"],
+                    citation_label="",
+                )
+        
+                if part:
+                    deterministic_parts.append(part)
+        
+            if deterministic_parts:
+                deterministic_drawing_answer = "\n\n".join(
+                    deterministic_parts
+                )
+        
+        if deterministic_drawing_answer:
+            answer = deterministic_drawing_answer.strip()
+        
+            st.session_state.messages.append({
+                "role": "assistant",
+                "content": answer,
+            })
+        
+            st.markdown(
+                """
+                <div style="padding:18px 20px; border-radius:16px; border:1px solid rgba(120,120,120,0.16);">
+                    <div style="font-size:24px; font-weight:750; margin-bottom:8px;">
+                        🤖 AI Answer
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        
+            st.markdown(answer)
+        
+            st.stop()
+        
         # Casual conversation path
         if is_casual_chat:
             casual_history = ""

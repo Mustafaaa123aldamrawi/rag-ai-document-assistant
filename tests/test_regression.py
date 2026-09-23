@@ -204,6 +204,9 @@ build_drawing_analysis_page = load_function_from_app(
 build_scope_of_work_context = load_function_from_app(
     "build_scope_of_work_context"
 )
+build_site_survey_blueprint_prompt = load_function_from_app(
+    "build_site_survey_blueprint_prompt"
+)
 get_drawing_analysis_pages = load_function_from_app(
     "get_drawing_analysis_pages"
 )
@@ -1130,3 +1133,23 @@ def test_build_scope_of_work_context_uses_original_pages_only():
     assert "Verify rack power, network, and cable routes." in result
     assert '"drawing_number":"AV-101"' not in result
     
+def test_build_site_survey_blueprint_prompt_is_compact_and_grounded():
+    scope_context = """
+    Project: Mastercard Riyadh
+    Location: 3rd Floor - Hamad Tower
+    Existing equipment: 2x Samsung QB65H displays
+    New equipment: Poly Studio G62
+    Divisible meeting room with partition sensor
+    """
+
+    prompt = build_site_survey_blueprint_prompt(scope_context)
+
+    assert prompt is not None
+    assert "Mastercard Riyadh" in prompt
+    assert "Samsung QB65H" in prompt
+    assert "Poly Studio G62" in prompt
+    assert '"divisible_room": false' in prompt
+    assert '"partition_sensor": false' in prompt
+
+    assert "Return ONLY valid JSON" in prompt
+    assert "Do not invent" in prompt

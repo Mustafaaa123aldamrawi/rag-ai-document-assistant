@@ -28,4 +28,4 @@ jobs:
 
       - name: Run regression tests
         run: |
-          pytest tests/test_regression.py -v
+          pytest tests -v

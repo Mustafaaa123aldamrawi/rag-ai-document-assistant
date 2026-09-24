@@ -864,6 +864,25 @@ def is_document_overview_question(question):
         for cue in overview_cues
     )
 
+def build_document_overview_instruction(question, query_route):
+    if (
+        query_route != "DOCUMENT"
+        or not is_document_overview_question(question)
+    ):
+        return ""
+
+    return """
+Document overview instructions:
+- Start with 1-2 sentences explaining what the document is and its main purpose.
+- Then summarize the main scope in 4-7 concise bullet points.
+- Prioritize project purpose, rooms/areas, major AV/UC systems, existing and proposed equipment, integration work, infrastructure requirements, responsibilities, and site-readiness requirements.
+- Do not lead with legal disclaimers, copyright notices, generic boilerplate, or minor administrative details.
+- Do not describe the document as a software-only project unless the source clearly says that.
+- Do not invent equipment, quantities, models, locations, or requirements.
+- Preserve technical terms and product names exactly as supported by the document.
+- End with one concise sentence explaining what the document is intended to achieve.
+""".strip()
+
 @observe(name="query-router")
 
 def decide_query_route(
@@ -7021,23 +7040,10 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
         - If a quantity is null, missing, or unspecified, state that the quantity is unspecified. Do not infer a count.
         - If the context contains conflicting values, report the conflict instead of choosing one.
         """.strip()
-        document_overview_instruction = ""
-
-        if (
-            query_route == "DOCUMENT"
-            and is_document_overview_question(question)
-        ):
-            document_overview_instruction = """
-        Document overview instructions:
-        - Start with 1-2 sentences explaining what the document is and its main purpose.
-        - Then summarize the main scope in 4-7 concise bullet points.
-        - Prioritize project purpose, rooms/areas, major AV/UC systems, existing and proposed equipment, integration work, infrastructure requirements, responsibilities, and site-readiness requirements.
-        - Do not lead with legal disclaimers, copyright notices, generic boilerplate, or minor administrative details.
-        - Do not describe the document as a software-only project unless the source clearly says that.
-        - Do not invent equipment, quantities, models, locations, or requirements.
-        - Preserve technical terms and product names exactly as supported by the document.
-        - End with one concise sentence explaining what the document is intended to achieve.
-        """.strip()
+        document_overview_instruction = build_document_overview_instruction(
+            question,
+            query_route,
+        )
         prompt = f"""
         Recent conversation:
         {conversation_history}    

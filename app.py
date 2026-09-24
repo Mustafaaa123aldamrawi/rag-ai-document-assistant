@@ -17,6 +17,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from core_ai import (build_grounded_verification_prompt, build_recent_history, build_response_plan, classify_intent, preserve_follow_up_intent, should_verify_grounded_answer, unsupported_citation_labels)
+from visual_ai import build_visual_analysis_messages, build_visual_evidence_text, parse_visual_analysis
 from langfuse import get_client, observe
 
 import os
@@ -1554,6 +1555,19 @@ def decide_query_route(
         "the drawing",
         "according to the drawing",
         "based on the drawing",
+        "this image",
+        "the image",
+        "this photo",
+        "the photo",
+        "this screenshot",
+        "the screenshot",
+        "uploaded image",
+        "uploaded photo",
+        "هاي الصورة",
+        "هذه الصورة",
+        "الصورة",
+        "سكرين شوت",
+        "لقطة الشاشة",
         "في هذا الملف",
         "حسب الملف",
         "في الملف",
@@ -4310,6 +4324,12 @@ with st.sidebar:
     type=["pdf"],
     accept_multiple_files=True
 )
+    uploaded_images = st.file_uploader(
+        "Upload site photos / screenshots",
+        type=["png", "jpg", "jpeg", "webp"],
+        accept_multiple_files=True,
+        key="visual_uploads",
+    )
     st.markdown(
         """
         <div style="font-size:13px; opacity:0.70; margin:8px 0 6px 0;">
@@ -4369,6 +4389,9 @@ all_rendered_drawing_pages = []
 
 if "drawing_analysis_cache" not in st.session_state:
     st.session_state["drawing_analysis_cache"] = {}
+
+if "visual_analysis_cache" not in st.session_state:
+    st.session_state["visual_analysis_cache"] = {}
 
 if uploaded_files:
     try:
@@ -5289,6 +5312,81 @@ if uploaded_files:
 
     except Exception as error:
         st.error(f"Error processing PDF: {error}")
+
+# Process standalone site photos and screenshots
+if uploaded_images:
+    for uploaded_image in uploaded_images:
+        visual_cache_key = build_drawing_cache_key(uploaded_image)
+        cached_visual = st.session_state["visual_analysis_cache"].get(
+            visual_cache_key
+        )
+
+        try:
+            if cached_visual:
+                visual_analysis = cached_visual["analysis"]
+            else:
+                uploaded_image.seek(0)
+                pil_visual = Image.open(uploaded_image).convert("RGB")
+                visual_data_url = pil_image_to_data_url(pil_visual)
+                visual_messages = build_visual_analysis_messages(
+                    file_name=getattr(
+                        uploaded_image,
+                        "name",
+                        "uploaded_image",
+                    ),
+                    image_data_url=visual_data_url,
+                )
+                raw_visual_analysis = call_conversation_llm(
+                    messages=visual_messages,
+                    temperature=0.1,
+                )
+                visual_analysis = parse_visual_analysis(
+                    raw_visual_analysis
+                )
+                st.session_state["visual_analysis_cache"][
+                    visual_cache_key
+                ] = {
+                    "analysis": visual_analysis,
+                }
+
+            visual_source_name = getattr(
+                uploaded_image,
+                "name",
+                "uploaded_image",
+            )
+            visual_evidence = build_visual_evidence_text(
+                visual_analysis,
+                file_name=visual_source_name,
+            )
+            document_pages.append(
+                {
+                    "page_number": 1,
+                    "source": visual_source_name,
+                    "text": visual_evidence,
+                    "has_extractable_text": True,
+                    "content_type": "VISUAL",
+                    "is_visual_analysis": True,
+                    "visual_category": visual_analysis.get(
+                        "category",
+                        "OTHER",
+                    ),
+                }
+            )
+
+            st.info(
+                f"{visual_source_name} detected as: "
+                f"{visual_analysis.get('category', 'OTHER')}"
+            )
+        except Exception as visual_error:
+            st.warning(
+                f"Image analysis could not be completed for "
+                f"{getattr(uploaded_image, 'name', 'image')}: "
+                f"{visual_error}"
+            )
+
+    if document_pages:
+        text_chunks = split_text_into_chunks(document_pages)
+        vector_store = create_vector_store(text_chunks)
 
 # Display conversation history
 if st.session_state.messages:
@@ -6480,6 +6578,51 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
         
                         if subject_page_text not in expanded_texts:
                             expanded_texts.append(subject_page_text)
+        visual_reference_phrases = (
+            "this image",
+            "the image",
+            "this photo",
+            "the photo",
+            "this screenshot",
+            "the screenshot",
+            "uploaded image",
+            "uploaded photo",
+            "هاي الصورة",
+            "هذه الصورة",
+            "الصورة",
+            "سكرين شوت",
+            "لقطة الشاشة",
+        )
+        is_visual_reference_question = any(
+            phrase in question_lower
+            for phrase in visual_reference_phrases
+        )
+
+        if is_visual_reference_question:
+            for page in document_pages:
+                if not page.get("is_visual_analysis"):
+                    continue
+
+                doc_key = (
+                    page.get("source"),
+                    page.get("page_number"),
+                )
+                doc_number = doc_source_numbers.get(doc_key)
+
+                if doc_number is None:
+                    doc_number = len(doc_source_numbers) + 1
+                    doc_source_numbers[doc_key] = doc_number
+
+                visual_text = (
+                    f"[DOC {doc_number}]\n"
+                    f"Source: {page.get('source')} | "
+                    f"Visual analysis\n"
+                    f"{page.get('text')}"
+                )
+                if visual_text not in expanded_texts:
+                    expanded_texts.append(visual_text)
+                used_sources.add(doc_key)
+
         if (
             query_route == "DOCUMENT"
             and is_document_overview_question(question)
@@ -6536,8 +6679,18 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
             )
         
         has_additional_context = bool(
-            query_route in {"DRAWING", "HYBRID"}
-            and get_drawing_analysis_pages(document_pages)
+            (
+                query_route in {"DRAWING", "HYBRID"}
+                and get_drawing_analysis_pages(document_pages)
+            )
+            or (
+                'is_visual_reference_question' in locals()
+                and is_visual_reference_question
+                and any(
+                    page.get("is_visual_analysis")
+                    for page in document_pages
+                )
+            )
         )
         
         if should_show_document_not_found(

@@ -159,6 +159,9 @@ get_follow_up_state = load_function_from_app(
 get_follow_up_state.__globals__["detect_follow_up_question"] = (
     detect_follow_up_question
 )
+get_document_retrieval_k = load_function_from_app(
+    "get_document_retrieval_k"
+)
 should_show_document_not_found = load_function_from_app(
     "should_show_document_not_found"
 )
@@ -255,6 +258,9 @@ generate_site_survey_blueprint.__globals__[
     "json"
 ] = json
 build_document_overview_instruction.__globals__[
+    "is_document_overview_question"
+] = is_document_overview_question
+get_document_retrieval_k.__globals__[
     "is_document_overview_question"
 ] = is_document_overview_question
 extract_primary_drawing_number.__globals__["re"] = re
@@ -1422,3 +1428,20 @@ def test_build_document_overview_instruction_returns_empty_for_non_overview():
     )
 
     assert result == ""
+
+def test_document_overview_uses_broader_retrieval():
+    result = get_document_retrieval_k(
+        "Can you tell me what the PDF is about?",
+        "DOCUMENT",
+    )
+
+    assert result == 12
+
+
+def test_non_overview_uses_default_retrieval_depth():
+    result = get_document_retrieval_k(
+        "What does this document say about installation?",
+        "DOCUMENT",
+    )
+
+    assert result == 4

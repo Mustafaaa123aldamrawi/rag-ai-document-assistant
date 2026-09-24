@@ -3,7 +3,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from core_ai import (build_recent_history, build_response_plan, build_router_prompt, classify_intent, preserve_follow_up_intent)
+from core_ai import (build_grounded_verification_prompt, build_recent_history, build_response_plan, build_router_prompt, classify_intent, extract_citation_labels, preserve_follow_up_intent, should_verify_grounded_answer, unsupported_citation_labels)
 
 
 def test_classifier_accepts_valid_label():
@@ -103,3 +103,42 @@ def test_follow_up_document_intent_degrades_without_document():
         is_follow_up=True,
         has_document=False,
     ) == "TECHNICAL"
+
+
+def test_extract_citation_labels():
+    assert extract_citation_labels("A [DOC 2] B [WEB 4]") == {"[DOC 2]", "[WEB 4]"}
+
+
+def test_unsupported_citation_labels_detects_invented_source():
+    assert unsupported_citation_labels(
+        "Claim [DOC 1] other [WEB 9]",
+        "[DOC 1] source text",
+    ) == {"[WEB 9]"}
+
+
+def test_grounded_answer_requires_verification():
+    assert should_verify_grounded_answer(
+        "Supported claim [DOC 1]",
+        "[DOC 1] source",
+        use_documents=True,
+        use_web=False,
+    ) is True
+
+
+def test_casual_answer_skips_grounded_verification():
+    assert should_verify_grounded_answer(
+        "Hello!",
+        "",
+        use_documents=False,
+        use_web=False,
+    ) is False
+
+
+def test_verification_prompt_prevents_requirement_condition_drift():
+    prompt = build_grounded_verification_prompt(
+        question="Summarize",
+        context="[DOC 1] Customer shall provide network access.",
+        answer="Network access is installed. [DOC 1]",
+    )
+    assert "Do not turn a source requirement into an observed site condition." in prompt
+    assert "Customer shall provide network access." in prompt

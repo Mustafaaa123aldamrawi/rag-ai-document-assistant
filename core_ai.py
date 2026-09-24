@@ -161,3 +161,69 @@ def preserve_follow_up_intent(
         return "DOCUMENT"
 
     return current_intent
+
+
+def extract_citation_labels(text: str) -> set[str]:
+    import re
+    return {
+        f"[{source} {number}]"
+        for source, number in re.findall(r"\[(DOC|WEB)\s+(\d+)\]", text or "")
+    }
+
+
+def unsupported_citation_labels(answer: str, context: str) -> set[str]:
+    answer_labels = extract_citation_labels(answer)
+    context_labels = extract_citation_labels(context)
+    return answer_labels - context_labels
+
+
+def should_verify_grounded_answer(
+    answer: str,
+    context: str,
+    *,
+    use_documents: bool,
+    use_web: bool,
+) -> bool:
+    if not (answer or "").strip() or str(answer).startswith("AI model error:"):
+        return False
+    if not (use_documents or use_web):
+        return False
+    return bool((context or "").strip())
+
+
+def build_grounded_verification_prompt(
+    *,
+    question: str,
+    context: str,
+    answer: str,
+) -> str:
+    return f"""
+Verify the CURRENT ANSWER strictly against the AVAILABLE CONTEXT.
+
+USER QUESTION:
+{question}
+
+AVAILABLE CONTEXT:
+{context}
+
+CURRENT ANSWER:
+{answer}
+
+Verification rules:
+- Preserve the user's requested language and concise professional style.
+- Keep only factual claims that are supported by the AVAILABLE CONTEXT.
+- Preserve exact manufacturers, product names, model numbers, room names, project names, quantities, lifecycle actions, and technical terminology when they appear in the context.
+- Never upgrade, rename, infer, or substitute one device category for another.
+- Use only [DOC X] and [WEB X] citation labels that actually occur in the AVAILABLE CONTEXT.
+- Remove unsupported citation labels.
+- Every factual bullet or factual sentence derived from the context must keep an appropriate supporting citation.
+- If a claim is only partially supported, shorten it to the supported portion.
+- Do not add facts, recommendations, examples, products, standards, quantities, dates, or conclusions that are not already supported.
+- Do not turn a source requirement into an observed site condition.
+- Do not turn an existing-condition statement into a design requirement.
+- Preserve uncertainty when the source is uncertain.
+- If the answer is already fully supported, preserve it as closely as possible.
+- Return only the verified final answer.
+
+VERIFIED ANSWER:
+""".strip()

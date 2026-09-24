@@ -16,7 +16,7 @@ from PIL import Image
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
-from core_ai import (build_recent_history, build_response_plan, classify_intent, preserve_follow_up_intent)
+from core_ai import (build_grounded_verification_prompt, build_recent_history, build_response_plan, classify_intent, preserve_follow_up_intent, should_verify_grounded_answer, unsupported_citation_labels)
 from langfuse import get_client, observe
 
 import os
@@ -8216,6 +8216,38 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
                     ).strip()
                 except Exception:
                     pass
+        # Central grounded-answer verification layer.
+        if (
+            direct_answer is None
+            and should_verify_grounded_answer(
+                answer,
+                context,
+                use_documents=response_plan.use_documents,
+                use_web=response_plan.use_web,
+            )
+        ):
+            verification_prompt = build_grounded_verification_prompt(
+                question=question,
+                context=context,
+                answer=answer,
+            )
+            try:
+                verified_answer = call_qwen_llm(
+                    verification_prompt
+                ).strip()
+                if verified_answer:
+                    answer = verified_answer
+            except Exception:
+                pass
+
+            invalid_labels = unsupported_citation_labels(
+                answer,
+                context,
+            )
+            for invalid_label in invalid_labels:
+                answer = answer.replace(invalid_label, "")
+            answer = re.sub(r"[ \t]+\n", "\n", answer).strip()
+
         # Deterministic guard for high-risk factual claims
         def get_cited_source_text(source_type, source_number, full_context):
             label = f"[{source_type} {source_number}]"

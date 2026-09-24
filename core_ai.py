@@ -227,3 +227,15 @@ Verification rules:
 
 VERIFIED ANSWER:
 """.strip()
+
+
+
+def select_available_model(
+    preferred_models,
+    available_model_ids,
+):
+    available = set(available_model_ids or [])
+    for model_id in preferred_models or []:
+        if model_id in available:
+            return model_id
+    return None

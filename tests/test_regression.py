@@ -162,6 +162,12 @@ get_follow_up_state.__globals__["detect_follow_up_question"] = (
 get_document_retrieval_k = load_function_from_app(
     "get_document_retrieval_k"
 )
+select_document_overview_pages = load_function_from_app(
+    "select_document_overview_pages"
+)
+select_relevant_documents = load_function_from_app(
+    "select_relevant_documents"
+)
 should_show_document_not_found = load_function_from_app(
     "should_show_document_not_found"
 )
@@ -1445,3 +1451,86 @@ def test_non_overview_uses_default_retrieval_depth():
     )
 
     assert result == 4
+
+
+
+def test_document_overview_page_selection_uses_all_pages_for_small_document():
+    pages = [
+        {
+            "page_number": index,
+            "source": "scope.pdf",
+            "text": f"Page {index}",
+        }
+        for index in range(1, 7)
+    ]
+
+    selected = select_document_overview_pages(
+        pages,
+        source_name="scope.pdf",
+        max_pages=12,
+    )
+
+    assert [page["page_number"] for page in selected] == [1, 2, 3, 4, 5, 6]
+
+
+def test_document_overview_page_selection_is_diverse_for_large_document():
+    pages = [
+        {
+            "page_number": index,
+            "source": "manual.pdf",
+            "text": f"Page {index}",
+        }
+        for index in range(1, 31)
+    ]
+
+    selected = select_document_overview_pages(
+        pages,
+        source_name="manual.pdf",
+        max_pages=6,
+    )
+
+    page_numbers = [page["page_number"] for page in selected]
+
+    assert len(page_numbers) == 6
+    assert page_numbers[0] == 1
+    assert page_numbers[-1] == 30
+    assert len(set(page_numbers)) == 6
+
+
+def test_document_overview_keeps_retrieved_evidence_before_page_context_expansion():
+    evidence_documents = [
+        ("page-2-chunk", 1.40, 0, 0),
+        ("page-6-chunk", 1.35, 0, 0),
+        ("page-4-chunk", 1.30, 0, 0),
+    ]
+
+    selected = select_relevant_documents(
+        evidence_documents=evidence_documents,
+        is_verification_question=False,
+        question_keywords=["pdf"],
+        evidence_keywords=["pdf"],
+        is_document_overview=True,
+    )
+
+    assert selected == [
+        "page-2-chunk",
+        "page-6-chunk",
+        "page-4-chunk",
+    ]
+
+
+def test_non_overview_still_uses_strict_evidence_filter():
+    evidence_documents = [
+        ("weak", 1.30, 0, 0),
+        ("strong", 1.05, 0, 0),
+    ]
+
+    selected = select_relevant_documents(
+        evidence_documents=evidence_documents,
+        is_verification_question=False,
+        question_keywords=["installation"],
+        evidence_keywords=["installation"],
+        is_document_overview=False,
+    )
+
+    assert selected == ["strong"]

@@ -5626,6 +5626,15 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
         
         elif vector_store is None:
             search_results = []
+
+        elif (
+            query_route == "DOCUMENT"
+            and is_document_overview_question(question)
+        ):
+            search_results = vector_store.similarity_search_with_score(
+                search_query,
+                k=12,
+            )
         
         elif matched_source:
             search_results = vector_store.similarity_search_with_score(

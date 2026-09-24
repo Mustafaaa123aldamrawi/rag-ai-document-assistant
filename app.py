@@ -883,10 +883,18 @@ def decide_query_route(
 
     question_lower = str(question or "").strip().lower()
     content_type = str(content_type or "").upper()
+      
 
     if search_mode == "Web Only":
         return "WEB"
 
+    if (
+        has_document
+        and content_type == "DOCUMENT"
+        and is_document_overview_question(question)
+    ):
+        return "DOCUMENT"
+    
     if search_mode == "Documents Only":
         if has_document and content_type == "DRAWING":
             return "DRAWING"

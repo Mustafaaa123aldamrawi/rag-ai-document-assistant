@@ -317,3 +317,43 @@ def restore_source_technical_terms(answer: str, context: str) -> str:
             )
 
     return text
+
+
+
+def is_safe_verifier_output(candidate: str, original_answer: str = "") -> bool:
+    """Reject verifier prompt echoes, source dumps, and obviously malformed rewrites."""
+    text = str(candidate or "").strip()
+    original = str(original_answer or "").strip()
+
+    if not text:
+        return False
+
+    lower = text.lower()
+    forbidden_markers = (
+        "review the answer against",
+        "source content:",
+        "available context:",
+        "current answer:",
+        "verification rules:",
+        "verified answer:",
+        "user question:",
+        "source context:",
+        "corrected overview:",
+        "your task is to correct",
+    )
+
+    if any(marker in lower for marker in forbidden_markers):
+        return False
+
+    # A verifier should not suddenly dump many raw source blocks.
+    if text.count("[DOC ") + text.count("[WEB ") >= 8:
+        if original and (text.count("[DOC ") + text.count("[WEB ")) > (
+            original.count("[DOC ") + original.count("[WEB ") + 4
+        ):
+            return False
+
+    # Guard against an implausible prompt/source echo expansion.
+    if original and len(original) >= 40 and len(text) > max(len(original) * 3, len(original) + 2500):
+        return False
+
+    return True

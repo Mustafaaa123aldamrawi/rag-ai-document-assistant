@@ -3,7 +3,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from core_ai import build_response_plan, build_router_prompt, classify_intent
+from core_ai import (build_recent_history, build_response_plan, build_router_prompt, classify_intent, preserve_follow_up_intent)
 
 
 def test_classifier_accepts_valid_label():
@@ -64,3 +64,42 @@ def test_technical_plan_uses_web_when_no_document_is_available():
     )
     assert plan.use_documents is False
     assert plan.use_web is True
+
+
+def test_build_recent_history_keeps_recent_turns():
+    messages = [
+        {"role": "user", "content": "Summarize the PDF"},
+        {"role": "assistant", "content": "Summary"},
+        {"role": "user", "content": "What about Room 2?"},
+    ]
+    history = build_recent_history(messages, limit=2)
+    assert "Assistant: Summary" in history
+    assert "User: What about Room 2?" in history
+    assert "Summarize the PDF" not in history
+
+
+def test_follow_up_inherits_document_intent_when_document_exists():
+    assert preserve_follow_up_intent(
+        "TECHNICAL",
+        "DOCUMENT",
+        is_follow_up=True,
+        has_document=True,
+    ) == "DOCUMENT"
+
+
+def test_follow_up_does_not_override_explicit_writing_request():
+    assert preserve_follow_up_intent(
+        "WRITING",
+        "DOCUMENT",
+        is_follow_up=True,
+        has_document=True,
+    ) == "WRITING"
+
+
+def test_follow_up_document_intent_degrades_without_document():
+    assert preserve_follow_up_intent(
+        "CASUAL",
+        "DOCUMENT",
+        is_follow_up=True,
+        has_document=False,
+    ) == "TECHNICAL"

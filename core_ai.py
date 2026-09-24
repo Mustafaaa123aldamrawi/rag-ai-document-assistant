@@ -108,3 +108,56 @@ def build_response_plan(
         preserve_conversation_context=is_follow_up,
         verify_document_fidelity=use_documents,
     )
+
+
+def build_recent_history(messages, limit: int = 6) -> str:
+    """Build a compact recent conversation transcript for routing and follow-ups."""
+    if not messages:
+        return ""
+
+    selected = messages[-limit:]
+    lines = []
+
+    for message in selected:
+        role = message.get("role", "user")
+        content = str(message.get("content", "")).strip()
+        if not content:
+            continue
+
+        label = "User" if role == "user" else "Assistant"
+        lines.append(f"{label}: {content}")
+
+    return "\n".join(lines)
+
+
+def preserve_follow_up_intent(
+    current_intent: Intent,
+    previous_intent: Intent | None,
+    *,
+    is_follow_up: bool,
+    has_document: bool,
+) -> Intent:
+    """Preserve conversational continuity only when the current turn is ambiguous."""
+    if not is_follow_up or not previous_intent:
+        return current_intent
+
+    if current_intent in {"WRITING", "TRANSLATION", "WEB_CURRENT"}:
+        return current_intent
+
+    if current_intent == "CASUAL" and previous_intent in {
+        "DOCUMENT",
+        "TECHNICAL",
+        "WEB_CURRENT",
+    }:
+        if previous_intent == "DOCUMENT" and not has_document:
+            return "TECHNICAL"
+        return previous_intent
+
+    if (
+        current_intent == "TECHNICAL"
+        and previous_intent == "DOCUMENT"
+        and has_document
+    ):
+        return "DOCUMENT"
+
+    return current_intent

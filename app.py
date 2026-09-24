@@ -16,7 +16,7 @@ from PIL import Image
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
-from core_ai import build_response_plan, classify_intent
+from core_ai import (build_recent_history, build_response_plan, classify_intent, preserve_follow_up_intent)
 from langfuse import get_client, observe
 
 import os
@@ -5404,11 +5404,10 @@ if submitted:
     question_lower = question.lower() if question else ""
 
     # Intelligent conversation router
-    router_history = ""
-    
-    for message in st.session_state.messages[-5:-1]:
-        role = "User" if message["role"] == "user" else "Assistant"
-        router_history += f"{role}: {message['content']}\n"
+    router_history = build_recent_history(
+        st.session_state.messages[:-1],
+        limit=4,
+    )
     
     detected_conversation_style = "NEUTRAL"
     # Strong dialect hints before LLM classification
@@ -5482,11 +5481,19 @@ if submitted:
     
     if question:
         try:
-            router_intent = classify_intent(
+            classified_intent = classify_intent(
                 question,
                 router_history,
                 call_qwen_llm,
             )
+            is_follow_up_question = detect_follow_up_question(question)
+            router_intent = preserve_follow_up_intent(
+                classified_intent,
+                st.session_state.get("last_router_intent"),
+                is_follow_up=is_follow_up_question,
+                has_document=bool(document_pages),
+            )
+            st.session_state.last_router_intent = router_intent
             
             is_casual_chat = router_intent == "CASUAL"
             is_writing_request = router_intent == "WRITING"
@@ -5494,7 +5501,6 @@ if submitted:
             is_technical_request = router_intent == "TECHNICAL"
             is_document_request = router_intent == "DOCUMENT"
             is_web_current_request = router_intent == "WEB_CURRENT"
-            is_follow_up_question = detect_follow_up_question(question)
             response_plan = build_response_plan(
                 router_intent,
                 search_mode=search_mode,

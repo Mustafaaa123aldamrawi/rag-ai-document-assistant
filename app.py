@@ -18,6 +18,7 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from core_ai import (build_grounded_verification_prompt, build_recent_history, build_response_plan, classify_intent, preserve_follow_up_intent, should_verify_grounded_answer, unsupported_citation_labels)
 from visual_ai import build_visual_analysis_messages, build_visual_evidence_text, parse_visual_analysis
+from deliverables import build_professional_site_survey_checklist_docx, build_site_survey_report_docx
 from langfuse import get_client, observe
 
 import os
@@ -5265,7 +5266,10 @@ if uploaded_files:
         
                         st.json(site_survey_checklist_data)
 
-                        word_bytes = build_site_survey_checklist_docx(
+                        word_bytes = build_professional_site_survey_checklist_docx(
+                            site_survey_checklist_data
+                        )
+                        report_bytes = build_site_survey_report_docx(
                             site_survey_checklist_data
                         )
                         
@@ -5299,6 +5303,21 @@ if uploaded_files:
                                 ),
                                 use_container_width=True,
                             )
+
+                            if report_bytes:
+                                report_file_name = (
+                                    f"{safe_project_name}_AV_Site_Survey_Report.docx"
+                                )
+                                st.download_button(
+                                    label="⬇️ Download Word Report",
+                                    data=report_bytes,
+                                    file_name=report_file_name,
+                                    mime=(
+                                        "application/vnd.openxmlformats-officedocument."
+                                        "wordprocessingml.document"
+                                    ),
+                                    use_container_width=True,
+                                )
         
                     else:
                         st.error(

@@ -210,6 +210,9 @@ build_site_survey_blueprint_prompt = load_function_from_app(
 build_professional_site_survey_data = load_function_from_app(
     "build_professional_site_survey_data"
 )
+build_document_overview_instruction = load_function_from_app(
+    "build_document_overview_instruction"
+)
 get_drawing_analysis_pages = load_function_from_app(
     "get_drawing_analysis_pages"
 )
@@ -251,6 +254,9 @@ generate_site_survey_blueprint.__globals__[
 generate_site_survey_blueprint.__globals__[
     "json"
 ] = json
+build_document_overview_instruction.__globals__[
+    "is_document_overview_question"
+] = is_document_overview_question
 extract_primary_drawing_number.__globals__["re"] = re
 validate_structured_drawing_number.__globals__["re"] = re
 deduplicate_references.__globals__["re"] = re
@@ -1396,3 +1402,23 @@ def test_document_overview_respects_web_only_mode():
     )
 
     assert result == "WEB"
+
+def test_build_document_overview_instruction_for_document_overview():
+    result = build_document_overview_instruction(
+        "Can you tell me what the PDF is about?",
+        "DOCUMENT",
+    )
+
+    assert "Document overview instructions:" in result
+    assert "Start with 1-2 sentences" in result
+    assert "4-7 concise bullet points" in result
+    assert "Do not lead with legal disclaimers" in result
+
+
+def test_build_document_overview_instruction_returns_empty_for_non_overview():
+    result = build_document_overview_instruction(
+        "What equipment is shown in this drawing?",
+        "DRAWING",
+    )
+
+    assert result == ""

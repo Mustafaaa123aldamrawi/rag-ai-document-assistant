@@ -1102,6 +1102,10 @@ def build_extractive_document_overview(
         "point-to-point video distribution system",
         "register to the customer's microsoft teams environment",
         "register to the customer’s microsoft teams environment",
+        "please see the environmental considerations",
+        "please see the “ environmental considerations ”",
+        "please see the customer responsibilities",
+        "required room properties and deployment best practices",
     )
 
     category_priority = (
@@ -1177,12 +1181,14 @@ def build_extractive_document_overview(
         if any(
             cue in sentence_lower
             for cue in (
-                "customer responsibilities",
                 "shall provide",
                 "network configuration",
                 "power connection",
                 "air conditioning",
                 "site readiness",
+                "customer shall",
+                "customer is responsible",
+                "customer will provide",
             )
         ):
             return "client_requirements"

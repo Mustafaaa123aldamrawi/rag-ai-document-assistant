@@ -901,6 +901,42 @@ def get_document_retrieval_k(question, query_route):
 
     return 4
 
+def build_document_overview_fidelity_review_prompt(
+    question,
+    context,
+    answer,
+):
+    return f"""
+Review the document overview below strictly against the provided source context.
+
+USER QUESTION:
+{question}
+
+SOURCE CONTEXT:
+{context}
+
+CURRENT OVERVIEW:
+{answer}
+
+Your task is to correct terminology drift and unsupported wording without changing supported meaning.
+
+Strict rules:
+- Use only facts explicitly supported by SOURCE CONTEXT.
+- Preserve exact product names, model numbers, manufacturers, building/site names, room names, and technical noun phrases from SOURCE CONTEXT.
+- If a product model appears, keep the exact device identity stated near that model in SOURCE CONTEXT. Never change a codec into a microphone, a camera into a display, a scaler into a cable, or any other device into a different category.
+- Preserve exact architectural and room-control terminology from SOURCE CONTEXT, including partition, operable partition, partition sensor, divisible room, room scheduler, control panel, credenza, rack, ceiling microphone, and loudspeaker when present.
+- Do not invent substitute terms such as end port, wall sensor, rocker, lower array microphone, wireless expansion unit, or similar paraphrases unless those exact terms occur in SOURCE CONTEXT.
+- Preserve lifecycle/action terms exactly: retained, reused, decommissioned, removed, handed over, relocated, and E-waste disposal must not be replaced with a different action.
+- Preserve valid [DOC X] citations and use only labels present in SOURCE CONTEXT.
+- Every bullet containing a factual claim must end with an appropriate [DOC X] citation.
+- If a phrase in CURRENT OVERVIEW cannot be verified from SOURCE CONTEXT, remove or replace it with wording that is explicitly supported.
+- Keep the answer concise: 1-2 sentence overview, 4-7 bullets, then one short closing sentence.
+- Return only the corrected final overview.
+
+Corrected overview:
+""".strip()
+
+
 def select_document_overview_pages(
     document_pages,
     source_name=None,
@@ -7640,6 +7676,28 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
                         output=answer
                     )
                     final_answer_span.end()
+        if (
+            query_route == "DOCUMENT"
+            and is_document_overview_question(question)
+            and answer
+            and not answer.startswith("AI model error:")
+        ):
+            overview_review_prompt = build_document_overview_fidelity_review_prompt(
+                question=question,
+                context=context,
+                answer=answer,
+            )
+
+            try:
+                reviewed_answer = call_qwen_llm(
+                    overview_review_prompt
+                ).strip()
+
+                if reviewed_answer:
+                    answer = reviewed_answer
+            except Exception:
+                pass
+
         # Ensure technical comparison answers cover both concepts and their difference
         if (
             is_technical_comparison

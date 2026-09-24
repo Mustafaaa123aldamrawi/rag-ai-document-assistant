@@ -1078,6 +1078,102 @@ def build_extractive_document_overview(
         "register to the customer’s microsoft teams environment",
     )
 
+    category_priority = (
+        "project_intent",
+        "retained_equipment",
+        "decommissioning",
+        "primary_platform",
+        "room2_audio",
+        "partition_control",
+        "client_requirements",
+    )
+
+    def classify_overview_candidate(sentence_lower):
+        if any(
+            cue in sentence_lower
+            for cue in (
+                "partition sensor",
+                "operable partition",
+                "room combining",
+            )
+        ):
+            return "partition_control"
+
+        if (
+            "room-2" in sentence_lower
+            or "room 2" in sentence_lower
+            or "adjacent room" in sentence_lower
+            or "audio overflow" in sentence_lower
+        ) and any(
+            cue in sentence_lower
+            for cue in (
+                "microphone",
+                "loudspeaker",
+                "speaker",
+                "amplifier",
+                "audio",
+            )
+        ):
+            return "room2_audio"
+
+        if any(
+            cue in sentence_lower
+            for cue in (
+                "poly studio g62",
+                "primary video conferencing platform",
+                "new codec",
+            )
+        ):
+            return "primary_platform"
+
+        if any(
+            cue in sentence_lower
+            for cue in (
+                "decommissioned",
+                "de-commissioning",
+                "e-waste",
+                "removed",
+            )
+        ):
+            return "decommissioning"
+
+        if any(
+            cue in sentence_lower
+            for cue in (
+                "retained",
+                "reused",
+                "shall be retained",
+                "will be reused",
+            )
+        ):
+            return "retained_equipment"
+
+        if any(
+            cue in sentence_lower
+            for cue in (
+                "customer responsibilities",
+                "shall provide",
+                "network configuration",
+                "power connection",
+                "air conditioning",
+                "site readiness",
+            )
+        ):
+            return "client_requirements"
+
+        if any(
+            cue in sentence_lower
+            for cue in (
+                "shall be upgraded",
+                "divisible/combined room",
+                "divisible room",
+                "combined room operation",
+            )
+        ):
+            return "project_intent"
+
+        return "other"
+
     candidates = []
     seen_sentences = set()
 
@@ -1159,6 +1255,7 @@ def build_extractive_document_overview(
                     doc_number,
                     sentence,
                     page.get("page_number"),
+                    classify_overview_candidate(sentence_lower),
                 )
             )
 
@@ -1175,18 +1272,48 @@ def build_extractive_document_overview(
 
     selected = []
     page_counts = {}
+    selected_categories = set()
 
-    for candidate in candidates:
-        page_number = candidate[5]
+    for category in category_priority:
+        category_candidates = [
+            candidate
+            for candidate in candidates
+            if candidate[6] == category
+        ]
 
-        if page_counts.get(page_number, 0) >= 3:
-            continue
+        for candidate in category_candidates:
+            page_number = candidate[5]
 
-        selected.append(candidate)
-        page_counts[page_number] = page_counts.get(page_number, 0) + 1
+            if page_counts.get(page_number, 0) >= 3:
+                continue
+
+            selected.append(candidate)
+            selected_categories.add(category)
+            page_counts[page_number] = page_counts.get(page_number, 0) + 1
+            break
 
         if len(selected) >= max_points:
             break
+
+    if len(selected) < max_points:
+        for candidate in candidates:
+            if candidate in selected:
+                continue
+
+            page_number = candidate[5]
+
+            if page_counts.get(page_number, 0) >= 3:
+                continue
+
+            if candidate[6] in selected_categories and candidate[6] != "other":
+                continue
+
+            selected.append(candidate)
+            page_counts[page_number] = page_counts.get(page_number, 0) + 1
+            selected_categories.add(candidate[6])
+
+            if len(selected) >= max_points:
+                break
 
     if len(selected) < 4:
         for candidate in candidates:
@@ -1237,6 +1364,7 @@ def build_extractive_document_overview(
             doc_number,
             sentence,
             page_number,
+            category,
         ) in selected
     ]
 

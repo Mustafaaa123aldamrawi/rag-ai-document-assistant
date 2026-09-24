@@ -2,7 +2,7 @@ from io import BytesIO
 
 from docx import Document
 
-from deliverables import build_site_survey_report_docx
+from deliverables import build_professional_site_survey_checklist_docx, build_site_survey_report_docx
 
 
 def sample_data():
@@ -49,3 +49,13 @@ def test_report_contains_professional_sections():
     assert "Executive Summary" in text
     assert "Recommendations / Next Actions" in text
     assert "Draft / Pre-Survey Report" in text
+
+
+
+def test_professional_checklist_docx_is_valid():
+    output = build_professional_site_survey_checklist_docx(sample_data())
+    assert output
+    document = Document(BytesIO(output))
+    text = "\n".join(p.text for p in document.paragraphs)
+    assert "AV SITE SURVEY CHECKLIST" in text
+    assert "Survey Sign-off" in text

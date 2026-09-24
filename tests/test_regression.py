@@ -1309,3 +1309,28 @@ def test_build_professional_site_survey_data_builds_dynamic_structure():
 
     assert len(result["final_survey_outcome"]) == 6
     assert len(result["sign_off"]) == 3
+
+def test_scope_of_work_document_is_not_misclassified_as_drawing():
+    pages = [
+        {
+            "text": """
+            Mastercard Riyadh Scope of Work
+
+            Project Considerations
+
+            This scope of work defines responsibilities, installation requirements,
+            equipment reuse, specifications, drawings, floor plans, rack work,
+            power, network, cabling and commissioning requirements.
+
+            Refer to the drawings and specifications for coordination.
+            """,
+            "has_extractable_text": True,
+        }
+    ]
+
+    result = detect_pdf_content_type(
+        pages,
+        "Mastercard Riyadh_Scope of Work11.pdf",
+    )
+
+    assert result == "DOCUMENT"

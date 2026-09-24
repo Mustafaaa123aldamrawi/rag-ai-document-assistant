@@ -1361,3 +1361,35 @@ def test_scope_of_work_document_with_drawing_terms_stays_document():
 )
 def test_is_document_overview_question(question, expected):
     assert is_document_overview_question(question) is expected
+
+def test_document_overview_routes_to_document():
+    decide_query_route.__globals__[
+        "is_document_overview_question"
+    ] = is_document_overview_question
+
+    result = decide_query_route(
+        question="Can you tell me what the PDF is about?",
+        search_mode="Documents + Web",
+        has_document=True,
+        content_type="DOCUMENT",
+        document_scope_active=False,
+        is_follow_up=False,
+    )
+
+    assert result == "DOCUMENT"
+
+def test_document_overview_respects_web_only_mode():
+    decide_query_route.__globals__[
+        "is_document_overview_question"
+    ] = is_document_overview_question
+
+    result = decide_query_route(
+        question="Can you tell me what the PDF is about?",
+        search_mode="Web Only",
+        has_document=True,
+        content_type="DOCUMENT",
+        document_scope_active=False,
+        is_follow_up=False,
+    )
+
+    assert result == "WEB"

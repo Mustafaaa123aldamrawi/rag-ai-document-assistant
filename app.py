@@ -1041,9 +1041,9 @@ def build_extractive_document_overview(
         "retain": 5,
         "reused": 6,
         "reuse": 5,
-        "decommissioned": 8,
-        "removed": 5,
-        "e-waste": 8,
+        "decommissioned": 16,
+        "removed": 8,
+        "e-waste": 14,
         "new ": 3,
         "codec": 5,
         "video conferencing": 5,
@@ -1062,7 +1062,7 @@ def build_extractive_document_overview(
         "rack": 2,
         "poly studio g62": 14,
         "primary video conferencing platform": 10,
-        "audio overflow": 9,
+        "audio overflow": 12,
         "shall be provided": 5,
     }
 
@@ -1072,6 +1072,10 @@ def build_extractive_document_overview(
         "will be white in color",
         "support conferencing and other system features",
         "will support playback of program and conferencing audio",
+        "routing and switching",
+        "point-to-point video distribution system",
+        "register to the customer's microsoft teams environment",
+        "register to the customer’s microsoft teams environment",
     )
 
     candidates = []
@@ -1083,6 +1087,16 @@ def build_extractive_document_overview(
             continue
 
         normalized_text = re.sub(r"\s+", " ", raw_text).strip()
+        normalized_text = re.sub(
+            r"\s+[•]\s+",
+            ". ",
+            normalized_text,
+        )
+        normalized_text = re.sub(
+            r"\s+o\s+(?=[A-Z0-9])",
+            ". ",
+            normalized_text,
+        )
         sentences = re.split(
             r"(?<=[.!?])\s+(?=[A-Z0-9*])",
             normalized_text,
@@ -1119,7 +1133,7 @@ def build_extractive_document_overview(
             )
 
             if any(cue in sentence_lower for cue in low_value_cues):
-                score -= 10
+                score -= 16
 
             if re.search(r"\b[A-Z][A-Za-z0-9-]*\d[A-Za-z0-9-]*\b", sentence):
                 score += 3

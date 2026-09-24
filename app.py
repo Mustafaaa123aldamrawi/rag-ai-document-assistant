@@ -937,6 +937,240 @@ Corrected overview:
 """.strip()
 
 
+def build_extractive_document_overview(
+    question,
+    document_pages,
+    doc_source_numbers,
+    source_name=None,
+    max_points=7,
+):
+    """
+    Build a source-faithful overview using exact source sentences.
+
+    Whole-document overview questions are intentionally extractive here:
+    technical nouns, product identities, room names, and lifecycle actions
+    remain exactly as written in the uploaded document instead of being
+    paraphrased by the final LLM.
+    """
+    pages = [
+        page
+        for page in (document_pages or [])
+        if not page.get("is_drawing_analysis")
+    ]
+
+    if source_name:
+        source_pages = [
+            page
+            for page in pages
+            if page.get("source") == source_name
+        ]
+        if source_pages:
+            pages = source_pages
+
+    if not pages:
+        return ""
+
+    max_points = max(4, min(int(max_points or 7), 7))
+
+    boilerplate_cues = (
+        "copyright",
+        "proprietary information",
+        "all rights reserved",
+        "shall be held in confidence",
+        "may not be copied",
+        "included pricing assumes",
+        "change orders",
+        "terms and conditions",
+    )
+
+    cue_weights = {
+        "divisible": 8,
+        "combined room": 6,
+        "operable partition": 8,
+        "partition sensor": 9,
+        "shall be upgraded": 9,
+        "existing": 3,
+        "retained": 6,
+        "retain": 5,
+        "reused": 6,
+        "reuse": 5,
+        "decommissioned": 8,
+        "removed": 5,
+        "e-waste": 8,
+        "new ": 3,
+        "codec": 5,
+        "video conferencing": 5,
+        "presentation": 3,
+        "microphone": 4,
+        "loudspeaker": 4,
+        "speaker": 3,
+        "amplifier": 3,
+        "dsp": 4,
+        "network": 2,
+        "power": 2,
+        "customer": 2,
+        "responsibil": 3,
+        "shall provide": 4,
+        "room": 1,
+        "rack": 2,
+    }
+
+    candidates = []
+    seen_sentences = set()
+
+    for page_order, page in enumerate(pages):
+        raw_text = str(page.get("text", "") or "")
+        if not raw_text.strip():
+            continue
+
+        normalized_text = re.sub(r"\s+", " ", raw_text).strip()
+        sentences = re.split(
+            r"(?<=[.!?])\s+(?=[A-Z0-9*])",
+            normalized_text,
+        )
+
+        for sentence_order, sentence in enumerate(sentences):
+            sentence = sentence.strip(" •\t")
+            sentence_lower = sentence.lower()
+
+            if len(sentence.split()) < 6:
+                continue
+
+            if len(sentence) > 900:
+                continue
+
+            if any(cue in sentence_lower for cue in boilerplate_cues):
+                continue
+
+            normalized_sentence = re.sub(
+                r"[^a-z0-9]+",
+                " ",
+                sentence_lower,
+            ).strip()
+
+            if not normalized_sentence or normalized_sentence in seen_sentences:
+                continue
+
+            score = sum(
+                weight
+                for cue, weight in cue_weights.items()
+                if cue in sentence_lower
+            )
+
+            if re.search(r"\b[A-Z][A-Za-z0-9-]*\d[A-Za-z0-9-]*\b", sentence):
+                score += 3
+
+            if score < 3:
+                continue
+
+            doc_key = (
+                page.get("source"),
+                page.get("page_number"),
+            )
+            doc_number = doc_source_numbers.get(doc_key)
+
+            if doc_number is None:
+                continue
+
+            seen_sentences.add(normalized_sentence)
+            candidates.append(
+                (
+                    score,
+                    page_order,
+                    sentence_order,
+                    doc_number,
+                    sentence,
+                    page.get("page_number"),
+                )
+            )
+
+    if not candidates:
+        return ""
+
+    candidates.sort(
+        key=lambda item: (
+            -item[0],
+            item[1],
+            item[2],
+        )
+    )
+
+    selected = []
+    page_counts = {}
+
+    for candidate in candidates:
+        page_number = candidate[5]
+
+        if page_counts.get(page_number, 0) >= 3:
+            continue
+
+        selected.append(candidate)
+        page_counts[page_number] = page_counts.get(page_number, 0) + 1
+
+        if len(selected) >= max_points:
+            break
+
+    if len(selected) < 4:
+        for candidate in candidates:
+            if candidate in selected:
+                continue
+
+            selected.append(candidate)
+
+            if len(selected) >= min(max_points, 4):
+                break
+
+    selected.sort(
+        key=lambda item: (
+            item[1],
+            item[2],
+        )
+    )
+
+    has_arabic = bool(
+        re.search(r"[\u0600-\u06FF]", str(question or ""))
+    )
+
+    if has_arabic:
+        intro = (
+            "هذه نظرة عامة مباشرة من محتوى المستند، مع الحفاظ على "
+            "المصطلحات التقنية والأسماء كما وردت في المصدر:"
+        )
+        closing = (
+            "هذه النقاط تلخص نطاق المستند اعتمادًا على النص الأصلي "
+            "من دون إعادة تسمية الأجهزة أو المصطلحات."
+        )
+    else:
+        intro = (
+            "Here is a source-faithful overview of the document. "
+            "The technical terminology below is kept as written in the source:"
+        )
+        closing = (
+            "These points summarize the supported scope without renaming "
+            "devices, rooms, or technical terms."
+        )
+
+    bullet_lines = [
+        f"- {sentence} [DOC {doc_number}]"
+        for (
+            score,
+            page_order,
+            sentence_order,
+            doc_number,
+            sentence,
+            page_number,
+        ) in selected
+    ]
+
+    return "\n\n".join(
+        [
+            intro,
+            "\n".join(bullet_lines),
+            closing,
+        ]
+    )
+
+
 def select_document_overview_pages(
     document_pages,
     source_name=None,
@@ -7657,28 +7891,46 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
                 # Never send casual answers through RAG/citation/technical post-processing.
                 st.stop()
         else:
-            with st.spinner("Analyzing sources and preparing your answer..."):
-                final_answer_span = langfuse.start_observation(
-                    name="final-answer-generation",
-                    as_type="generation",
-                    input={
-                        "question": question,
-                        "query_route": query_route,
-                        "context": context,
-                        "prompt": prompt,
-                    },
+            deterministic_document_overview = ""
+
+            if (
+                query_route == "DOCUMENT"
+                and is_document_overview_question(question)
+            ):
+                deterministic_document_overview = build_extractive_document_overview(
+                    question=question,
+                    document_pages=document_pages,
+                    doc_source_numbers=doc_source_numbers,
+                    source_name=matched_source,
+                    max_points=7,
                 )
-                try:
-                    answer = call_qwen_llm(prompt)
-                except Exception as e:
-                    answer = f"AI model error: {e}"
-                    final_answer_span.update(
-                        output=answer
+
+            if deterministic_document_overview:
+                answer = deterministic_document_overview
+            else:
+                with st.spinner("Analyzing sources and preparing your answer..."):
+                    final_answer_span = langfuse.start_observation(
+                        name="final-answer-generation",
+                        as_type="generation",
+                        input={
+                            "question": question,
+                            "query_route": query_route,
+                            "context": context,
+                            "prompt": prompt,
+                        },
                     )
-                    final_answer_span.end()
+                    try:
+                        answer = call_qwen_llm(prompt)
+                    except Exception as e:
+                        answer = f"AI model error: {e}"
+                        final_answer_span.update(
+                            output=answer
+                        )
+                        final_answer_span.end()
         if (
             query_route == "DOCUMENT"
             and is_document_overview_question(question)
+            and not deterministic_document_overview
             and answer
             and not answer.startswith("AI model error:")
         ):

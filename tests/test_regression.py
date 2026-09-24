@@ -225,6 +225,9 @@ build_document_overview_instruction = load_function_from_app(
 build_document_overview_fidelity_review_prompt = load_function_from_app(
     "build_document_overview_fidelity_review_prompt"
 )
+build_extractive_document_overview = load_function_from_app(
+    "build_extractive_document_overview"
+)
 get_drawing_analysis_pages = load_function_from_app(
     "get_drawing_analysis_pages"
 )
@@ -269,6 +272,7 @@ generate_site_survey_blueprint.__globals__[
 build_document_overview_instruction.__globals__[
     "is_document_overview_question"
 ] = is_document_overview_question
+build_extractive_document_overview.__globals__["re"] = re
 get_document_retrieval_k.__globals__[
     "is_document_overview_question"
 ] = is_document_overview_question
@@ -1482,6 +1486,83 @@ def test_document_overview_fidelity_review_prompt_preserves_lifecycle_terms():
     assert "removed" in prompt
     assert "handed over" in prompt
     assert "E-waste disposal" in prompt
+
+
+
+def test_extractive_document_overview_preserves_exact_device_identity():
+    pages = [
+        {
+            "source": "scope.pdf",
+            "page_number": 3,
+            "text": (
+                "The existing meeting room AV system shall be upgraded to support "
+                "divisible/combined room operation using the existing AV infrastructure "
+                "wherever practical. A new Poly Studio G62 codec shall be provided as "
+                "the primary video conferencing platform and integrated with the existing "
+                "room AV system. The existing Codec, HDMI switcher, Scaler & wireless "
+                "presentation unit shall be decommissioned, removed, and handed over "
+                "for E-waste disposal in accordance with the project requirements."
+            ),
+        },
+        {
+            "source": "scope.pdf",
+            "page_number": 5,
+            "text": (
+                "A new partition sensor shall be provided to detect the operable "
+                "partition status and enable the divisible-room audio control logic. "
+                "When the partition is open, the audio system shall combine the "
+                "microphone and loudspeaker zones."
+            ),
+        },
+    ]
+
+    doc_source_numbers = {
+        ("scope.pdf", 3): 3,
+        ("scope.pdf", 5): 5,
+    }
+
+    result = build_extractive_document_overview(
+        question="Can you tell me what the PDF is about?",
+        document_pages=pages,
+        doc_source_numbers=doc_source_numbers,
+        source_name="scope.pdf",
+        max_points=7,
+    )
+
+    assert "Poly Studio G62 codec" in result
+    assert "partition sensor" in result
+    assert "operable partition" in result
+    assert "E-waste disposal" in result
+    assert "G62 microphone" not in result
+    assert "end port sensor" not in result
+    assert "[DOC 3]" in result
+    assert "[DOC 5]" in result
+
+
+def test_extractive_document_overview_skips_legal_boilerplate():
+    pages = [
+        {
+            "source": "scope.pdf",
+            "page_number": 1,
+            "text": (
+                "This Entire Document and all information is proprietary information. "
+                "Copyright AVI-SPL LLC. All Rights Reserved. "
+                "The existing AV system shall be upgraded for divisible room operation."
+            ),
+        }
+    ]
+
+    result = build_extractive_document_overview(
+        question="Summarize this document",
+        document_pages=pages,
+        doc_source_numbers={("scope.pdf", 1): 1},
+        source_name="scope.pdf",
+        max_points=7,
+    )
+
+    assert "The existing AV system shall be upgraded" in result
+    assert "Copyright AVI-SPL" not in result
+    assert "proprietary information" not in result
 
 def test_document_overview_uses_broader_retrieval():
     result = get_document_retrieval_k(

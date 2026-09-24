@@ -5410,7 +5410,8 @@ if submitted:
         role = "User" if message["role"] == "user" else "Assistant"
         router_history += f"{role}: {message['content']}\n"
     
-    router_prompt = build_router_prompt(question, router_history)\n    detected_conversation_style = "NEUTRAL"
+    router_prompt = build_router_prompt(question, router_history)
+    detected_conversation_style = "NEUTRAL"
     # Strong dialect hints before LLM classification
     dialect_hint = None
     

@@ -276,6 +276,9 @@ build_document_overview_instruction.__globals__[
     "is_document_overview_question"
 ] = is_document_overview_question
 build_extractive_document_overview.__globals__["re"] = re
+build_extractive_document_overview.__globals__[
+    "clean_extractive_overview_sentence"
+] = clean_extractive_overview_sentence
 clean_extractive_overview_sentence.__globals__["re"] = re
 get_document_retrieval_k.__globals__[
     "is_document_overview_question"

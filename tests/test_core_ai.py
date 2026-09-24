@@ -179,6 +179,7 @@ def test_restore_source_technical_terms_repairs_av_drift():
 def test_restore_source_technical_terms_does_not_inject_absent_terms():
     fixed = restore_source_technical_terms(
         "The wall sensor is visible.",
-        "No partition sensor is mentioned here.",
+        "The room contains a generic sensor.",
     )
-    assert "partition sensor" in fixed
+    assert "wall sensor" in fixed
+    assert "partition sensor" not in fixed

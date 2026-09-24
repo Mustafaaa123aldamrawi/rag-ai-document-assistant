@@ -1556,6 +1556,62 @@ def test_clean_extractive_overview_sentence_repairs_pdf_spacing():
     )
 
 
+def test_extractive_document_overview_splits_inline_bullets_and_drops_generic_feature_text():
+    pages = [
+        {
+            "source": "scope.pdf",
+            "page_number": 3,
+            "text": (
+                "The existing Codec, HDMI switcher, Scaler & wireless presentation unit "
+                "shall be decommissioned, removed, and handed over for E-waste disposal. "
+                "A new Poly Studio G62 codec shall be provided as the primary video "
+                "conferencing platform."
+            ),
+        },
+        {
+            "source": "scope.pdf",
+            "page_number": 4,
+            "text": (
+                "Routing and Switching • A Point-to-Point video distribution system that "
+                "will route all video sources throughout the system. "
+                "UC Solution / Video Conferencing • A Microsoft Teams Room video appliance "
+                "will register to the Customer’s Microsoft Teams environment. "
+                "1, new Ceiling mounted array microphone installed in Room-2 for Audio fill. "
+                "A new Dante amplifier will be installed in the rack to serve the new speakers."
+            ),
+        },
+        {
+            "source": "scope.pdf",
+            "page_number": 5,
+            "text": (
+                "A ceiling mounted partition sensor will be installed to support automatic "
+                "room combining functions."
+            ),
+        },
+    ]
+
+    result = build_extractive_document_overview(
+        question="Can you tell me what the PDF is about?",
+        document_pages=pages,
+        doc_source_numbers={
+            ("scope.pdf", 3): 3,
+            ("scope.pdf", 4): 4,
+            ("scope.pdf", 5): 5,
+        },
+        source_name="scope.pdf",
+        max_points=7,
+    )
+
+    assert "Poly Studio G62 codec" in result
+    assert "E-waste disposal" in result
+    assert "Audio fill" in result
+    assert "Dante amplifier" in result
+    assert "partition sensor" in result
+    assert "Routing and Switching" not in result
+    assert "Point-to-Point video distribution" not in result
+    assert "register to the Customer’s Microsoft Teams environment" not in result
+
+
 def test_extractive_document_overview_prioritizes_core_scope_over_low_value_text():
     pages = [
         {

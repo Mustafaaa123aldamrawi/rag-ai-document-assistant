@@ -1310,19 +1310,27 @@ def test_build_professional_site_survey_data_builds_dynamic_structure():
     assert len(result["final_survey_outcome"]) == 6
     assert len(result["sign_off"]) == 3
 
-def test_scope_of_work_document_is_not_misclassified_as_drawing():
+def test_scope_of_work_document_with_drawing_terms_stays_document():
     pages = [
         {
             "text": """
             Mastercard Riyadh Scope of Work
 
             Project Considerations
+            Statement of Work
+            Responsibilities and installation requirements.
 
-            This scope of work defines responsibilities, installation requirements,
-            equipment reuse, specifications, drawings, floor plans, rack work,
-            power, network, cabling and commissioning requirements.
+            Refer to AV DEVICE FLOOR PLAN.
+            Refer to AV INFRASTRUCTURE FLOOR PLAN.
+            DRAWING NO.
+            SCALE 1:50
+            GENERAL ARRANGEMENT
 
-            Refer to the drawings and specifications for coordination.
+            The scope defines existing equipment, proposed equipment,
+            rack work, cabling, power, network, partition sensor,
+            testing and commissioning requirements.
+
+            Refer to drawings and specifications for coordination.
             """,
             "has_extractable_text": True,
         }

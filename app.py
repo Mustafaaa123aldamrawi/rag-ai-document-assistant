@@ -972,7 +972,11 @@ def clean_extractive_overview_sentence(sentence):
         )
         text = re.sub(
             split_pattern,
-            word,
+            lambda match: (
+                word.capitalize()
+                if match.group(0)[0].isupper()
+                else word
+            ),
             text,
             flags=re.IGNORECASE,
         )

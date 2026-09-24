@@ -8202,31 +8202,48 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
                 # Never send casual answers through RAG/citation/technical post-processing.
                 st.stop()
         else:
-            # AI-first answer generation:
-            # Retrieval gathers grounded evidence; the LLM composes the answer.
-            # Keep the old extractive overview helper available for regression
-            # coverage, but do not use it as the final user-facing response.
+            # AI-first generation for normal grounded questions.
+            # Whole-document overviews use a canonical source-faithful mode
+            # because equipment identity, lifecycle actions, and room-control
+            # terminology must remain exactly as written in the source.
             deterministic_document_overview = ""
 
-            with st.spinner("Analyzing sources and preparing your answer..."):
-                final_answer_span = langfuse.start_observation(
-                    name="final-answer-generation",
-                    as_type="generation",
-                    input={
-                        "question": question,
-                        "query_route": query_route,
-                        "context": context,
-                        "prompt": prompt,
-                    },
-                )
-                try:
-                    answer = call_qwen_llm(prompt)
-                except Exception as e:
-                    answer = f"AI model error: {e}"
-                    final_answer_span.update(
-                        output=answer
+            if (
+                query_route == "DOCUMENT"
+                and is_document_overview_question(question)
+            ):
+                deterministic_document_overview = (
+                    build_extractive_document_overview(
+                        question=question,
+                        document_pages=document_pages,
+                        doc_source_numbers=doc_source_numbers,
+                        source_name=matched_source,
+                        max_points=7,
                     )
-                    final_answer_span.end()
+                )
+
+            if deterministic_document_overview:
+                answer = deterministic_document_overview
+            else:
+                with st.spinner("Analyzing sources and preparing your answer..."):
+                    final_answer_span = langfuse.start_observation(
+                        name="final-answer-generation",
+                        as_type="generation",
+                        input={
+                            "question": question,
+                            "query_route": query_route,
+                            "context": context,
+                            "prompt": prompt,
+                        },
+                    )
+                    try:
+                        answer = call_qwen_llm(prompt)
+                    except Exception as e:
+                        answer = f"AI model error: {e}"
+                        final_answer_span.update(
+                            output=answer
+                        )
+                        final_answer_span.end()
         if (
             query_route == "DOCUMENT"
             and is_document_overview_question(question)

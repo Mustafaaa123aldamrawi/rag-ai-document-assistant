@@ -3,7 +3,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from core_ai import (build_grounded_verification_prompt, build_recent_history, build_response_plan, build_router_prompt, classify_intent, extract_citation_labels, preserve_follow_up_intent, should_verify_grounded_answer, unsupported_citation_labels, select_available_model)
+from core_ai import (build_grounded_verification_prompt, build_recent_history, build_response_plan, build_router_prompt, classify_intent, extract_citation_labels, preserve_follow_up_intent, should_verify_grounded_answer, unsupported_citation_labels, select_available_model, restore_source_technical_terms)
 
 
 def test_classifier_accepts_valid_label():
@@ -155,3 +155,31 @@ def test_select_available_model_respects_preference_order():
 
 def test_select_available_model_returns_none_when_unavailable():
     assert select_available_model(["large"], {"small"}) is None
+
+
+
+def test_restore_source_technical_terms_repairs_av_drift():
+    context = (
+        "Hamad Tower. A new partition sensor shall be provided. "
+        "The existing codec shall be handed over for E-waste disposal. "
+        "Poly Studio G62 shall be the primary video conferencing platform."
+    )
+    answer = (
+        "Hamd Tower uses a blade sensor. Equipment goes for electronic waste monitoring. "
+        "Poly Studio G62 is the basic video communications platform."
+    )
+    fixed = restore_source_technical_terms(answer, context)
+    assert "Hamad Tower" in fixed
+    assert "partition sensor" in fixed
+    assert "E-waste disposal" in fixed
+    assert "primary video conferencing platform" in fixed
+    assert "blade sensor" not in fixed
+
+
+def test_restore_source_technical_terms_does_not_inject_absent_terms():
+    fixed = restore_source_technical_terms(
+        "The wall sensor is visible.",
+        "The room contains a generic sensor.",
+    )
+    assert "wall sensor" in fixed
+    assert "partition sensor" not in fixed

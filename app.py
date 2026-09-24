@@ -879,7 +879,11 @@ Document overview instructions:
 - Do not lead with legal disclaimers, copyright notices, generic boilerplate, or minor administrative details.
 - Do not describe the document as a software-only project unless the source clearly says that.
 - Do not invent equipment, quantities, models, locations, or requirements.
-- Preserve technical terms and product names exactly as supported by the document.
+- Preserve technical terms, product names, model numbers, site/building names, room names, and manufacturer names exactly as supported by the document.
+- Preserve source terminology for physical architecture and AV concepts. Do not substitute one physical concept for another (for example, do not turn a partition wall into a screen, a rack into a cabinet, or a ceiling microphone into a surface device).
+- Preserve lifecycle/disposition terms exactly. Do not rewrite removal, reuse, relocation, disposal, or e-waste instructions into a different action.
+- If the source uses an established English technical term or proper noun, keep that wording unchanged instead of translating or paraphrasing it into a different technical meaning.
+- Prefer exact source wording for ambiguous technical nouns over fluent paraphrase.
 - End with one concise sentence explaining what the document is intended to achieve.
 """.strip()
 

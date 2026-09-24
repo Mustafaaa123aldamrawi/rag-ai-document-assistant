@@ -1284,7 +1284,7 @@ def build_extractive_document_overview(
         for candidate in category_candidates:
             page_number = candidate[5]
 
-            if page_counts.get(page_number, 0) >= 3:
+            if page_counts.get(page_number, 0) >= 4:
                 continue
 
             selected.append(candidate)

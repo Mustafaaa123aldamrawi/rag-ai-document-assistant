@@ -1,3 +1,8 @@
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 from core_ai import build_response_plan, build_router_prompt, classify_intent
 
 

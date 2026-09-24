@@ -1387,6 +1387,7 @@ def test_scope_of_work_document_with_drawing_terms_stays_document():
         ("Can you tell me what the PDF is about?", True),
         ("Summarize this document", True),
         ("Give me an overview of this document", True),
+        ("Give me a professional overview of this document.", True),
         ("What does this PDF cover?", True),
         ("شو هاد الملف؟", True),
         ("لخص الملف", True),

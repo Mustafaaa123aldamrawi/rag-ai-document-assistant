@@ -5769,7 +5769,6 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
                     pass
 
             answer = normalize_model_names(answer)
-            if not deterministic_document_overview:
             answer = polish_arabic_answer(answer)
             answer = clean_arabic_av_phrasing(answer)
             

@@ -228,6 +228,9 @@ build_document_overview_fidelity_review_prompt = load_function_from_app(
 build_extractive_document_overview = load_function_from_app(
     "build_extractive_document_overview"
 )
+clean_extractive_overview_sentence = load_function_from_app(
+    "clean_extractive_overview_sentence"
+)
 get_drawing_analysis_pages = load_function_from_app(
     "get_drawing_analysis_pages"
 )
@@ -273,6 +276,10 @@ build_document_overview_instruction.__globals__[
     "is_document_overview_question"
 ] = is_document_overview_question
 build_extractive_document_overview.__globals__["re"] = re
+build_extractive_document_overview.__globals__[
+    "clean_extractive_overview_sentence"
+] = clean_extractive_overview_sentence
+clean_extractive_overview_sentence.__globals__["re"] = re
 get_document_retrieval_k.__globals__[
     "is_document_overview_question"
 ] = is_document_overview_question
@@ -1537,6 +1544,59 @@ def test_extractive_document_overview_preserves_exact_device_identity():
     assert "end port sensor" not in result
     assert "[DOC 3]" in result
     assert "[DOC 5]" in result
+
+
+def test_clean_extractive_overview_sentence_repairs_pdf_spacing():
+    result = clean_extractive_overview_sentence(
+        "C amera in Room -1 supports divisible -room operation , with C odec."
+    )
+
+    assert result == (
+        "Camera in Room-1 supports divisible-room operation, with Codec."
+    )
+
+
+def test_extractive_document_overview_prioritizes_core_scope_over_low_value_text():
+    pages = [
+        {
+            "source": "scope.pdf",
+            "page_number": 3,
+            "text": (
+                "See the Conferencing section for more detailed information regarding "
+                "audio or video conferencing. "
+                "A new Poly Studio G62 codec shall be provided as the primary video "
+                "conferencing platform and integrated with the existing room AV system. "
+                "The existing Codec, HDMI switcher, Scaler & wireless presentation unit "
+                "shall be decommissioned, removed, and handed over for E-waste disposal."
+            ),
+        },
+        {
+            "source": "scope.pdf",
+            "page_number": 5,
+            "text": (
+                "A new partition sensor shall be provided to detect the operable "
+                "partition status and enable the divisible-room audio control logic. "
+                "The microphone will be white in color."
+            ),
+        },
+    ]
+
+    result = build_extractive_document_overview(
+        question="Can you tell me what the PDF is about?",
+        document_pages=pages,
+        doc_source_numbers={
+            ("scope.pdf", 3): 3,
+            ("scope.pdf", 5): 5,
+        },
+        source_name="scope.pdf",
+        max_points=4,
+    )
+
+    assert "Poly Studio G62 codec" in result
+    assert "E-waste disposal" in result
+    assert "partition sensor" in result
+    assert "See the Conferencing section" not in result
+    assert "white in color" not in result
 
 
 def test_extractive_document_overview_skips_legal_boilerplate():

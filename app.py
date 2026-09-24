@@ -5802,6 +5802,10 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
                     and keyword_matches > 0
                 )
                 or (
+                    query_route == "DOCUMENT"
+                    and is_document_overview_question(question)
+                )
+                or (
                     retrieval_is_follow_up
                     and keyword_matches >= 2
                 )

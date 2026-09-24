@@ -1556,6 +1556,83 @@ def test_clean_extractive_overview_sentence_repairs_pdf_spacing():
     )
 
 
+def test_extractive_document_overview_balances_scope_categories():
+    pages = [
+        {
+            "source": "scope.pdf",
+            "page_number": 3,
+            "text": (
+                "The existing meeting room AV system shall be upgraded to support "
+                "divisible/combined room operation using the existing AV infrastructure "
+                "wherever practical. "
+                "The existing displays, Camera, video extenders, controller, Audio DSP, "
+                "amplifier, ceiling loudspeakers and Array microphone shall be retained. "
+                "The existing Codec, HDMI switcher, Scaler & wireless presentation unit "
+                "shall be decommissioned, removed, and handed over for E-waste disposal. "
+                "A new Poly Studio G62 codec shall be provided as the primary video "
+                "conferencing platform."
+            ),
+        },
+        {
+            "source": "scope.pdf",
+            "page_number": 4,
+            "text": (
+                "The adjacent Room-2 shall be equipped with a new ceiling array microphone "
+                "and ceiling loudspeakers, supported by a new amplifier, and shall function "
+                "as an audio overflow area when the rooms are combined."
+            ),
+        },
+        {
+            "source": "scope.pdf",
+            "page_number": 5,
+            "text": (
+                "A new partition sensor shall be provided to detect the operable partition "
+                "status and enable the divisible-room audio control logic."
+            ),
+        },
+        {
+            "source": "scope.pdf",
+            "page_number": 6,
+            "text": (
+                "The Customer shall provide power connection, network configuration, "
+                "air conditioning, and other required site readiness items."
+            ),
+        },
+        {
+            "source": "scope.pdf",
+            "page_number": 9,
+            "text": (
+                "De-commissioning & E-Waste management applies to additional AV units. "
+                "The decommissioned AV devices will be packed for disposal and processed "
+                "as e-waste through a certified recycling company."
+            ),
+        },
+    ]
+
+    result = build_extractive_document_overview(
+        question="Can you tell me what the PDF is about?",
+        document_pages=pages,
+        doc_source_numbers={
+            ("scope.pdf", 3): 3,
+            ("scope.pdf", 4): 4,
+            ("scope.pdf", 5): 5,
+            ("scope.pdf", 6): 6,
+            ("scope.pdf", 9): 9,
+        },
+        source_name="scope.pdf",
+        max_points=7,
+    )
+
+    assert "divisible/combined room operation" in result
+    assert "shall be retained" in result
+    assert "E-waste disposal" in result
+    assert "Poly Studio G62 codec" in result
+    assert "Room-2" in result
+    assert "partition sensor" in result
+    assert "Customer shall provide" in result
+    assert result.count("[DOC 9]") <= 1
+
+
 def test_extractive_document_overview_splits_inline_bullets_and_drops_generic_feature_text():
     pages = [
         {

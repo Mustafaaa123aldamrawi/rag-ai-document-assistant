@@ -892,6 +892,98 @@ def get_document_retrieval_k(question, query_route):
 
     return 4
 
+def select_document_overview_pages(
+    document_pages,
+    source_name=None,
+    max_pages=12,
+):
+    """
+    Select page-diverse source pages for whole-document overview questions.
+
+    This deliberately avoids semantic ranking so broad summaries are not
+    dominated by several highly similar chunks from the same one or two pages.
+    """
+    pages = [
+        page
+        for page in (document_pages or [])
+        if not page.get("is_drawing_analysis")
+    ]
+
+    if source_name:
+        source_pages = [
+            page
+            for page in pages
+            if page.get("source") == source_name
+        ]
+        if source_pages:
+            pages = source_pages
+
+    if not pages:
+        return []
+
+    max_pages = max(1, int(max_pages or 1))
+
+    if len(pages) <= max_pages:
+        return pages
+
+    if max_pages == 1:
+        return [pages[0]]
+
+    last_index = len(pages) - 1
+    selected_indices = [
+        round(position * last_index / (max_pages - 1))
+        for position in range(max_pages)
+    ]
+
+    return [
+        pages[index]
+        for index in selected_indices
+    ]
+
+
+def select_relevant_documents(
+    evidence_documents,
+    is_verification_question,
+    question_keywords,
+    evidence_keywords,
+    is_document_overview=False,
+):
+    """
+    Apply the strict evidence filter for focused questions, while allowing
+    whole-document overview queries to retain their retrieved evidence.
+    """
+    if is_document_overview:
+        return [
+            document
+            for document, score, keyword_matches, product_matches
+            in evidence_documents
+        ]
+
+    return [
+        document
+        for document, score, keyword_matches, product_matches
+        in evidence_documents
+        if (
+            (
+                is_verification_question
+                and len(question_keywords) > 0
+                and keyword_matches >= max(
+                    1,
+                    len(evidence_keywords) - 1
+                )
+            )
+            or
+            (
+                not is_verification_question
+                and (
+                    product_matches > 0
+                    or keyword_matches > 0
+                    or score <= 1.10
+                )
+            )
+        )
+    ]
+
 @observe(name="query-router")
 
 def decide_query_route(
@@ -5820,29 +5912,16 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
             key=lambda item: (-item[3], -item[2], item[1])
         )
         
-        relevant_documents = [
-            document
-            for document, score, keyword_matches, product_matches in evidence_documents
-            if (
-                (
-                    is_verification_question
-                    and len(question_keywords) > 0
-                    and keyword_matches >= max(
-                        1,
-                        len(evidence_keywords) - 1
-                    )
-                )
-                or
-                (
-                    not is_verification_question
-                    and (
-                        product_matches > 0
-                        or keyword_matches > 0
-                        or score <= 1.10
-                    )
-                )
-            )
-        ]
+        relevant_documents = select_relevant_documents(
+            evidence_documents=evidence_documents,
+            is_verification_question=is_verification_question,
+            question_keywords=question_keywords,
+            evidence_keywords=evidence_keywords,
+            is_document_overview=(
+                query_route == "DOCUMENT"
+                and is_document_overview_question(question)
+            ),
+        )
         
         # Neighbor Expansion
         # Add the previous and next chunk from the same source/page
@@ -5988,6 +6067,46 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
         
                         if subject_page_text not in expanded_texts:
                             expanded_texts.append(subject_page_text)
+        if (
+            query_route == "DOCUMENT"
+            and is_document_overview_question(question)
+        ):
+            overview_pages = select_document_overview_pages(
+                document_pages,
+                source_name=matched_source,
+                max_pages=12,
+            )
+
+            overview_texts = []
+
+            for page in overview_pages:
+                page_text = str(page.get("text", "") or "").strip()
+
+                if not page_text:
+                    continue
+
+                doc_key = (
+                    page.get("source"),
+                    page.get("page_number"),
+                )
+                doc_number = doc_source_numbers.get(doc_key)
+
+                if doc_number is None:
+                    doc_number = len(doc_source_numbers) + 1
+                    doc_source_numbers[doc_key] = doc_number
+
+                overview_texts.append(
+                    f"[DOC {doc_number}]\n"
+                    f"Source: {page.get('source')} | "
+                    f"Page: {page.get('page_number')}\n"
+                    f"{page_text[:4000]}"
+                )
+
+                used_sources.add(doc_key)
+
+            if overview_texts:
+                expanded_texts = overview_texts
+
         if expanded_texts:
             context = "\n\n".join(expanded_texts)
         else:

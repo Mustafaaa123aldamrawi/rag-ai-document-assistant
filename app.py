@@ -883,6 +883,15 @@ Document overview instructions:
 - End with one concise sentence explaining what the document is intended to achieve.
 """.strip()
 
+def get_document_retrieval_k(question, query_route):
+    if (
+        query_route == "DOCUMENT"
+        and is_document_overview_question(question)
+    ):
+        return 12
+
+    return 4
+
 @observe(name="query-router")
 
 def decide_query_route(
@@ -5633,7 +5642,10 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
         ):
             search_results = vector_store.similarity_search_with_score(
                 search_query,
-                k=12,
+                k=get_document_retrieval_k(
+                    question,
+                    query_route,
+                ),,
             )
         
         elif matched_source:

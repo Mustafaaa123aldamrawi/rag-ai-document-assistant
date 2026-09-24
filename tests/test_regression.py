@@ -1546,6 +1546,20 @@ def test_extractive_document_overview_preserves_exact_device_identity():
     assert "[DOC 5]" in result
 
 
+def test_clean_extractive_overview_sentence_removes_heading_fragments_and_connectives():
+    assert clean_extractive_overview_sentence(
+        "Room Numbers (TBA) Design Narrative The existing AV system shall be upgraded."
+    ) == "The existing AV system shall be upgraded."
+
+    assert clean_extractive_overview_sentence(
+        "Project Considerations Customer Responsibilities These are items required before installation."
+    ) == "These are items required before installation."
+
+    assert clean_extractive_overview_sentence(
+        "However, the room audio distribution will be performed with a Partition sensor.."
+    ) == "the room audio distribution will be performed with a Partition sensor."
+
+
 def test_clean_extractive_overview_sentence_repairs_pdf_spacing():
     result = clean_extractive_overview_sentence(
         "C amera in Room -1 supports divisible -room operation , with C odec."
@@ -1554,6 +1568,63 @@ def test_clean_extractive_overview_sentence_repairs_pdf_spacing():
     assert result == (
         "Camera in Room-1 supports divisible-room operation, with Codec."
     )
+
+
+def test_extractive_document_overview_prefers_richer_room2_scope_from_same_page():
+    pages = [
+        {
+            "source": "scope.pdf",
+            "page_number": 3,
+            "text": (
+                "The existing meeting room AV system shall be upgraded to support "
+                "divisible/combined room operation. "
+                "The existing equipment shall be retained. "
+                "The existing Codec shall be decommissioned and removed for E-waste disposal. "
+                "A new Poly Studio G62 codec shall be provided as the primary video conferencing platform. "
+                "The adjacent room shall be equipped with a new ceiling array microphone and ceiling "
+                "loudspeakers, supported by a new amplifier. The adjacent room shall function as an "
+                "audio overflow area only when the rooms are combined."
+            ),
+        },
+        {
+            "source": "scope.pdf",
+            "page_number": 4,
+            "text": (
+                "1, new Ceiling mounted array microphone installed in Room-2 for Audio fill."
+            ),
+        },
+        {
+            "source": "scope.pdf",
+            "page_number": 5,
+            "text": (
+                "A new partition sensor shall be provided to detect the operable partition status."
+            ),
+        },
+        {
+            "source": "scope.pdf",
+            "page_number": 6,
+            "text": (
+                "The Customer shall provide power connection and network configuration."
+            ),
+        },
+    ]
+
+    result = build_extractive_document_overview(
+        question="Can you tell me what the PDF is about?",
+        document_pages=pages,
+        doc_source_numbers={
+            ("scope.pdf", 3): 3,
+            ("scope.pdf", 4): 4,
+            ("scope.pdf", 5): 5,
+            ("scope.pdf", 6): 6,
+        },
+        source_name="scope.pdf",
+        max_points=7,
+    )
+
+    assert "adjacent room shall be equipped" in result.lower()
+    assert "new amplifier" in result
+    assert "1, new Ceiling mounted array microphone" not in result
 
 
 def test_extractive_document_overview_balances_scope_categories():

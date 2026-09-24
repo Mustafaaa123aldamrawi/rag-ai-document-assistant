@@ -267,3 +267,149 @@ def build_site_survey_report_docx(checklist_data: dict[str, Any]) -> bytes | Non
     document.save(buffer)
     buffer.seek(0)
     return buffer.getvalue()
+
+
+
+def build_professional_site_survey_checklist_docx(
+    checklist_data: dict[str, Any],
+) -> bytes | None:
+    if not isinstance(checklist_data, dict):
+        return None
+
+    project_info = checklist_data.get("project_info") or {}
+    project_name = str(project_info.get("project_name") or "AV Site Survey").strip()
+    client = str(project_info.get("client") or "").strip()
+    location = str(project_info.get("location") or "").strip()
+    rooms = [
+        str(item).strip()
+        for item in checklist_data.get("rooms_areas", []) or []
+        if str(item).strip()
+    ]
+
+    document = Document()
+    section = document.sections[0]
+    section.top_margin = Inches(0.55)
+    section.bottom_margin = Inches(0.55)
+    section.left_margin = Inches(0.65)
+    section.right_margin = Inches(0.65)
+
+    document.styles["Normal"].font.name = "Aptos"
+    document.styles["Normal"].font.size = Pt(9.5)
+
+    title = document.add_paragraph()
+    title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = title.add_run("AV SITE SURVEY CHECKLIST")
+    run.bold = True
+    run.font.size = Pt(21)
+    run.font.color.rgb = __import__("docx").shared.RGBColor.from_string(NAVY)
+
+    subtitle = document.add_paragraph()
+    subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = subtitle.add_run(project_name)
+    run.bold = True
+    run.font.size = Pt(14)
+    run.font.color.rgb = __import__("docx").shared.RGBColor.from_string(BLUE)
+
+    document.add_paragraph()
+
+    info_table = document.add_table(rows=0, cols=2)
+    info_table.style = "Table Grid"
+    for label, value in [
+        ("Project", project_name),
+        ("Client", client),
+        ("Location", location),
+        ("Rooms / Areas", ", ".join(rooms)),
+        ("Survey Status", "Pre-Survey / To Be Verified"),
+    ]:
+        if not value:
+            continue
+        cells = info_table.add_row().cells
+        _set_cell_text(cells[0], label, bold=True, color=WHITE)
+        _shade_cell(cells[0], NAVY)
+        _set_cell_text(cells[1], value)
+
+    document.add_paragraph(
+        "Status guide: PASS = verified acceptable; VERIFY = confirm on site; "
+        "ACTION = corrective action/coordination required; N/A = not applicable."
+    )
+
+    item_number = 1
+    for section_data in checklist_data.get("checklist_sections", []) or []:
+        if not isinstance(section_data, dict):
+            continue
+
+        section_name = str(section_data.get("section") or "").strip()
+        items = section_data.get("items") or []
+        if not section_name or not items:
+            continue
+
+        _add_section_heading(document, section_name)
+
+        table = document.add_table(rows=1, cols=5)
+        table.style = "Table Grid"
+        for idx, header in enumerate(["No.", "Inspection / Verification Item", "Status", "Notes / Evidence", "Photo Ref."]):
+            _set_cell_text(table.rows[0].cells[idx], header, bold=True, color=WHITE)
+            _shade_cell(table.rows[0].cells[idx], NAVY)
+
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            status = str(item.get("status") or "VERIFY").strip().upper()
+            row = table.add_row().cells
+            values = [
+                item_number,
+                item.get("item") or "",
+                status,
+                item.get("notes") or "",
+                item.get("photo_ref") or "",
+            ]
+            for idx, value in enumerate(values):
+                _set_cell_text(row[idx], value)
+
+            if status == "VERIFY":
+                _shade_cell(row[2], LIGHT_BLUE)
+            elif status == "ACTION":
+                _shade_cell(row[2], "FCE4D6")
+            elif status == "PASS":
+                _shade_cell(row[2], "E2F0D9")
+
+            item_number += 1
+
+    _add_section_heading(document, "Required Site Photos")
+    required_photos = checklist_data.get("required_photos", []) or []
+    if required_photos:
+        for photo in required_photos:
+            document.add_paragraph(f"☐ {photo}")
+    else:
+        document.add_paragraph("☐ General room overview")
+        document.add_paragraph("☐ Rack front and rear")
+        document.add_paragraph("☐ Displays / camera / microphones / control interfaces")
+
+    _add_section_heading(document, "Open Items / Follow-up")
+    open_items = checklist_data.get("open_items", []) or []
+    if open_items:
+        for item in open_items:
+            document.add_paragraph(f"☐ {item}")
+    else:
+        document.add_paragraph("☐ ________________________________________________")
+        document.add_paragraph("☐ ________________________________________________")
+
+    _add_section_heading(document, "Survey Sign-off")
+    sign_table = document.add_table(rows=5, cols=2)
+    sign_table.style = "Table Grid"
+    sign_rows = [
+        ("Surveyed By", ""),
+        ("Project / Engineering Review", ""),
+        ("Client Representative", ""),
+        ("Date", ""),
+        ("Final Status", "☐ Ready   ☐ Ready with Actions   ☐ Hold"),
+    ]
+    for row, values in zip(sign_table.rows, sign_rows):
+        _set_cell_text(row.cells[0], values[0], bold=True)
+        _shade_cell(row.cells[0], LIGHT_GRAY)
+        _set_cell_text(row.cells[1], values[1])
+
+    buffer = BytesIO()
+    document.save(buffer)
+    buffer.seek(0)
+    return buffer.getvalue()

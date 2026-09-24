@@ -1239,6 +1239,35 @@ def build_extractive_document_overview(
             )
             sentence_lower = sentence.lower()
 
+            # Whole-document overviews should not surface raw BOQ/list fragments
+            # such as "1, existing Ceiling mounted array microphones...".
+            # Keep complete scope statements instead.
+            if re.match(r"^\d+\s*[,.)-]\s+", sentence):
+                scope_statement_cues = (
+                    " shall ",
+                    " will ",
+                    " must ",
+                    " is to ",
+                    " are to ",
+                )
+                padded_sentence_lower = f" {sentence_lower} "
+                is_complete_scope_statement = any(
+                    cue in padded_sentence_lower
+                    for cue in scope_statement_cues
+                )
+                is_existing_inventory_fragment = bool(
+                    re.match(
+                        r"^\d+\s*[,.)-]\s+existing\b",
+                        sentence_lower,
+                    )
+                )
+
+                if (
+                    is_existing_inventory_fragment
+                    and not is_complete_scope_statement
+                ):
+                    continue
+
             if len(sentence.split()) < 6:
                 continue
 

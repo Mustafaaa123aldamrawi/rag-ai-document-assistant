@@ -2014,3 +2014,43 @@ def test_canonical_overview_mode_preserves_mastercard_scope_terms():
     assert "blade sensor" not in result
     assert "portable wall sensor" not in result
     assert "basic video communications platform" not in result
+
+
+
+def test_canonical_overview_drops_numbered_equipment_fragment():
+    pages = [
+        {
+            "source": "scope.pdf",
+            "page_number": 3,
+            "text": (
+                "The existing meeting room AV system shall be upgraded to support "
+                "divisible/combined room operation. "
+                "The existing displays, Camera, video extenders, 10” controller, Audio DSP & amplifier, "
+                "existing ceiling loudspeakers & Array microphone in Room-1, slide-out rack and PDU "
+                "shall be retained and integrated into the upgraded system."
+            ),
+        },
+        {
+            "source": "scope.pdf",
+            "page_number": 4,
+            "text": (
+                "1, existing Ceiling mounted array microphones installed in Room-1. "
+                "2, existing ceiling loudspeakers installed in Room-1."
+            ),
+        },
+    ]
+
+    result = build_extractive_document_overview(
+        question="Give me a professional overview of this document.",
+        document_pages=pages,
+        doc_source_numbers={
+            ("scope.pdf", 3): 3,
+            ("scope.pdf", 4): 4,
+        },
+        source_name="scope.pdf",
+        max_points=7,
+    )
+
+    assert "shall be retained and integrated" in result
+    assert "1, existing Ceiling mounted array microphones" not in result
+    assert "2, existing ceiling loudspeakers" not in result

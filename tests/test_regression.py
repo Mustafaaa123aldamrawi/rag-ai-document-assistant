@@ -219,6 +219,9 @@ is_generic_room_label = load_function_from_app(
 is_ambiguous_equipment_annotation = load_function_from_app(
     "is_ambiguous_equipment_annotation"
 )
+is_document_overview_question = load_function_from_app(
+    "is_document_overview_question"
+)
 simplify_composite_equipment_name = load_function_from_app(
     "simplify_composite_equipment_name"
 )
@@ -1342,3 +1345,19 @@ def test_scope_of_work_document_with_drawing_terms_stays_document():
     )
 
     assert result == "DOCUMENT"
+
+@pytest.mark.parametrize(
+    "question, expected",
+    [
+        ("Can you tell me what the PDF is about?", True),
+        ("Summarize this document", True),
+        ("Give me an overview of this document", True),
+        ("What does this PDF cover?", True),
+        ("شو هاد الملف؟", True),
+        ("لخص الملف", True),
+        ("What equipment is shown in this drawing?", False),
+        ("What is the latest Cisco firmware?", False),
+    ],
+)
+def test_is_document_overview_question(question, expected):
+    assert is_document_overview_question(question) is expected

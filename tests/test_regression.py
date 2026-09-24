@@ -1966,3 +1966,51 @@ def test_non_overview_still_uses_strict_evidence_filter():
     )
 
     assert selected == ["strong"]
+
+
+
+def test_canonical_overview_mode_preserves_mastercard_scope_terms():
+    pages = [
+        {
+            "source": "Mastercard Riyadh_Scope of Work11.pdf",
+            "page_number": 3,
+            "text": (
+                "The existing meeting room AV system shall be upgraded to support "
+                "divisible/combined room operation using the existing AV infrastructure "
+                "wherever practical. "
+                "The existing Codec, HDMI switcher, Scaler & wireless presentation unit "
+                "shall be decommissioned, removed, and handed over for E-waste disposal. "
+                "A new Poly Studio G62 codec shall be provided as the primary video "
+                "conferencing platform and integrated with the existing room AV system."
+            ),
+        },
+        {
+            "source": "Mastercard Riyadh_Scope of Work11.pdf",
+            "page_number": 5,
+            "text": (
+                "A new partition sensor shall be provided to detect the operable partition "
+                "status and enable the divisible-room audio control logic."
+            ),
+        },
+    ]
+
+    result = build_extractive_document_overview(
+        question="Give me a professional overview of this document.",
+        document_pages=pages,
+        doc_source_numbers={
+            ("Mastercard Riyadh_Scope of Work11.pdf", 3): 3,
+            ("Mastercard Riyadh_Scope of Work11.pdf", 5): 5,
+        },
+        source_name="Mastercard Riyadh_Scope of Work11.pdf",
+        max_points=7,
+    )
+
+    assert "divisible/combined room operation" in result
+    assert "Poly Studio G62 codec" in result
+    assert "primary video conferencing platform" in result
+    assert "partition sensor" in result
+    assert "operable partition status" in result
+    assert "E-waste disposal" in result
+    assert "blade sensor" not in result
+    assert "portable wall sensor" not in result
+    assert "basic video communications platform" not in result

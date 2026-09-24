@@ -258,6 +258,9 @@ deduplicate_installation_notes.__globals__["re"] = re
 build_drawing_analysis_page.__globals__["json"] = json
 get_structured_drawing_data_from_pages.__globals__["json"] = json
 should_run_drawing_vision.__globals__["decide_query_route"] = decide_query_route
+decide_query_route.__globals__[
+    "is_document_overview_question"
+] = is_document_overview_question
 generate_deterministic_drawing_answer.__globals__[
     "classify_drawing_fact_question"
 ] = classify_drawing_fact_question

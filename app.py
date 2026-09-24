@@ -830,7 +830,42 @@ def detect_follow_up_question(question):
         or starts_like_follow_up
     )
 
+def is_document_overview_question(question):
+    question_lower = str(question or "").strip().lower()
+
+    if not question_lower:
+        return False
+
+    overview_cues = (
+        "what is this pdf about",
+        "what is this document about",
+        "what is this file about",
+        "tell me what the pdf is about",
+        "tell me what the document is about",
+        "summarize this document",
+        "summarize the document",
+        "summarize this pdf",
+        "give me an overview",
+        "give me an overview of this document",
+        "document overview",
+        "pdf overview",
+        "what does this document cover",
+        "what does this pdf cover",
+        "شو هذا الملف",
+        "شو هاد الملف",
+        "عن شو الملف",
+        "لخص الملف",
+        "اعطيني ملخص",
+        "اعطيني نظرة عامة",
+    )
+
+    return any(
+        cue in question_lower
+        for cue in overview_cues
+    )
+
 @observe(name="query-router")
+
 def decide_query_route(
     question,
     search_mode,

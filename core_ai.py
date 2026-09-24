@@ -99,7 +99,7 @@ def build_response_plan(
             use_documents = has_document
         elif intent == "TECHNICAL":
             use_documents = has_document
-            use_web = False
+            use_web = not has_document
 
     return ResponsePlan(
         intent=intent,

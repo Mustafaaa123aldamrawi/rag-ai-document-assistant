@@ -16,7 +16,7 @@ from PIL import Image
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
-from core_ai import build_router_prompt
+from core_ai import build_response_plan, classify_intent
 from langfuse import get_client, observe
 
 import os
@@ -5410,7 +5410,6 @@ if submitted:
         role = "User" if message["role"] == "user" else "Assistant"
         router_history += f"{role}: {message['content']}\n"
     
-    router_prompt = build_router_prompt(question, router_history)
     detected_conversation_style = "NEUTRAL"
     # Strong dialect hints before LLM classification
     dialect_hint = None
@@ -5483,21 +5482,10 @@ if submitted:
     
     if question:
         try:
-            router_result = call_qwen_llm(router_prompt).strip().upper()
-
-            allowed_intents = {
-                "CASUAL",
-                "WRITING",
-                "TRANSLATION",
-                "TECHNICAL",
-                "DOCUMENT",
-                "WEB_CURRENT",
-            }
-            
-            router_intent = (
-                router_result
-                if router_result in allowed_intents
-                else "CASUAL"
+            router_intent = classify_intent(
+                question,
+                router_history,
+                call_qwen_llm,
             )
             
             is_casual_chat = router_intent == "CASUAL"
@@ -5507,6 +5495,12 @@ if submitted:
             is_document_request = router_intent == "DOCUMENT"
             is_web_current_request = router_intent == "WEB_CURRENT"
             is_follow_up_question = detect_follow_up_question(question)
+            response_plan = build_response_plan(
+                router_intent,
+                search_mode=search_mode,
+                has_document=bool(document_pages),
+                is_follow_up=is_follow_up_question,
+            )
             query_route = decide_query_route(
                 question=question,
                 search_mode=search_mode,
@@ -6724,13 +6718,14 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
             is_document_focused_question = (
                 has_explicit_document_reference
                 or (
-                    is_document_request
+                    response_plan.use_documents
+                    and not response_plan.use_web
                     and not has_current_web_signal
                 )
             )
                 
             is_current_web_question = (
-                is_web_current_request
+                response_plan.use_web
                 or (
                     has_current_web_signal
                     and not has_explicit_document_reference
@@ -6966,11 +6961,10 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
             if (
                 web_search_query
                 and (
-                    query_route in {"WEB", "HYBRID"}
-                    or is_web_current_request
-                    or is_technical_request
+                    response_plan.use_web
+                    or query_route in {"WEB", "HYBRID"}
                     or (
-                        not is_document_request
+                        not response_plan.use_documents
                         and search_mode == "Documents + Web"
                     )
                 )

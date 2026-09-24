@@ -1570,6 +1570,44 @@ def test_clean_extractive_overview_sentence_repairs_pdf_spacing():
     )
 
 
+def test_extractive_document_overview_skips_meta_reference_and_uses_actual_customer_requirement():
+    pages = [
+        {
+            "source": "scope.pdf",
+            "page_number": 3,
+            "text": (
+                "The existing meeting room AV system shall be upgraded to support "
+                "divisible/combined room operation. "
+                "Please see the Environmental Considerations and Customer Responsibilities "
+                "sections of this document for required room properties and deployment best practices."
+            ),
+        },
+        {
+            "source": "scope.pdf",
+            "page_number": 6,
+            "text": (
+                "The Customer shall provide power connection, network configuration, "
+                "air conditioning, and other required site readiness items."
+            ),
+        },
+    ]
+
+    result = build_extractive_document_overview(
+        question="Can you tell me what the PDF is about?",
+        document_pages=pages,
+        doc_source_numbers={
+            ("scope.pdf", 3): 3,
+            ("scope.pdf", 6): 6,
+        },
+        source_name="scope.pdf",
+        max_points=7,
+    )
+
+    assert "Please see the Environmental Considerations" not in result
+    assert "Customer shall provide power connection" in result
+    assert "[DOC 6]" in result
+
+
 def test_extractive_document_overview_prefers_richer_room2_scope_from_same_page():
     pages = [
         {

@@ -884,6 +884,11 @@ Document overview instructions:
 - Preserve lifecycle/disposition terms exactly. Do not rewrite removal, reuse, relocation, disposal, or e-waste instructions into a different action.
 - If the source uses an established English technical term or proper noun, keep that wording unchanged instead of translating or paraphrasing it into a different technical meaning.
 - Prefer exact source wording for ambiguous technical nouns over fluent paraphrase.
+- For equipment mentions, copy the exact source noun phrase and model name. Do not add or change a device category unless the source explicitly states it. For example, do not call a codec a microphone, a display a video wall, a scheduler a control panel, or a partition sensor a wall sensor unless that wording appears in the source.
+- Preserve directional and mounting descriptors exactly when they change meaning, including ceiling, table, wall, floor, surface, rack, front, rear, left, right, upper, and lower.
+- Preserve room-function terminology exactly. Do not rewrite divisible room, partition, operable wall, movable wall, partition sensor, room scheduler, control panel, touch panel, or similar terms into a different architectural or AV concept.
+- Do not convert a product into a different product family or role because of nearby text. A model name must keep the same device identity it has in the source.
+- When the source is ambiguous about a device type or action, omit the unsupported label rather than guessing.
 - End with one concise sentence explaining what the document is intended to achieve.
 """.strip()
 

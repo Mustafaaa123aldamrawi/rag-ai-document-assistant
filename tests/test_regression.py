@@ -1552,7 +1552,7 @@ def test_clean_extractive_overview_sentence_repairs_pdf_spacing():
     )
 
     assert result == (
-        "Camera in Room-1 supports divisible-room operation, with codec."
+        "Camera in Room-1 supports divisible-room operation, with Codec."
     )
 
 

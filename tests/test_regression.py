@@ -1429,6 +1429,11 @@ def test_build_document_overview_instruction_for_document_overview():
     assert "partition wall into a screen" in result
     assert "Preserve lifecycle/disposition terms exactly" in result
     assert "established English technical term or proper noun" in result
+    assert "copy the exact source noun phrase and model name" in result
+    assert "do not call a codec a microphone" in result
+    assert "Preserve directional and mounting descriptors exactly" in result
+    assert "Do not rewrite divisible room" in result
+    assert "omit the unsupported label rather than guessing" in result
 
 
 def test_build_document_overview_instruction_returns_empty_for_non_overview():

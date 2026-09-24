@@ -3,7 +3,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from core_ai import (build_grounded_verification_prompt, build_recent_history, build_response_plan, build_router_prompt, classify_intent, extract_citation_labels, preserve_follow_up_intent, should_verify_grounded_answer, unsupported_citation_labels)
+from core_ai import (build_grounded_verification_prompt, build_recent_history, build_response_plan, build_router_prompt, classify_intent, extract_citation_labels, preserve_follow_up_intent, should_verify_grounded_answer, unsupported_citation_labels, select_available_model)
 
 
 def test_classifier_accepts_valid_label():
@@ -142,3 +142,16 @@ def test_verification_prompt_prevents_requirement_condition_drift():
     )
     assert "Do not turn a source requirement into an observed site condition." in prompt
     assert "Customer shall provide network access." in prompt
+
+
+
+def test_select_available_model_respects_preference_order():
+    selected = select_available_model(
+        ["large", "fast", "fallback"],
+        {"fast", "fallback"},
+    )
+    assert selected == "fast"
+
+
+def test_select_available_model_returns_none_when_unavailable():
+    assert select_available_model(["large"], {"small"}) is None

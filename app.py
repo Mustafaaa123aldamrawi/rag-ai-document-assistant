@@ -16,7 +16,7 @@ from PIL import Image
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
-from core_ai import (build_grounded_verification_prompt, build_recent_history, build_response_plan, classify_intent, preserve_follow_up_intent, should_verify_grounded_answer, unsupported_citation_labels, select_available_model)
+from core_ai import (build_grounded_verification_prompt, build_recent_history, build_response_plan, classify_intent, preserve_follow_up_intent, should_verify_grounded_answer, unsupported_citation_labels, select_available_model, restore_source_technical_terms)
 from visual_ai import build_visual_analysis_messages, build_visual_evidence_text, parse_visual_analysis
 from deliverables import build_professional_site_survey_checklist_docx, build_site_survey_report_docx
 from langfuse import get_client, observe
@@ -925,6 +925,9 @@ Strict rules:
 - Preserve exact product names, model numbers, manufacturers, building/site names, room names, and technical noun phrases from SOURCE CONTEXT.
 - If a product model appears, keep the exact device identity stated near that model in SOURCE CONTEXT. Never change a codec into a microphone, a camera into a display, a scaler into a cable, or any other device into a different category.
 - Preserve exact architectural and room-control terminology from SOURCE CONTEXT, including partition, operable partition, partition sensor, divisible room, room scheduler, control panel, credenza, rack, ceiling microphone, and loudspeaker when present.
+- Do not replace exact source terms with synonyms. If SOURCE CONTEXT says "partition sensor", write "partition sensor" exactly; never rewrite it as blade sensor, wall sensor, divider sensor, or similar wording.
+- If SOURCE CONTEXT says "E-waste disposal", preserve "E-waste disposal" exactly; do not rewrite it as monitoring, handling, management, recycling, or another lifecycle action unless the source uses that exact wording.
+- If SOURCE CONTEXT says "primary video conferencing platform", preserve that exact role and do not downgrade or rename it as a basic/main communications platform.
 - Do not invent substitute terms such as end port, wall sensor, rocker, lower array microphone, wireless expansion unit, or similar paraphrases unless those exact terms occur in SOURCE CONTEXT.
 - Preserve lifecycle/action terms exactly: retained, reused, decommissioned, removed, handed over, relocated, and E-waste disposal must not be replaced with a different action.
 - Preserve valid [DOC X] citations and use only labels present in SOURCE CONTEXT.
@@ -8247,6 +8250,11 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
             except Exception:
                 pass
 
+            answer = restore_source_technical_terms(
+                answer,
+                context,
+            )
+
         # Ensure technical comparison answers cover both concepts and their difference
         if (
             is_technical_comparison
@@ -8424,6 +8432,10 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
             )
             for invalid_label in invalid_labels:
                 answer = answer.replace(invalid_label, "")
+            answer = restore_source_technical_terms(
+                answer,
+                context,
+            )
             answer = re.sub(r"[ \t]+\n", "\n", answer).strip()
 
         # Deterministic guard for high-risk factual claims

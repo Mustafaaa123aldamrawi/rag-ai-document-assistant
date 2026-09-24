@@ -16,6 +16,7 @@ from PIL import Image
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
+from core_ai import build_router_prompt
 from langfuse import get_client, observe
 
 import os
@@ -5409,113 +5410,7 @@ if submitted:
         role = "User" if message["role"] == "user" else "Assistant"
         router_history += f"{role}: {message['content']}\n"
     
-    router_prompt = f"""
-    Classify the user's CURRENT MESSAGE into exactly ONE intent.
-    
-    Allowed intents:
-    
-    CASUAL
-    WRITING
-    TRANSLATION
-    TECHNICAL
-    DOCUMENT
-    WEB_CURRENT
-    
-    Definitions:
-    
-    CASUAL:
-    Normal conversation or general assistance that does not require external research.
-    Examples include:
-    - greetings
-    - jokes
-    - opinions
-    - emotional/supportive conversation
-    - everyday questions
-    - general advice
-    - asking whether you can help
-    - general work or project discussion when the user has not yet provided enough information
-    - short conversational follow-ups
-    
-    Examples:
-    "How are you?"
-    "احكيلي اشي يضحكني"
-    "شو رأيك باسم التطبيق؟"
-    "بتقدر تساعدني بشغلي؟"
-    "Can you help me with my work?"
-    "عندي مشروع ومش عارف كيف أبلش"
-    
-    WRITING:
-    The user wants help creating, rewriting, polishing, formatting, or replying to written content.
-    Examples:
-    "Write an email for me"
-    "زبطلي هاد الايميل"
-    "Give me a reply to this"
-    "اعطيني رد عليه"
-    "Can you help me do a report for my work?"
-    "Write a project status report"
-    
-    TRANSLATION:
-    The user explicitly asks to translate text from one language to another.
-    Examples:
-    "ترجم"
-    "ترجمه للعربي"
-    "Translate this to English"
-    "لا اكتبو بالانجليزي"
-    
-    TECHNICAL:
-    The user asks a technical, engineering, AV/UC, product, troubleshooting, design, installation, configuration, or professional-domain question that can be answered without requiring current web information.
-    Examples:
-    "Tell me about Q-SYS"
-    "What is Dante?"
-    "How does HDMI EDID work?"
-    "شو وظيفة MXA920؟"
-    "How should I troubleshoot this AV issue?"
-    
-    DOCUMENT:
-    The user explicitly asks for information from, about, or based on an uploaded document or documents.
-    Examples:
-    "According to the PDF..."
-    "حسب الملف شو مكتوب؟"
-    "Summarize this document"
-    "What does my CV say about Q-SYS?"
-    
-    WEB_CURRENT:
-    The user explicitly needs current, latest, changing, externally verified, or web-researched information.
-    Examples:
-    "What is the latest Q-SYS firmware?"
-    "Search the web for the newest Barco model"
-    "كم سعر CTS حالياً؟"
-    "Find current Samsung video wall models"
-    "What changed in Dante recently?"
-    
-    Important routing rules:
-    
-    - Classify the CURRENT MESSAGE by the user's actual intent, not merely by keywords.
-    - Do NOT classify a request as WEB_CURRENT merely because it concerns work, projects, products, reports, or professional topics.
-    - Do NOT use WEB_CURRENT when the user is simply asking for help writing, planning, discussing, or understanding something.
-    - Technical product questions are TECHNICAL unless the user explicitly needs current/latest/web-verified information.
-    - Requests to write or reply are WRITING even when the subject is technical or professional.
-    - Explicit translation requests are TRANSLATION.
-    - Explicit requests based on uploaded files are DOCUMENT.
-    - Use recent conversation only to resolve short follow-ups and references.
-    - A follow-up should preserve the intent of the immediately relevant conversation when appropriate.
-    - If a short message changes the requested action, classify according to the new action.
-    
-    Recent conversation:
-    {router_history}
-    
-    Current message:
-    {question}
-    
-    Return EXACTLY ONE label and nothing else:
-    CASUAL
-    WRITING
-    TRANSLATION
-    TECHNICAL
-    DOCUMENT
-    WEB_CURRENT
-    """
-    detected_conversation_style = "NEUTRAL"
+    router_prompt = build_router_prompt(question, router_history)\n    detected_conversation_style = "NEUTRAL"
     # Strong dialect hints before LLM classification
     dialect_hint = None
     

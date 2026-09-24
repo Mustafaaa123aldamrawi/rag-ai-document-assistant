@@ -3,7 +3,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from core_ai import (build_grounded_verification_prompt, build_recent_history, build_response_plan, build_router_prompt, classify_intent, extract_citation_labels, preserve_follow_up_intent, should_verify_grounded_answer, unsupported_citation_labels, select_available_model, restore_source_technical_terms)
+from core_ai import (build_grounded_verification_prompt, build_recent_history, build_response_plan, build_router_prompt, classify_intent, extract_citation_labels, preserve_follow_up_intent, should_verify_grounded_answer, unsupported_citation_labels, select_available_model, restore_source_technical_terms, is_safe_verifier_output)
 
 
 def test_classifier_accepts_valid_label():
@@ -183,3 +183,30 @@ def test_restore_source_technical_terms_does_not_inject_absent_terms():
     )
     assert "wall sensor" in fixed
     assert "partition sensor" not in fixed
+
+
+
+def test_verifier_output_rejects_prompt_echo():
+    candidate = (
+        "Review the answer against the exact cited source content below.\n"
+        "SOURCE CONTENT: [DOC 1] raw source"
+    )
+    assert is_safe_verifier_output(candidate, "Room-2 uses a new microphone [DOC 4].") is False
+
+
+def test_verifier_output_rejects_large_source_dump():
+    original = "Room-2 uses a new microphone [DOC 4]."
+    candidate = "\n".join(
+        f"[DOC {i}] source text {i}" for i in range(1, 10)
+    )
+    assert is_safe_verifier_output(candidate, original) is False
+
+
+def test_verifier_output_accepts_clean_corrected_answer():
+    candidate = (
+        "Room-2 is equipped with a new ceiling array microphone for Audio fill [DOC 4]."
+    )
+    assert is_safe_verifier_output(
+        candidate,
+        "Room-2 has a microphone [DOC 4].",
+    ) is True

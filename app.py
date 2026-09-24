@@ -16,7 +16,7 @@ from PIL import Image
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
-from core_ai import (build_grounded_verification_prompt, build_recent_history, build_response_plan, classify_intent, preserve_follow_up_intent, should_verify_grounded_answer, unsupported_citation_labels, select_available_model, restore_source_technical_terms)
+from core_ai import (build_grounded_verification_prompt, build_recent_history, build_response_plan, classify_intent, preserve_follow_up_intent, should_verify_grounded_answer, unsupported_citation_labels, select_available_model, restore_source_technical_terms, is_safe_verifier_output)
 from visual_ai import build_visual_analysis_messages, build_visual_evidence_text, parse_visual_analysis
 from deliverables import build_professional_site_survey_checklist_docx, build_site_survey_report_docx
 from langfuse import get_client, observe
@@ -8467,7 +8467,13 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
                         "Qwen/Qwen2.5-Coder-32B-Instruct",
                     ],
                 ).strip()
-                if verified_answer:
+                if (
+                    verified_answer
+                    and is_safe_verifier_output(
+                        verified_answer,
+                        answer,
+                    )
+                ):
                     answer = verified_answer
             except Exception:
                 pass
@@ -8888,8 +8894,20 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
         """
         
                 try:
-                    answer = call_qwen_llm(claim_verification_prompt)
-                    claim_verification_passed = True
+                    pre_claim_verification_answer = answer
+                    claim_verified_answer = call_qwen_llm(
+                        claim_verification_prompt
+                    ).strip()
+
+                    if is_safe_verifier_output(
+                        claim_verified_answer,
+                        pre_claim_verification_answer,
+                    ):
+                        answer = claim_verified_answer
+                        claim_verification_passed = True
+                    else:
+                        answer = pre_claim_verification_answer
+                        claim_verification_passed = False
                 except Exception as e:
                     st.warning(f"Claim verification error: {e}")
         # Final answer cleanup: preserve user language and normalize citation format

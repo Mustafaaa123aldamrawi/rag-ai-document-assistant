@@ -1425,6 +1425,10 @@ def test_build_document_overview_instruction_for_document_overview():
     assert "Start with 1-2 sentences" in result
     assert "4-7 concise bullet points" in result
     assert "Do not lead with legal disclaimers" in result
+    assert "site/building names" in result
+    assert "partition wall into a screen" in result
+    assert "Preserve lifecycle/disposition terms exactly" in result
+    assert "established English technical term or proper noun" in result
 
 
 def test_build_document_overview_instruction_returns_empty_for_non_overview():

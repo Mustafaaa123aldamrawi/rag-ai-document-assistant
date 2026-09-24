@@ -1251,9 +1251,20 @@ def build_extractive_document_overview(
                     " are to ",
                 )
                 padded_sentence_lower = f" {sentence_lower} "
-                if not any(
+                is_complete_scope_statement = any(
                     cue in padded_sentence_lower
                     for cue in scope_statement_cues
+                )
+                is_existing_inventory_fragment = bool(
+                    re.match(
+                        r"^\d+\s*[,.)-]\s+existing\b",
+                        sentence_lower,
+                    )
+                )
+
+                if (
+                    is_existing_inventory_fragment
+                    and not is_complete_scope_statement
                 ):
                     continue
 

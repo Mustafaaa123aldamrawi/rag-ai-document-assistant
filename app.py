@@ -16,7 +16,7 @@ from PIL import Image
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
-from core_ai import (build_grounded_verification_prompt, build_recent_history, build_response_plan, classify_intent, preserve_follow_up_intent, should_verify_grounded_answer, unsupported_citation_labels)
+from core_ai import (build_grounded_verification_prompt, build_recent_history, build_response_plan, classify_intent, preserve_follow_up_intent, should_verify_grounded_answer, unsupported_citation_labels, select_available_model)
 from visual_ai import build_visual_analysis_messages, build_visual_evidence_text, parse_visual_analysis
 from deliverables import build_professional_site_survey_checklist_docx, build_site_survey_report_docx
 from langfuse import get_client, observe
@@ -29,6 +29,29 @@ os.environ["LANGFUSE_BASE_URL"] = st.secrets["LANGFUSE_BASE_URL"]
 
 langfuse = get_client()
 
+@st.cache_data(ttl=300, show_spinner=False)
+def get_available_hf_model_ids():
+    models_url = "https://router.huggingface.co/v1/models"
+    headers = {
+        "Authorization": f"Bearer {st.secrets['HF_TOKEN']}",
+        "Content-Type": "application/json",
+    }
+    response = requests.get(
+        models_url,
+        headers=headers,
+        timeout=30,
+    )
+    if not response.ok:
+        raise Exception(
+            f"Hugging Face models API error "
+            f"{response.status_code}: {response.text}"
+        )
+    return {
+        model.get("id")
+        for model in response.json().get("data", [])
+        if model.get("id")
+    }
+
 def call_qwen_llm(prompt, preferred_models_override=None):
     url = "https://router.huggingface.co/v1/chat/completions"
 
@@ -36,41 +59,16 @@ def call_qwen_llm(prompt, preferred_models_override=None):
         "Authorization": f"Bearer {st.secrets['HF_TOKEN']}",
         "Content-Type": "application/json"
     }
-    models_url = "https://router.huggingface.co/v1/models"
-
-    models_response = requests.get(
-        models_url,
-        headers=headers,
-        timeout=30
-    )
-         
-    if not models_response.ok:
-        raise Exception(
-            f"Hugging Face models API error "
-            f"{models_response.status_code}: {models_response.text}"
-        )
-    
-    models_data = models_response.json().get("data", [])
-    
     preferred_models = preferred_models_override or [
         "Qwen/Qwen2.5-Coder-32B-Instruct",
         "openai/gpt-oss-20b",
         "google/gemma-2-2b-it",
     ]
     
-    available_model_ids = {
-        model.get("id")
-        for model in models_data
-        if model.get("id")
-    }
-    
-    selected_model = next(
-        (
-            model_id
-            for model_id in preferred_models
-            if model_id in available_model_ids
-        ),
-        None
+    available_model_ids = get_available_hf_model_ids()
+    selected_model = select_available_model(
+        preferred_models,
+        available_model_ids,
     )
     
     if selected_model is None:
@@ -148,22 +146,6 @@ def call_conversation_llm(
         "Content-Type": "application/json"
     }
     
-    models_url = "https://router.huggingface.co/v1/models"
-    
-    models_response = requests.get(
-        models_url,
-        headers=headers,
-        timeout=30
-    )
-    
-    if not models_response.ok:
-        raise Exception(
-            f"Hugging Face models API error "
-            f"{models_response.status_code}: {models_response.text}"
-        )
-    
-    models_data = models_response.json().get("data", [])
-    
     conversation_models = preferred_models_override or [
         "Qwen/Qwen2.5-72B-Instruct",
         "Qwen/Qwen2.5-32B-Instruct",
@@ -174,22 +156,14 @@ def call_conversation_llm(
         "google/gemma-2-2b-it",
     ]
     
-    available_model_ids = {
-        model.get("id")
-        for model in models_data
-        if model.get("id")
-    }
+    available_model_ids = get_available_hf_model_ids()
     
     if preferred_models_override:
         models_to_try = conversation_models
     else:
-        selected_model = next(
-            (
-                model_id
-                for model_id in conversation_models
-                if model_id in available_model_ids
-            ),
-            None
+        selected_model = select_available_model(
+            conversation_models,
+            available_model_ids,
         )
     
         if selected_model is None:
@@ -8405,7 +8379,11 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
             )
             try:
                 verified_answer = call_qwen_llm(
-                    verification_prompt
+                    verification_prompt,
+                    preferred_models_override=[
+                        "openai/gpt-oss-20b",
+                        "Qwen/Qwen2.5-Coder-32B-Instruct",
+                    ],
                 ).strip()
                 if verified_answer:
                     answer = verified_answer

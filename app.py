@@ -836,9 +836,32 @@ def is_document_overview_question(question):
         "اعطيني نظرة عامة",
     )
 
-    return any(
+    if any(
         cue in question_lower
         for cue in overview_cues
+    ):
+        return True
+
+    overview_terms = (
+        "overview",
+        "summary",
+        "summarize",
+        "summarise",
+        "ملخص",
+        "نظرة عامة",
+    )
+    document_terms = (
+        "document",
+        "pdf",
+        "file",
+        "مستند",
+        "ملف",
+        "دوكيومنت",
+    )
+
+    return (
+        any(term in question_lower for term in overview_terms)
+        and any(term in question_lower for term in document_terms)
     )
 
 def build_document_overview_instruction(question, query_route):
@@ -6675,6 +6698,11 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
             (
                 query_route in {"DRAWING", "HYBRID"}
                 and get_drawing_analysis_pages(document_pages)
+            )
+            or (
+                query_route == "DOCUMENT"
+                and is_document_overview_question(question)
+                and bool(context.strip())
             )
             or (
                 'is_visual_reference_question' in locals()

@@ -3347,6 +3347,16 @@ def detect_pdf_content_type(pages, source_name=""):
         "specifications",
         "warranty",
     )
+
+    high_confidence_document_cues = (
+        "scope of work",
+        "statement of work",
+        "project considerations",
+        "project requirements",
+        "responsibilities",
+        "terms and conditions",
+        "method statement",
+    )
     
     source_lower = (source_name or "").lower()
     
@@ -3356,6 +3366,12 @@ def detect_pdf_content_type(pages, source_name=""):
     ).lower()
     
     searchable_text = f"{source_lower} {combined_text}"
+
+    high_confidence_document_score = sum(
+        1
+        for cue in high_confidence_document_cues
+        if cue in searchable_text
+    )
     
     strong_score = sum(
         1 for cue in strong_drawing_cues
@@ -3384,6 +3400,9 @@ def detect_pdf_content_type(pages, source_name=""):
         total_pages > 0
         and pages_with_text / total_pages < 0.5
     )
+
+    if high_confidence_document_score >= 1 and not low_text_ratio:
+        return "DOCUMENT"
     
     if document_score >= 2 and strong_score < 2:
         return "DOCUMENT"

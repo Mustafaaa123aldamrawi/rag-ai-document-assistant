@@ -37,3 +37,25 @@ def test_router_prompt_contains_current_question():
     prompt = build_router_prompt("What is the latest Q-SYS firmware?", "User: Hi")
     assert "What is the latest Q-SYS firmware?" in prompt
     assert "WEB_CURRENT" in prompt
+
+
+def test_technical_plan_uses_documents_when_available():
+    plan = build_response_plan(
+        "TECHNICAL",
+        search_mode="Documents + Web",
+        has_document=True,
+        is_follow_up=False,
+    )
+    assert plan.use_documents is True
+    assert plan.use_web is False
+
+
+def test_technical_plan_uses_web_when_no_document_is_available():
+    plan = build_response_plan(
+        "TECHNICAL",
+        search_mode="Documents + Web",
+        has_document=False,
+        is_follow_up=False,
+    )
+    assert plan.use_documents is False
+    assert plan.use_web is True

@@ -943,6 +943,7 @@ def clean_extractive_overview_sentence(sentence):
     """
     text = re.sub(r"\s+", " ", str(sentence or "")).strip()
     text = re.sub(r"\s+([,.;:!?])", r"\1", text)
+    text = re.sub(r"\.{2,}", ".", text)
     text = re.sub(r"\b(Room|room)\s*-\s*(\d+)\b", r"\1-\2", text)
     text = re.sub(r"\b(divisible)\s*-\s*(room)\b", r"\1-\2", text, flags=re.IGNORECASE)
 
@@ -981,7 +982,30 @@ def clean_extractive_overview_sentence(sentence):
             flags=re.IGNORECASE,
         )
 
-    return text
+    heading_prefixes = (
+        r"^Room Numbers\s*\(TBA\)\s+Design Narrative\s+",
+        r"^Design Narrative\s+",
+        r"^Project Considerations\s+Customer Responsibilities\s+",
+        r"^Customer Responsibilities\s+",
+        r"^De-commissioning\s*&\s*E-Waste management\s+",
+    )
+
+    for prefix in heading_prefixes:
+        text = re.sub(
+            prefix,
+            "",
+            text,
+            flags=re.IGNORECASE,
+        )
+
+    text = re.sub(
+        r"^(?:However|Additionally|Furthermore),\s+",
+        "",
+        text,
+        flags=re.IGNORECASE,
+    )
+
+    return text.strip()
 
 
 def build_extractive_document_overview(
@@ -1063,6 +1087,8 @@ def build_extractive_document_overview(
         "poly studio g62": 14,
         "primary video conferencing platform": 10,
         "audio overflow": 12,
+        "adjacent room shall be equipped": 14,
+        "shall be equipped": 6,
         "shall be provided": 5,
     }
 
@@ -1284,7 +1310,7 @@ def build_extractive_document_overview(
         for candidate in category_candidates:
             page_number = candidate[5]
 
-            if page_counts.get(page_number, 0) >= 4:
+            if page_counts.get(page_number, 0) >= max_points:
                 continue
 
             selected.append(candidate)

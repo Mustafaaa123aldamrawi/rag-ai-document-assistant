@@ -5645,7 +5645,7 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
                 k=get_document_retrieval_k(
                     question,
                     query_route,
-                ),,
+                ),
             )
         
         elif matched_source:

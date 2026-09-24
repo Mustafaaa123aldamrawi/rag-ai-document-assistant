@@ -222,6 +222,9 @@ build_professional_site_survey_data = load_function_from_app(
 build_document_overview_instruction = load_function_from_app(
     "build_document_overview_instruction"
 )
+build_document_overview_fidelity_review_prompt = load_function_from_app(
+    "build_document_overview_fidelity_review_prompt"
+)
 get_drawing_analysis_pages = load_function_from_app(
     "get_drawing_analysis_pages"
 )
@@ -1443,6 +1446,42 @@ def test_build_document_overview_instruction_returns_empty_for_non_overview():
     )
 
     assert result == ""
+
+
+
+def test_document_overview_fidelity_review_prompt_guards_device_identity():
+    prompt = build_document_overview_fidelity_review_prompt(
+        question="Can you tell me what the PDF is about?",
+        context=(
+            "[DOC 3] A new Poly Studio G62 codec shall be provided. "
+            "A new partition sensor shall detect the operable partition status."
+        ),
+        answer=(
+            "- A Poly Studio G62 microphone will be installed [DOC 3].\n"
+            "- An end port sensor will be installed [DOC 3]."
+        ),
+    )
+
+    assert "Never change a codec into a microphone" in prompt
+    assert "partition sensor" in prompt
+    assert "Do not invent substitute terms such as end port" in prompt
+    assert "Poly Studio G62 codec" in prompt
+
+
+def test_document_overview_fidelity_review_prompt_preserves_lifecycle_terms():
+    prompt = build_document_overview_fidelity_review_prompt(
+        question="Summarize this document",
+        context=(
+            "[DOC 3] The existing codec shall be decommissioned, removed, "
+            "and handed over for E-waste disposal."
+        ),
+        answer="- The codec will be environmentally processed [DOC 3].",
+    )
+
+    assert "decommissioned" in prompt
+    assert "removed" in prompt
+    assert "handed over" in prompt
+    assert "E-waste disposal" in prompt
 
 def test_document_overview_uses_broader_retrieval():
     result = get_document_retrieval_k(

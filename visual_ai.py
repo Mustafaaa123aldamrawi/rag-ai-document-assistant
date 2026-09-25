@@ -335,3 +335,113 @@ def build_visual_diagnostic_context(
     )
 
     return "\n".join(lines).strip()
+
+
+
+def visual_answer_is_complete(answer: str, question: str = "") -> bool:
+    """Return True when a visual diagnostic answer covers the requested workflow."""
+    text = str(answer or "").strip().lower()
+    if not text:
+        return False
+
+    question_lower = str(question or "").lower()
+
+    asks_what_visible = any(
+        cue in question_lower
+        for cue in ("what can you see", "what do you see", "what is visible")
+    )
+    asks_issue = any(
+        cue in question_lower
+        for cue in ("what looks wrong", "what is wrong", "issue", "problem")
+    )
+    asks_next = any(
+        cue in question_lower
+        for cue in ("what should i check", "check next", "next check", "what to check")
+    )
+
+    if not any((asks_what_visible, asks_issue, asks_next)):
+        return True
+
+    has_visible_section = any(
+        cue in text
+        for cue in ("what i can see", "what is visible", "visible observations")
+    )
+    has_issue_section = any(
+        cue in text
+        for cue in (
+            "what looks wrong",
+            "visible fault",
+            "possible issue",
+            "no obvious",
+            "no clear",
+        )
+    )
+    has_next_section = any(
+        cue in text
+        for cue in ("what to check next", "check next", "next checks")
+    )
+
+    return (
+        (not asks_what_visible or has_visible_section)
+        and (not asks_issue or has_issue_section)
+        and (not asks_next or has_next_section)
+    )
+
+
+def build_visual_field_answer(
+    analysis: dict[str, Any],
+    *,
+    citation_label: str = "",
+) -> str:
+    """Build a complete, concise field answer without relying on a second LLM pass."""
+    plan = build_visual_diagnostic_plan(analysis)
+    cite = f" {citation_label}".rstrip() if citation_label else ""
+
+    lines = ["**What I can see:**", ""]
+
+    observations = plan.get("observations") or []
+    if observations:
+        for item in observations[:4]:
+            lines.append(f"- {item}{cite}")
+    else:
+        summary = str(analysis.get("summary") or "").strip()
+        if summary:
+            lines.append(f"- {summary}{cite}")
+        else:
+            lines.append(f"- The image contains visible AV/site information, but no reliable detailed observation was extracted.{cite}")
+
+    lines.extend(["", "**What looks wrong:**", ""])
+
+    issues = plan.get("possible_issues") or []
+    supported_issues = [
+        item
+        for item in issues
+        if item.get("confidence") in {"high", "medium"}
+    ]
+
+    if supported_issues:
+        for item in supported_issues[:3]:
+            basis = str(item.get("basis") or "").strip()
+            confidence = str(item.get("confidence") or "low").capitalize()
+            issue_text = str(item.get("issue") or "").strip()
+            suffix = f" — {confidence} confidence"
+            if basis:
+                suffix += f"; visible basis: {basis}"
+            lines.append(f"- {issue_text}{suffix}.{cite}")
+    else:
+        lines.append(
+            f"- No obvious visual fault is directly supported by this image alone.{cite}"
+        )
+
+    uncertainties = plan.get("uncertainties") or []
+    if uncertainties:
+        lines.append(
+            f"- Some details remain uncertain from the photo and should be verified on site rather than treated as faults.{cite}"
+        )
+
+    lines.extend(["", "**What to check next:**", ""])
+
+    for item in (plan.get("next_checks") or [])[:5]:
+        lines.append(f"- {item}{cite}")
+
+    return "\n".join(lines).strip()

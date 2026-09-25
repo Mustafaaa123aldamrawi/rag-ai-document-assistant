@@ -405,7 +405,7 @@ def build_site_survey_report_docx(checklist_data: dict[str, Any]) -> bytes | Non
     _add_header_footer(document, project_name, "AV SITE SURVEY / INSPECTION REPORT")
     _add_title_block(
         document,
-        "AV SITE SURVEY / INSPECTION REPORT",
+        "AV SITE SURVEY REPORT / INSPECTION REPORT",
         project_name,
         "Scope verification + visual site evidence | Draft until field sign-off",
     )
@@ -468,7 +468,8 @@ def build_site_survey_report_docx(checklist_data: dict[str, Any]) -> bytes | Non
     scope_available = checklist_data.get("scope_available")
     if scope_available is None:
         scope_available = bool(
-            checklist_data.get("inspection_sections")
+            checklist_data.get("checklist_sections")
+            or checklist_data.get("inspection_sections")
             or checklist_data.get("survey_priorities")
         )
 
@@ -731,7 +732,7 @@ def build_professional_site_survey_checklist_docx(
         for idx, value in enumerate(values):
             _set_cell_text(row[idx], value, size=8.5)
 
-    _add_section_heading(document, "Survey Outcome / Sign-off")
+    _add_section_heading(document, "Survey Sign-off / Outcome")
     outcome = document.add_table(rows=5, cols=2)
     _format_table(outcome)
     for row, values in zip(

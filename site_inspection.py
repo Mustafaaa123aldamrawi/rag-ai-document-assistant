@@ -27,39 +27,117 @@ def _normalized_key(value: Any) -> str:
     )
 
 
-def _uncertainty_is_actionable(value: Any) -> bool:
+def _content_terms(value: Any) -> set[str]:
+    stopwords = {
+        "about", "after", "against", "cannot", "could", "from", "have",
+        "image", "into", "only", "photo", "requires", "site", "that",
+        "their", "there", "these", "this", "through", "visible", "whether",
+        "with", "without", "would", "verify", "verified", "verification",
+    }
+    return {
+        token
+        for token in _normalized_key(value).split()
+        if len(token) >= 4 and token not in stopwords
+    }
+
+
+def _uncertainty_duplicates_finding(
+    uncertainty: Any,
+    photo_findings: list[dict[str, Any]],
+) -> bool:
+    uncertainty_terms = _content_terms(uncertainty)
+    if not uncertainty_terms:
+        return False
+
+    for finding in photo_findings:
+        finding_terms = _content_terms(
+            " ".join(
+                (
+                    _clean_text(finding.get("finding")),
+                    _clean_text(finding.get("basis")),
+                )
+            )
+        )
+        if len(uncertainty_terms & finding_terms) >= 2:
+            return True
+
+    return False
+
+
+def _uncertainty_is_client_relevant(
+    value: Any,
+    photo_findings: list[dict[str, Any]],
+) -> bool:
+    """Keep only decision-relevant uncertainty in client-facing outputs."""
     text = _normalized_key(value)
     if not text:
         return False
 
-    low_value_phrases = (
-        "manufacturer is not readable",
-        "manufacturer and model are not readable",
-        "manufacturer/model",
-        "model number is unreadable",
+    # If the uncertainty is already represented by a visible observation/finding,
+    # keep the observation and its follow-up instead of duplicating it as VERIFY.
+    if _uncertainty_duplicates_finding(value, photo_findings):
+        return False
+
+    generic_absence_phrases = (
+        "not visible",
+        "not legible",
+        "not readable",
+        "cannot be assessed",
+        "cannot be verified",
+        "cannot be confirmed",
+        "cannot be determined",
+        "cannot be identified",
+        "not labeled",
+        "not labelled",
+        "unknown",
+        "out of frame",
+        "may be out of frame",
+        "behind the wall",
+        "behind wall",
+        "behind the panel",
+        "behind panel",
+        "behind the devices",
+        "behind devices",
+        "rear cabling",
+        "hidden wiring",
+        "connections behind",
+        "manufacturer",
+        "model number",
+        "make/model",
+        "brand/model",
         "exact model",
         "exact manufacturer",
-        "text is unreadable",
-        "text is too blurry",
         "exact labels",
-        "cannot be determined from the image",
-        "cannot be confirmed from the image",
-        "manufacturers and models cannot be determined",
-        "manufacturer and model cannot be determined",
-        "make/model",
-        "make and model",
-        "model number is not visible",
-        "exact crestron model",
-        "background flat-panel",
-        "background flat panel",
         "function of the space",
-        "space (meeting room",
-        "space is not labeled",
-        "purpose (decorative",
-        "purpose is not visually confirmed",
-        "power state of the background",
+        "purpose is not",
+        "power state",
+        "device identity",
     )
-    return not any(phrase in text for phrase in low_value_phrases)
+    if any(phrase in text for phrase in generic_absence_phrases):
+        return False
+
+    # Keep only uncertainties that could materially change the disposition of a
+    # visible condition or a safety/installation decision.
+    material_cues = (
+        "safety",
+        "hazard",
+        "live conductor",
+        "energized",
+        "structural",
+        "water ingress",
+        "overheating",
+        "blocked",
+        "clearance",
+        "support",
+        "secure",
+        "load",
+        "mount",
+        "termination",
+        "terminated",
+        "damage",
+    )
+    return any(cue in text for cue in material_cues)
+
 
 
 def _is_critical_high_confidence_finding(finding: dict[str, Any]) -> bool:
@@ -281,11 +359,20 @@ def build_site_inspection_summary(
             )
             issue_counter += 1
 
+        photo_findings = [
+            finding
+            for finding in findings
+            if finding.get("source_photo_ref") == photo_ref
+        ]
+
         photo_verify_count = 0
         for uncertainty in uncertainties:
-            if photo_verify_count >= 2:
+            if photo_verify_count >= 1:
                 break
-            if not _uncertainty_is_actionable(uncertainty):
+            if not _uncertainty_is_client_relevant(
+                uncertainty,
+                photo_findings,
+            ):
                 continue
 
             verify_key = _normalized_key(uncertainty)
@@ -346,8 +433,8 @@ def build_site_inspection_summary(
     if findings:
         summary_text = (
             f"{len(items)} photo(s) were reviewed. "
-            f"{len(findings)} possible visual issue(s) were identified and require "
-            "field verification before root cause or responsibility is assigned."
+            f"{len(findings)} visual observation(s) require field review before "
+            "any defect, root cause, or responsibility is assigned."
         )
     elif items:
         summary_text = (
@@ -466,46 +553,112 @@ def build_inspection_only_survey_data(
     }
 
 
-PHOTO_SCOPE_TERM_GROUPS = {
-    "display": ("display", "flat panel", "screen", "monitor"),
-    "camera": ("camera",),
-    "scheduler": ("crestron", "scheduler", "scheduling", "touch panel", "tc10"),
-    "rack": ("rack", "headend", "pdu", "power distribution"),
-    "dsp": ("dsp", "biamp", "tesira"),
-    "amplifier": ("amplifier", "amp", "netpa"),
-    "codec": ("codec", "poly", "g62", "vtc"),
-    "switcher": ("switcher", "sw-01"),
-    "extender": ("extender", "receiver", "transmitter", "rx-01", "wrx-01"),
-    "microphone": ("microphone", "mic", "array microphone"),
-    "speaker": ("speaker", "loudspeaker"),
-    "ceiling": ("ceiling", "above-ceiling", "above ceiling", "plenum"),
-    "partition": ("partition", "divisible", "combined room", "room-combining"),
-    "cable": ("cable", "pathway", "containment", "conduit", "hdmi", "usb"),
-    "dante": ("dante",),
-    "room": ("meeting room", "conference room", "room-1", "room-2"),
-}
-
-
-def _photo_scope_tokens(text: Any) -> set[str]:
-    normalized = _normalized_key(text)
-    matched = set()
-    for canonical, variants in PHOTO_SCOPE_TERM_GROUPS.items():
-        if any(variant in normalized for variant in variants):
-            matched.add(canonical)
-    return matched
-
-
 def _photo_search_text(photo: dict[str, Any]) -> str:
-    return " ".join(
-        _clean_text(photo.get(key))
-        for key in (
-            "subject_equipment",
-            "notes",
-            "visible_text",
-            "category",
+    return _normalized_key(
+        " ".join(
+            _clean_text(photo.get(key))
+            for key in (
+                "subject_equipment",
+                "notes",
+                "visible_text",
+                "category",
+            )
+            if _clean_text(photo.get(key))
         )
-        if _clean_text(photo.get(key))
     )
+
+
+def _contains_any(text: str, phrases: tuple[str, ...]) -> bool:
+    return any(phrase in text for phrase in phrases)
+
+
+def _photo_evidence_score(
+    section_text: str,
+    item_text: str,
+    photo_text: str,
+) -> int:
+    """Conservative evidence matching: no broad manufacturer-only matches."""
+    section = _normalized_key(section_text)
+    item = _normalized_key(item_text)
+    photo = _normalized_key(photo_text)
+    probe = f"{section} {item}"
+
+    # Exact/specific equipment must be directly visible in the photo analysis.
+    if "poly studio g62" in probe or "g62" in probe:
+        return 100 if "g62" in photo else 0
+
+    if "poly tc10" in probe or "tc10" in probe:
+        return 100 if "tc10" in photo else 0
+
+    if "crestron room scheduling" in probe or "room scheduling touch panel" in probe:
+        return 100 if (
+            "crestron" in photo
+            and _contains_any(photo, ("scheduler", "scheduling", "touch panel"))
+        ) else 0
+
+    if _contains_any(probe, ("audio dsp", "biamp", "tesira")):
+        return 95 if _contains_any(photo, ("biamp", "tesira", "dsp-01", "audio dsp")) else 0
+
+    if "dante amplifier" in probe:
+        return 95 if "dante" in photo and _contains_any(photo, ("amplifier", "amp")) else 0
+
+    if "amplifier" in probe:
+        return 90 if _contains_any(photo, ("amplifier", "netpa", "pa-01")) else 0
+
+    if "power distribution unit" in probe or " pdu " in f" {probe} ":
+        return 90 if _contains_any(photo, ("power distribution", "pdu")) else 0
+
+    if _contains_any(probe, ("slide out equipment rack", "rack capacity", "a/v rack", "av rack")):
+        return 90 if "rack" in photo else 0
+
+    if "high definition camera" in probe or "camera" in probe:
+        return 90 if "camera" in photo else 0
+
+    if _contains_any(probe, ("flat panel display", "flat-panel display", "displays")):
+        if not _contains_any(photo, ("display", "flat-panel", "flat panel", "screen")):
+            return 0
+        # For dual-display claims, require the photo analysis to explicitly
+        # indicate two/dual displays rather than merely one background screen.
+        if _contains_any(probe, ("2 x", "dual", "two ")):
+            return 95 if _contains_any(photo, ("two ", "2 ", "dual")) else 0
+        return 80
+
+    if _contains_any(probe, ("ceiling loudspeaker", "ceiling speaker", "loudspeakers")):
+        return 90 if _contains_any(photo, ("ceiling speaker", "ceiling loudspeaker", "loudspeaker")) else 0
+
+    if _contains_any(probe, ("array microphone", "ceiling mounted array microphone")):
+        return 90 if _contains_any(photo, ("array microphone", "microphone", "mic")) else 0
+
+    if "partition sensor" in probe:
+        return 90 if _contains_any(photo, ("partition sensor", "partition")) else 0
+
+    if _contains_any(probe, ("codec", "existing codec")):
+        return 85 if _contains_any(photo, ("codec", "vtc-01")) else 0
+
+    if "hdmi switcher" in probe or "switcher" in probe:
+        return 85 if _contains_any(photo, ("switcher", "sw-01", "sw2 hd")) else 0
+
+    if "scaler" in probe:
+        return 85 if _contains_any(photo, ("scaler", "dsc")) else 0
+
+    if "wireless presentation" in probe:
+        return 85 if _contains_any(photo, ("wireless presentation", "wrx-01")) else 0
+
+    if _contains_any(probe, ("video extender", "extender")):
+        return 85 if _contains_any(photo, ("extender", "receiver", "transmitter", "rx-01", "wrx-01", "dtp")) else 0
+
+    # Site-condition evidence: link only when the photo explicitly covers the
+    # relevant physical condition.
+    if _contains_any(probe, ("ceiling construction", "above-ceiling", "above ceiling")):
+        return 80 if _contains_any(photo, ("ceiling", "plenum", "ductwork", "ceiling grid")) else 0
+
+    if _contains_any(probe, ("cable pathways", "cable routes", "containment", "conduit")):
+        return 80 if _contains_any(photo, ("cable", "pathway", "conduit", "plenum")) else 0
+
+    if "dust-free" in probe or "finishes completely installed" in probe:
+        return 75 if _contains_any(photo, ("debris", "ceiling grid", "construction material", "floor", "wall finish")) else 0
+
+    return 0
 
 
 def _link_photo_refs_to_scope(merged: dict[str, Any]) -> None:
@@ -516,75 +669,81 @@ def _link_photo_refs_to_scope(merged: dict[str, Any]) -> None:
     if not photos:
         return
 
-    photo_tokens = []
-    for photo in photos:
-        text = _photo_search_text(photo)
-        photo_tokens.append(
-            (
-                _clean_text(photo.get("photo_ref")),
-                _photo_scope_tokens(text),
-                _normalized_key(text),
-            )
+    prepared_photos = [
+        (
+            _clean_text(photo.get("photo_ref")),
+            _photo_search_text(photo),
         )
+        for photo in photos
+        if _clean_text(photo.get("photo_ref"))
+    ]
 
     for section in merged.get("inspection_sections", []) or []:
         if not isinstance(section, dict):
             continue
+
         section_text = _clean_text(
             section.get("section_title") or section.get("section")
         )
+
         for item in section.get("items", []) or []:
             if not isinstance(item, dict):
                 continue
 
-            item_text = " ".join(
-                (
-                    section_text,
-                    _clean_text(item.get("inspection_item") or item.get("item")),
-                )
+            item_text = _clean_text(
+                item.get("inspection_item") or item.get("item")
             )
-            item_tokens = _photo_scope_tokens(item_text)
-            normalized_item = _normalized_key(item_text)
 
             scored = []
-            for photo_ref, tokens, photo_text in photo_tokens:
-                if not photo_ref:
-                    continue
-                overlap = len(item_tokens & tokens)
-                exact_bonus = 0
-
-                # Strong evidence terms should beat broad room/ceiling matches.
-                for phrase in (
-                    "crestron",
-                    "tc10",
-                    "rack",
-                    "biamp",
-                    "dsp",
-                    "codec",
-                    "poly",
-                    "display",
-                    "camera",
-                    "ceiling",
-                    "cable",
-                    "partition",
-                ):
-                    if phrase in normalized_item and phrase in photo_text:
-                        exact_bonus += 2
-
-                score = overlap + exact_bonus
-                if score >= 2:
+            for photo_ref, photo_text in prepared_photos:
+                score = _photo_evidence_score(
+                    section_text,
+                    item_text,
+                    photo_text,
+                )
+                if score > 0:
                     scored.append((score, photo_ref))
 
             scored.sort(key=lambda pair: (-pair[0], pair[1]))
-            refs = []
-            for _, ref in scored:
-                if ref not in refs:
-                    refs.append(ref)
-                if len(refs) >= 2:
-                    break
+            if scored:
+                # One strong evidence reference is preferable to multiple weak
+                # references that could imply unsupported confirmation.
+                item["photo_ref"] = scored[0][1]
+            else:
+                item["photo_ref"] = ""
 
-            if refs:
-                item["photo_ref"] = ", ".join(refs)
+
+def _build_deviation_action_rows(
+    visual_findings: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    rows = []
+    for finding in visual_findings or []:
+        if not isinstance(finding, dict):
+            continue
+
+        status = _clean_text(finding.get("status")).upper()
+        if status not in {"OBSERVATION", "ACTION"}:
+            continue
+
+        priority = _clean_text(finding.get("priority")).upper() or "MEDIUM"
+        if status == "ACTION":
+            impact = "Potential safety / installation impact; immediate review required."
+        else:
+            impact = "Potential installation or site-readiness impact; confirm before classification."
+
+        rows.append(
+            {
+                "id": _clean_text(finding.get("id")),
+                "deviation_risk_missing_item": _clean_text(finding.get("finding")),
+                "impact": impact,
+                "required_action": _clean_text(finding.get("required_action")),
+                "owner": "",
+                "priority": priority,
+                "photo_ref": _clean_text(finding.get("source_photo_ref")),
+            }
+        )
+    return rows
+
 
 
 def merge_site_inspection_into_survey_data(
@@ -612,6 +771,9 @@ def merge_site_inspection_into_survey_data(
     merged["executive_summary"] = summary.get("executive_summary") or ""
     merged["visual_findings"] = summary.get("visual_findings") or []
     merged["verification_items"] = summary.get("verification_items") or []
+    merged["deviations_risks_actions"] = _build_deviation_action_rows(
+        merged["visual_findings"]
+    )
 
     existing_photo_register = list(merged.get("photo_register") or [])
     visual_photo_register = list(summary.get("photo_register") or [])

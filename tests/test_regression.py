@@ -2101,3 +2101,11 @@ def test_customer_responsibility_pages_prefer_full_requirements_section():
     assert selected[0]["page_number"] == 6
     assert "network connectivity" in selected[0]["text"]
     assert "air conditioning" in selected[0]["text"]
+
+
+
+def test_general_technical_web_query_uses_user_question_not_document_context():
+    source = APP_FILE.read_text(encoding="utf-8")
+    assert "web_search_query = normalize_search_query(question)" in source
+    assert "is_technical_request" in source
+    assert "not response_plan.use_documents" in source

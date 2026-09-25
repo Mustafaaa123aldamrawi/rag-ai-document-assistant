@@ -7057,10 +7057,19 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
         
         if is_current_web_question:
             st.session_state.document_scope_active = False
-            web_search_query = build_document_aware_web_query(
-                question,
-                context
-            )
+            if (
+                is_technical_request
+                and not response_plan.use_documents
+            ):
+                # General technical questions must search from the user's
+                # question itself. Uploaded document context is unrelated and
+                # can contaminate the web query.
+                web_search_query = normalize_search_query(question)
+            else:
+                web_search_query = build_document_aware_web_query(
+                    question,
+                    context
+                )
         
         elif is_document_focused_question:
             st.session_state.document_scope_active = True
@@ -7070,10 +7079,16 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
             web_search_query = None
         
         else:
-            web_search_query = build_document_aware_web_query(
-                question,
-                context
-            )
+            if (
+                is_technical_request
+                and not response_plan.use_documents
+            ):
+                web_search_query = normalize_search_query(question)
+            else:
+                web_search_query = build_document_aware_web_query(
+                    question,
+                    context
+                )
        
         # Detect whether this is a web follow-up question
         web_follow_up_starters = (

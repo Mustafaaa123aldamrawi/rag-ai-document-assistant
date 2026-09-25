@@ -53,10 +53,20 @@ def test_app_routes_visual_analysis_to_dedicated_vision_llm():
         Path(__file__).resolve().parents[1] / "app.py"
     ).read_text(encoding="utf-8")
     assert "def call_vision_llm(" in app_source
-    assert '"Qwen/Qwen2.5-VL-7B-Instruct"' in app_source
+    assert '"Qwen/Qwen3.8-Flash-Next:featherless-ai"' in app_source
+    assert '"Qwen/Qwen2.5-VL-3B-Instruct"' in app_source
     assert "raw_visual_analysis = call_vision_llm(" in app_source
     visual_block = app_source.split(
         "# Process standalone site photos and screenshots",
         1,
     )[1]
     assert "raw_visual_analysis = call_conversation_llm(" not in visual_block
+
+
+
+def test_vision_errors_keep_all_model_attempts_visible():
+    app_source = (
+        Path(__file__).resolve().parents[1] / "app.py"
+    ).read_text(encoding="utf-8")
+    assert "attempt_errors = []" in app_source
+    assert '"No compatible image-capable model succeeded. "' in app_source

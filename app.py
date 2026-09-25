@@ -141,8 +141,13 @@ def call_vision_llm(messages, temperature=0.1):
     }
 
     vision_models = [
-        "Qwen/Qwen2.5-VL-7B-Instruct",
-        "Qwen/Qwen2.5-VL-32B-Instruct",
+        # Hugging Face documents this provider-qualified VLM path for
+        # Featherless AI chat-completion vision requests.
+        "Qwen/Qwen3.8-Flash-Next:featherless-ai",
+        # Smaller documented image-text models kept as provider-agnostic
+        # fallbacks in case account/provider availability changes.
+        "Qwen/Qwen2.5-VL-3B-Instruct",
+        "Qwen/Qwen2-VL-7B-Instruct",
     ]
 
     available_model_ids = get_available_hf_model_ids()
@@ -157,6 +162,7 @@ def call_vision_llm(messages, temperature=0.1):
     # fallback candidates and let the API report provider availability.
     models_to_try = available_candidates or vision_models
     last_error = None
+    attempt_errors = []
 
     for model_id in models_to_try:
         payload = {
@@ -176,11 +182,13 @@ def call_vision_llm(messages, temperature=0.1):
             )
         except requests.exceptions.Timeout:
             last_error = f"Vision model {model_id} timed out after 120 seconds."
+            attempt_errors.append(last_error)
             continue
         except requests.exceptions.ConnectionError as connection_error:
             last_error = (
                 f"Vision model {model_id} connection error: {connection_error}"
             )
+            attempt_errors.append(last_error)
             continue
 
         if response.ok:
@@ -197,11 +205,19 @@ def call_vision_llm(messages, temperature=0.1):
             last_error = (
                 f"Vision model {model_id} returned no usable content: {data}"
             )
+            attempt_errors.append(last_error)
             continue
 
         last_error = (
             f"Hugging Face vision API error {response.status_code} "
             f"for {model_id}: {response.text}"
+        )
+        attempt_errors.append(last_error)
+
+    if attempt_errors:
+        raise Exception(
+            "No compatible image-capable model succeeded. "
+            + " | ".join(attempt_errors)
         )
 
     raise Exception(

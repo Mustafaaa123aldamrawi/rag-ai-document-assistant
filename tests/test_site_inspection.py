@@ -625,3 +625,40 @@ def test_mastercard_style_generic_uncertainties_do_not_reach_client_verify_table
     summary = build_site_inspection_summary(items)
     assert summary["inspection_meta"]["verify_items"] == 0
     assert summary["verification_items"] == []
+
+
+
+def test_site_inspection_summary_retains_image_bytes_for_final_report():
+    image_bytes = b"fake-image-bytes"
+    items = [
+        {
+            "file_name": "site.jpg",
+            "image_bytes": image_bytes,
+            "analysis": {
+                "category": "SITE_PHOTO",
+                "summary": "Site photo.",
+                "visible_text": [],
+                "devices": [],
+                "observations": ["Room visible."],
+                "possible_issues": [],
+                "uncertainties": [],
+            },
+        }
+    ]
+
+    summary = build_site_inspection_summary(items)
+    assert summary["photo_register"][0]["image_bytes"] == image_bytes
+
+
+def test_app_exposes_voice_and_final_report_workflows():
+    app_source = (
+        Path(__file__).resolve().parents[1] / "app.py"
+    ).read_text(encoding="utf-8")
+
+    assert "def transcribe_audio_hf(" in app_source
+    assert 'st.audio_input(' in app_source
+    assert 'st.session_state["question_input"] = voice_transcript' in app_source
+    assert "def render_read_aloud_button(" in app_source
+    assert "build_final_professional_site_report_docx(" in app_source
+    assert "🏁 Download Final Professional Report" in app_source
+    assert '"image_bytes": uploaded_image.getvalue()' in app_source

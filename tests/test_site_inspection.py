@@ -52,7 +52,7 @@ def test_multi_image_summary_aggregates_photos_findings_and_verify_items():
     assert summary["inspection_meta"]["photos_reviewed"] == 2
     assert summary["inspection_meta"]["possible_issues"] == 1
     assert summary["inspection_meta"]["verify_items"] == 1
-    assert summary["inspection_meta"]["overall_status"] == "ACTION REQUIRED"
+    assert summary["inspection_meta"]["overall_status"] == "REVIEW REQUIRED"
     assert len(summary["photo_register"]) == 2
     assert summary["visual_findings"][0]["source_photo"] == "rack.jpg"
 
@@ -133,7 +133,7 @@ def test_multi_image_summary_filters_low_value_verify_noise_and_caps_per_photo()
     assert "exact labels" not in verify_text
 
 
-def test_high_confidence_noncritical_finding_is_action_required_not_hold():
+def test_high_confidence_noncritical_finding_is_observation_not_action():
     items = [
         {
             "file_name": "rack.jpg",
@@ -156,7 +156,8 @@ def test_high_confidence_noncritical_finding_is_action_required_not_hold():
     ]
 
     summary = build_site_inspection_summary(items)
-    assert summary["inspection_meta"]["overall_status"] == "ACTION REQUIRED"
+    assert summary["inspection_meta"]["overall_status"] == "REVIEW REQUIRED"
+    assert summary["visual_findings"][0]["status"] == "OBSERVATION"
 
 
 def test_high_confidence_safety_finding_can_hold():
@@ -182,4 +183,41 @@ def test_high_confidence_safety_finding_can_hold():
     ]
 
     summary = build_site_inspection_summary(items)
-    assert summary["inspection_meta"]["overall_status"] == "HOLD / INVESTIGATE"
+    assert summary["inspection_meta"]["overall_status"] == "ACTION REQUIRED"
+    assert summary["visual_findings"][0]["status"] == "ACTION"
+
+
+
+def test_photo_register_uses_short_photo_refs():
+    summary = build_site_inspection_summary(sample_visual_items())
+    assert summary["photo_register"][0]["photo_ref"] == "P01"
+    assert summary["photo_register"][1]["photo_ref"] == "P02"
+    assert summary["visual_findings"][0]["source_photo_ref"] == "P02"
+
+
+def test_scope_merge_does_not_duplicate_visual_findings_into_scope_sections():
+    base = {
+        "project_info": {"project_name": "Project X", "rooms": ["Room-1"]},
+        "inspection_sections": [
+            {
+                "section_number": 1,
+                "section_title": "System design intent",
+                "items": [
+                    {
+                        "item_number": 1,
+                        "inspection_item": "Verify divisible room operation.",
+                        "status": "VERIFY",
+                        "status_options": ["PASS", "VERIFY", "ACTION", "N/A"],
+                        "notes_photo": "",
+                    }
+                ],
+            }
+        ],
+        "photo_register": [],
+    }
+    summary = build_site_inspection_summary(sample_visual_items())
+    merged = merge_site_inspection_into_survey_data(base, summary)
+
+    assert len(merged["inspection_sections"]) == 1
+    assert merged["inspection_sections"][0]["section_title"] == "System design intent"
+    assert merged["visual_findings"]

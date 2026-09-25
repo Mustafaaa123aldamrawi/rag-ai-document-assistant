@@ -26,6 +26,10 @@ from visual_ai import (
     visual_answer_is_complete,
 )
 from deliverables import build_professional_site_survey_checklist_docx, build_site_survey_report_docx
+from site_inspection import (
+    build_site_inspection_summary,
+    merge_site_inspection_into_survey_data,
+)
 from langfuse import get_client, observe
 
 import os
@@ -4574,6 +4578,22 @@ with st.sidebar:
         st.session_state["requested_document_action"] = (
             "site_survey_checklist"
         )
+
+    create_site_inspection_package = st.button(
+        "📷 Build Site Inspection Package",
+        use_container_width=True,
+        disabled=not uploaded_images,
+    )
+
+    if create_site_inspection_package:
+        st.session_state["requested_document_action"] = (
+            "site_inspection_package"
+        )
+
+    st.caption(
+        "Tip: upload the Scope of Work together with site photos to combine "
+        "design requirements and observed visual evidence in one package."
+    )
     st.divider()
     
     st.markdown(
@@ -5557,6 +5577,8 @@ if uploaded_files:
         st.error(f"Error processing PDF: {error}")
 
 # Process standalone site photos and screenshots
+current_visual_items = []
+
 if uploaded_images:
     for uploaded_image in uploaded_images:
         visual_cache_key = build_drawing_cache_key(uploaded_image)
@@ -5597,6 +5619,13 @@ if uploaded_images:
                 "name",
                 "uploaded_image",
             )
+
+            current_visual_items.append(
+                {
+                    "file_name": visual_source_name,
+                    "analysis": visual_analysis,
+                }
+            )
             visual_evidence = build_visual_evidence_text(
                 visual_analysis,
                 file_name=visual_source_name,
@@ -5636,6 +5665,161 @@ if uploaded_images:
     if document_pages:
         text_chunks = split_text_into_chunks(document_pages)
         vector_store = create_vector_store(text_chunks)
+
+if current_visual_items:
+    st.session_state["current_visual_inspection_items"] = current_visual_items
+
+if (
+    st.session_state.get("requested_document_action")
+    == "site_inspection_package"
+):
+    visual_items = st.session_state.get(
+        "current_visual_inspection_items",
+        [],
+    )
+
+    if not visual_items:
+        st.warning(
+            "No successfully analyzed site photos are available yet."
+        )
+    else:
+        with st.spinner(
+            "Building multi-image site inspection package..."
+        ):
+            inspection_summary = build_site_inspection_summary(
+                visual_items
+            )
+
+            base_survey_data = st.session_state.get(
+                "site_survey_checklist_data"
+            )
+
+            if base_survey_data is None and uploaded_files:
+                scope_pages = [
+                    page
+                    for page in document_pages
+                    if not page.get("is_visual_analysis")
+                ]
+                scope_context = build_scope_of_work_context(
+                    scope_pages
+                )
+
+                if scope_context:
+                    blueprint = generate_site_survey_blueprint(
+                        scope_context
+                    )
+                    if blueprint:
+                        base_survey_data = (
+                            build_professional_site_survey_data(
+                                blueprint
+                            )
+                        )
+
+            package_data = merge_site_inspection_into_survey_data(
+                base_survey_data,
+                inspection_summary,
+            )
+
+            st.session_state[
+                "site_inspection_package_data"
+            ] = package_data
+            st.session_state[
+                "requested_document_action"
+            ] = None
+
+            st.success(
+                "Multi-image site inspection package generated successfully."
+            )
+
+package_data = st.session_state.get(
+    "site_inspection_package_data"
+)
+
+if package_data:
+    st.markdown("### 📷 Site Inspection Package")
+
+    visual_meta = (
+        package_data.get("inspection_meta") or {}
+    )
+
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric(
+        "Overall Status",
+        str(visual_meta.get("overall_status") or "VERIFY"),
+    )
+    col2.metric(
+        "Photos Reviewed",
+        int(visual_meta.get("photos_reviewed") or 0),
+    )
+    col3.metric(
+        "Possible Issues",
+        int(visual_meta.get("possible_issues") or 0),
+    )
+    col4.metric(
+        "Verify Items",
+        int(visual_meta.get("verify_items") or 0),
+    )
+
+    st.caption(
+        str(
+            package_data.get("executive_summary")
+            or "Visual inspection package ready."
+        )
+    )
+
+    checklist_bytes = (
+        build_professional_site_survey_checklist_docx(
+            package_data
+        )
+    )
+    report_bytes = build_site_survey_report_docx(
+        package_data
+    )
+
+    project_info = package_data.get("project_info") or {}
+    project_name = (
+        project_info.get("project_name")
+        or "AV_Site_Inspection"
+    )
+    safe_project_name = re.sub(
+        r"[^A-Za-z0-9_-]+",
+        "_",
+        str(project_name),
+    ).strip("_")
+
+    download_col1, download_col2 = st.columns(2)
+
+    with download_col1:
+        if checklist_bytes:
+            st.download_button(
+                label="⬇️ Download Professional Checklist",
+                data=checklist_bytes,
+                file_name=(
+                    f"{safe_project_name}_Site_Inspection_Checklist.docx"
+                ),
+                mime=(
+                    "application/vnd.openxmlformats-officedocument."
+                    "wordprocessingml.document"
+                ),
+                use_container_width=True,
+                key="download_inspection_checklist",
+            )
+
+    with download_col2:
+        if report_bytes:
+            st.download_button(
+                label="⬇️ Download Professional Report",
+                data=report_bytes,
+                file_name=(
+                    f"{safe_project_name}_Site_Inspection_Report.docx"
+                ),
+                mime=(
+                    "application/vnd.openxmlformats-officedocument."
+                    "wordprocessingml.document"
+                ),
+                use_container_width=True,
+                key="download_inspection_report",
+            )
 
 # Display conversation history
 if st.session_state.messages:

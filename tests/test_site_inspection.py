@@ -662,3 +662,47 @@ def test_app_exposes_voice_and_final_report_workflows():
     assert "build_final_professional_site_report_docx(" in app_source
     assert "🏁 Download Final Professional Report" in app_source
     assert '"image_bytes": uploaded_image.getvalue()' in app_source
+
+
+
+def test_voice_ui_has_language_control_and_defaults_to_arabic():
+    app_source = (
+        Path(__file__).resolve().parents[1] / "app.py"
+    ).read_text(encoding="utf-8")
+
+    assert '"🎙️ Voice language"' in app_source
+    assert 'options=["Arabic", "English", "Greek", "Auto"]' in app_source
+    assert 'index=0' in app_source
+    assert 'language=voice_language' in app_source
+
+
+def test_voice_transcription_uses_whisper_large_v3_and_language_hint():
+    app_source = (
+        Path(__file__).resolve().parents[1] / "app.py"
+    ).read_text(encoding="utf-8")
+
+    assert 'model="openai/whisper-large-v3"' in app_source
+    assert '"task": "transcribe"' in app_source
+    assert '"language": language_code' in app_source
+    assert "InferenceClient(" in app_source
+
+
+def test_voice_transcript_deduplication_exists():
+    app_source = (
+        Path(__file__).resolve().parents[1] / "app.py"
+    ).read_text(encoding="utf-8")
+
+    assert "def _dedupe_adjacent_voice_tokens(" in app_source
+    assert "def _normalize_voice_transcript(" in app_source
+    assert "_dedupe_adjacent_voice_tokens(value)" in app_source
+
+
+def test_read_aloud_supports_arabic_english_and_greek_voice_selection():
+    app_source = (
+        Path(__file__).resolve().parents[1] / "app.py"
+    ).read_text(encoding="utf-8")
+
+    assert 'return "ar-SA"' in app_source
+    assert 'return "el-GR"' in app_source
+    assert 'return "en-US"' in app_source
+    assert "matching.find(v => v.localService) || matching[0]" in app_source

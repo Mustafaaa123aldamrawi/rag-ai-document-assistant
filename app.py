@@ -2611,6 +2611,26 @@ def build_professional_site_survey_data(blueprint):
     if not isinstance(blueprint, dict):
         return None
 
+    # Kept local so this function remains self-contained for regression
+    # extraction and can be reused independently of the Streamlit runtime.
+    def format_equipment_identity(equipment):
+        if not isinstance(equipment, dict):
+            return ""
+
+        device = str(equipment.get("device") or "").strip()
+        manufacturer = str(equipment.get("manufacturer") or "").strip()
+        model = str(equipment.get("model") or "").strip()
+
+        identity = device
+        for value in (manufacturer, model):
+            if not value:
+                continue
+            if value.lower() in identity.lower():
+                continue
+            identity = f"{value} {identity}".strip()
+
+        return " ".join(identity.split())
+
     project = blueprint.get("project") or {}
     features = blueprint.get("project_features") or {}
 

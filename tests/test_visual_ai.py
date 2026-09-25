@@ -70,3 +70,21 @@ def test_vision_errors_keep_all_model_attempts_visible():
     ).read_text(encoding="utf-8")
     assert "attempt_errors = []" in app_source
     assert '"No compatible image-capable model succeeded. "' in app_source
+
+
+
+def test_visual_questions_mark_subject_found_from_visual_evidence():
+    app_source = (
+        Path(__file__).resolve().parents[1] / "app.py"
+    ).read_text(encoding="utf-8")
+    assert "visual_evidence_available = bool(" in app_source
+    assert "if visual_evidence_available:" in app_source
+    assert "subject_found = True" in app_source
+
+
+def test_visual_grounding_rules_prevent_document_not_found_fallback():
+    app_source = (
+        Path(__file__).resolve().parents[1] / "app.py"
+    ).read_text(encoding="utf-8")
+    assert "Visual grounding rules:" in app_source
+    assert "Do not say the information was not found in the document when visual evidence is present." in app_source

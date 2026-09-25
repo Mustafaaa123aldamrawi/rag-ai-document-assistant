@@ -680,7 +680,7 @@ def build_professional_site_survey_checklist_docx(
         or visual_meta.get("overall_status")
         or "VERIFY"
     )
-    status = str(
+    survey_status = str(
         checklist_data.get("survey_status")
         or visual_status
         or "Pre-Survey / To Be Verified"
@@ -710,7 +710,7 @@ def build_professional_site_survey_checklist_docx(
         client=client,
         location=location,
         rooms=rooms,
-        status=status,
+        status=survey_status,
         document_type="AV Site Survey Checklist",
     )
 
@@ -769,18 +769,18 @@ def build_professional_site_survey_checklist_docx(
         _set_repeat_table_header(table.rows[0])
 
         for item in items:
-            status = str(item.get("status") or "VERIFY").upper()
+            item_status = str(item.get("status") or "VERIFY").upper()
             row = table.add_row().cells
             values = [
                 item_number,
                 item.get("item") or "",
-                status,
+                item_status,
                 item.get("notes") or "",
                 item.get("photo_ref") or "",
             ]
             for idx, value in enumerate(values):
                 _set_cell_text(row[idx], value, size=8.5)
-            fill = _status_fill(status)
+            fill = _status_fill(item_status)
             if fill:
                 _shade_cell(row[2], fill)
             item_number += 1
@@ -840,7 +840,7 @@ def build_professional_site_survey_checklist_docx(
     for row, values in zip(
         outcome.rows,
         [
-            ("Overall Status", status),
+            ("Overall Status", survey_status),
             ("Surveyed By", ""),
             ("Project / Engineering Review", ""),
             ("Client Representative", ""),

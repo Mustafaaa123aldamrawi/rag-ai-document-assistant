@@ -892,3 +892,380 @@ def build_professional_site_survey_checklist_docx(
     document.save(buffer)
     buffer.seek(0)
     return buffer.getvalue()
+
+
+
+def _add_final_report_photo_evidence(
+    document: Document,
+    checklist_data: dict[str, Any],
+) -> None:
+    photo_register = checklist_data.get("photo_register", []) or []
+    if not photo_register:
+        return
+
+    _add_section_heading(document, "7. Photo Evidence")
+
+    intro = document.add_paragraph(
+        "The photographs below are included as visual evidence only. "
+        "They confirm only what is directly visible in each image and do not, by themselves, "
+        "confirm concealed cabling, internal configuration, commissioning status, or final compliance."
+    )
+    intro.paragraph_format.space_after = Pt(8)
+
+    rendered = 0
+    for entry in photo_register:
+        if not isinstance(entry, dict):
+            continue
+
+        image_bytes = entry.get("image_bytes")
+        if not image_bytes:
+            continue
+
+        photo_ref = str(
+            entry.get("photo_ref")
+            or entry.get("photo_number")
+            or f"P{rendered + 1:02d}"
+        ).strip()
+        subject = _compact_text(
+            entry.get("photo_subject")
+            or entry.get("subject")
+            or entry.get("subject_equipment")
+            or "Site photo",
+            220,
+        )
+        category = str(entry.get("category") or "").strip()
+        notes = _compact_text(
+            entry.get("photo_notes")
+            or entry.get("notes")
+            or "",
+            320,
+        )
+
+        if rendered:
+            document.add_paragraph()
+
+        caption = document.add_paragraph()
+        caption.paragraph_format.space_after = Pt(4)
+        run = caption.add_run(
+            f"{photo_ref} — {subject}"
+            + (f" [{category}]" if category else "")
+        )
+        run.bold = True
+        run.font.name = "Aptos"
+        run.font.size = Pt(10)
+        run.font.color.rgb = _rgb(NAVY)
+
+        try:
+            picture_stream = BytesIO(image_bytes)
+            document.add_picture(
+                picture_stream,
+                width=Inches(6.25),
+            )
+            picture_paragraph = document.paragraphs[-1]
+            picture_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        except Exception:
+            fallback = document.add_paragraph(
+                f"{photo_ref}: embedded image could not be rendered in this document."
+            )
+            fallback.runs[0].italic = True
+
+        if notes:
+            p = document.add_paragraph()
+            p.paragraph_format.space_before = Pt(3)
+            p.paragraph_format.space_after = Pt(8)
+            run = p.add_run("Visible evidence: ")
+            run.bold = True
+            p.add_run(notes)
+
+        rendered += 1
+
+    if not rendered:
+        document.add_paragraph(
+            "Photo references are available in the evidence register, but no embedded image bytes "
+            "were available for this generated report."
+        )
+
+
+def build_final_professional_site_report_docx(
+    checklist_data: dict[str, Any],
+) -> bytes | None:
+    """
+    Build a client-facing one-click final report package from the current
+    Scope-derived survey data and retained inspection photo evidence.
+
+    The report remains evidence-disciplined: VERIFY stays unconfirmed and
+    visual observations are not converted into defects without field closure.
+    """
+    if not isinstance(checklist_data, dict):
+        return None
+
+    project_name, client, location, rooms = _project_fields(checklist_data)
+    visual = _visual_summary(checklist_data)
+    visual_meta = visual.get("inspection_meta") or checklist_data.get("inspection_meta") or {}
+
+    visual_status = str(
+        checklist_data.get("visual_status")
+        or visual_meta.get("visual_status")
+        or visual_meta.get("overall_status")
+        or "VERIFY"
+    ).strip()
+    survey_status = str(
+        checklist_data.get("survey_status")
+        or visual_status
+        or "FIELD VERIFICATION REQUIRED"
+    ).strip()
+
+    document = Document()
+    section = document.sections[0]
+    section.top_margin = Inches(0.55)
+    section.bottom_margin = Inches(0.6)
+    section.left_margin = Inches(0.62)
+    section.right_margin = Inches(0.62)
+
+    document.styles["Normal"].font.name = "Aptos"
+    document.styles["Normal"].font.size = Pt(9.5)
+
+    _add_header_footer(document, project_name, "FINAL AV SITE SURVEY & INSPECTION REPORT")
+    _add_title_block(
+        document,
+        "FINAL AV SITE SURVEY & INSPECTION REPORT",
+        project_name,
+        "Scope verification + field observations + embedded photographic evidence",
+    )
+
+    p = document.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = p.add_run(
+        "Report status is evidence-based. Final acceptance requires closure of all outstanding VERIFY/ACTION items and sign-off."
+    )
+    run.italic = True
+    run.font.size = Pt(8.5)
+    run.font.color.rgb = _rgb(DARK_GRAY)
+
+    document.add_paragraph()
+
+    _add_document_control_table(
+        document,
+        project_name=project_name,
+        client=client,
+        location=location,
+        rooms=rooms,
+        status=survey_status,
+        document_type="Final AV Site Survey & Inspection Report",
+    )
+
+    _add_section_heading(document, "1. Executive Summary")
+    executive_summary = (
+        checklist_data.get("executive_summary")
+        or visual.get("executive_summary")
+        or "Site inspection evidence and Scope verification were consolidated into this report."
+    )
+    document.add_paragraph(str(executive_summary))
+
+    dashboard = document.add_table(rows=2, cols=5)
+    _format_table(dashboard)
+    headers = ["Survey Status", "Visual Status", "Photos", "Observations / Actions", "Visual Verify"]
+    values = [
+        survey_status,
+        visual_status,
+        visual_meta.get("photos_reviewed") or 0,
+        f"{visual_meta.get('observations') or 0} / {visual_meta.get('actions') or 0}",
+        visual_meta.get("verify_items") or 0,
+    ]
+    for idx, header in enumerate(headers):
+        _set_cell_text(dashboard.rows[0].cells[idx], header, bold=True, color=WHITE)
+        _shade_cell(dashboard.rows[0].cells[idx], NAVY)
+        _set_cell_text(dashboard.rows[1].cells[idx], values[idx], bold=(idx < 2))
+
+    _add_section_heading(document, "2. Report Basis & Evidence Rules")
+    document.add_paragraph(
+        "This report combines Scope-of-Work requirements with uploaded site-photo evidence. "
+        "A Scope item marked VERIFY has not yet been confirmed. A photo reference means the image "
+        "contains directly relevant visible evidence; it does not prove concealed wiring, programming, "
+        "commissioning, or compliance unless those conditions are directly observable."
+    )
+
+    _add_section_heading(document, "3. Scope Verification Register")
+    scope_sections = _normalized_checklist_sections(checklist_data)
+    if scope_sections:
+        table = document.add_table(rows=1, cols=5)
+        _format_table(table)
+        headers = ["No.", "Scope / Verification Item", "Status", "Evidence / Notes", "Photo Ref."]
+        for idx, header in enumerate(headers):
+            _set_cell_text(table.rows[0].cells[idx], header, bold=True, color=WHITE)
+            _shade_cell(table.rows[0].cells[idx], NAVY)
+        _set_repeat_table_header(table.rows[0])
+
+        item_no = 1
+        for section_data in scope_sections:
+            section_name = str(section_data.get("section") or "").strip()
+            for item in section_data.get("items", []) or []:
+                status = str(item.get("status") or "VERIFY").upper()
+                row = table.add_row().cells
+                item_text = str(item.get("item") or "").strip()
+                values = [
+                    item_no,
+                    f"{section_name}: {item_text}" if section_name else item_text,
+                    status,
+                    item.get("notes") or "",
+                    item.get("photo_ref") or "",
+                ]
+                for idx, value in enumerate(values):
+                    _set_cell_text(row[idx], value, size=8.2)
+                fill = _status_fill(status)
+                if fill:
+                    _shade_cell(row[2], fill)
+                item_no += 1
+    else:
+        document.add_paragraph(
+            "No Scope-derived verification register was available for this report."
+        )
+
+    _add_section_heading(document, "4. Visual Findings & Required Actions")
+    findings = checklist_data.get("visual_findings") or visual.get("visual_findings", [])
+    if findings:
+        table = document.add_table(rows=1, cols=6)
+        _format_table(table)
+        headers = ["ID", "Photo", "Observation / Finding", "Confidence", "Status", "Required Follow-up"]
+        for idx, header in enumerate(headers):
+            _set_cell_text(table.rows[0].cells[idx], header, bold=True, color=WHITE)
+            _shade_cell(table.rows[0].cells[idx], NAVY)
+        _set_repeat_table_header(table.rows[0])
+
+        for finding in findings:
+            if not isinstance(finding, dict):
+                continue
+            status = str(finding.get("status") or "VERIFY").upper()
+            row = table.add_row().cells
+            values = [
+                finding.get("id") or "",
+                finding.get("source_photo_ref") or "",
+                _compact_text(finding.get("finding"), 240),
+                finding.get("confidence") or "",
+                status,
+                _compact_text(finding.get("required_action"), 240),
+            ]
+            for idx, value in enumerate(values):
+                _set_cell_text(row[idx], value, size=8.2)
+            fill = _status_fill(status)
+            if fill:
+                _shade_cell(row[4], fill)
+    else:
+        document.add_paragraph(
+            "No visual observation requiring client-facing follow-up was identified from the current photo set."
+        )
+
+    _add_section_heading(document, "5. Deviations / Risks / Action Register")
+    risk_rows = checklist_data.get("deviations_risks_actions", []) or []
+    table = document.add_table(rows=1, cols=7)
+    _format_table(table)
+    headers = ["ID", "Photo", "Deviation / Risk / Observation", "Impact", "Required Action", "Owner", "Priority"]
+    for idx, header in enumerate(headers):
+        _set_cell_text(table.rows[0].cells[idx], header, bold=True, color=WHITE)
+        _shade_cell(table.rows[0].cells[idx], NAVY)
+    _set_repeat_table_header(table.rows[0])
+
+    if risk_rows:
+        for entry in risk_rows:
+            if not isinstance(entry, dict):
+                continue
+            row = table.add_row().cells
+            values = [
+                entry.get("id") or "",
+                entry.get("photo_ref") or "",
+                _compact_text(entry.get("deviation_risk_missing_item") or entry.get("finding"), 220),
+                _compact_text(entry.get("impact"), 180),
+                _compact_text(entry.get("required_action"), 220),
+                entry.get("owner") or "",
+                entry.get("priority") or "",
+            ]
+            for idx, value in enumerate(values):
+                _set_cell_text(row[idx], value, size=8.0)
+    else:
+        row = table.add_row().cells
+        values = [
+            "",
+            "",
+            "No deviation/action has been confirmed from the current visual evidence.",
+            "",
+            "Continue Scope verification and record confirmed deviations only.",
+            "",
+            "",
+        ]
+        for idx, value in enumerate(values):
+            _set_cell_text(row[idx], value, size=8.2)
+
+    _add_section_heading(document, "6. Outstanding Verification & Next Steps")
+    verify_items = checklist_data.get("verification_items") or visual.get("verification_items", [])
+    if verify_items:
+        for item in verify_items:
+            if not isinstance(item, dict):
+                continue
+            document.add_paragraph(
+                f"• {item.get('source_photo_ref') or ''} "
+                f"{_compact_text(item.get('item'), 240)}".strip()
+            )
+    else:
+        document.add_paragraph(
+            "No additional client-facing visual verification item remains outside the Scope checklist. "
+            "Outstanding project verification is controlled through the Scope Verification Register above."
+        )
+
+    document.add_paragraph(
+        "Next step: complete all outstanding Scope verification items, update statuses to PASS / OBSERVATION / ACTION / N/A as applicable, "
+        "attach closure evidence, and obtain final project/client sign-off."
+    )
+
+    _add_final_report_photo_evidence(document, checklist_data)
+
+    _add_section_heading(document, "8. Final Assessment")
+    actions = int(visual_meta.get("actions") or 0)
+    assessment = document.add_table(rows=0, cols=2)
+    _format_table(assessment)
+    rows = [
+        ("Survey Status", survey_status),
+        ("Visual Status", visual_status),
+        (
+            "Critical Blockers",
+            "Visual action item(s) require immediate review."
+            if actions
+            else "No critical blocker is confirmed from the uploaded visual evidence.",
+        ),
+        (
+            "Acceptance Position",
+            "Not ready for final acceptance until outstanding VERIFY/ACTION items are closed."
+            if survey_status not in {"READY FOR FINAL REVIEW", "PASS"}
+            else "Ready for final review and sign-off.",
+        ),
+        (
+            "Required Close-out",
+            "Complete remaining field verification, attach closure evidence, and update the checklist before acceptance.",
+        ),
+    ]
+    for label, value in rows:
+        cells = assessment.add_row().cells
+        _set_cell_text(cells[0], label, bold=True)
+        _shade_cell(cells[0], LIGHT_GRAY)
+        _set_cell_text(cells[1], value)
+
+    _add_section_heading(document, "9. Sign-off")
+    sign_table = document.add_table(rows=5, cols=2)
+    _format_table(sign_table)
+    for row, values in zip(
+        sign_table.rows,
+        [
+            ("Surveyed By", ""),
+            ("Project / Engineering Review", ""),
+            ("Client Representative", ""),
+            ("Date", ""),
+            ("Final Acceptance", "☐ Accepted   ☐ Accepted with actions   ☐ Not accepted"),
+        ],
+    ):
+        _set_cell_text(row.cells[0], values[0], bold=True)
+        _shade_cell(row.cells[0], LIGHT_GRAY)
+        _set_cell_text(row.cells[1], values[1])
+
+    buffer = BytesIO()
+    document.save(buffer)
+    buffer.seek(0)
+    return buffer.getvalue()

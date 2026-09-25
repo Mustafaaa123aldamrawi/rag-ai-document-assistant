@@ -11,6 +11,8 @@ from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Inches, Pt
 import base64
+import hashlib
+import streamlit.components.v1 as components
 
 from PIL import Image
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -27,7 +29,11 @@ from visual_ai import (
     parse_visual_analysis,
     visual_answer_is_complete,
 )
-from deliverables import build_professional_site_survey_checklist_docx, build_site_survey_report_docx
+from deliverables import (
+    build_final_professional_site_report_docx,
+    build_professional_site_survey_checklist_docx,
+    build_site_survey_report_docx,
+)
 from site_inspection import (
     build_site_inspection_summary,
     merge_site_inspection_into_survey_data,
@@ -41,6 +47,129 @@ os.environ["LANGFUSE_SECRET_KEY"] = st.secrets["LANGFUSE_SECRET_KEY"]
 os.environ["LANGFUSE_BASE_URL"] = st.secrets["LANGFUSE_BASE_URL"]
 
 langfuse = get_client()
+
+
+def transcribe_audio_hf(audio_bytes, content_type="audio/wav"):
+    """Transcribe a recorded voice message using HF-hosted Whisper."""
+    if not audio_bytes:
+        return ""
+
+    token = st.secrets["HF_TOKEN"]
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": content_type or "audio/wav",
+    }
+
+    endpoints = [
+        "https://router.huggingface.co/hf-inference/models/openai/whisper-large-v3-turbo",
+        "https://api-inference.huggingface.co/models/openai/whisper-large-v3-turbo",
+    ]
+
+    errors = []
+    for endpoint in endpoints:
+        try:
+            response = requests.post(
+                endpoint,
+                headers=headers,
+                data=audio_bytes,
+                timeout=120,
+            )
+        except Exception as error:
+            errors.append(str(error))
+            continue
+
+        if not response.ok:
+            errors.append(
+                f"{response.status_code}: {response.text[:300]}"
+            )
+            continue
+
+        try:
+            data = response.json()
+        except Exception:
+            errors.append("Speech service returned a non-JSON response.")
+            continue
+
+        transcript = ""
+        if isinstance(data, dict):
+            transcript = str(data.get("text") or "").strip()
+        elif isinstance(data, list) and data and isinstance(data[0], dict):
+            transcript = str(data[0].get("text") or "").strip()
+
+        if transcript:
+            return transcript
+
+        errors.append(f"No transcript returned: {str(data)[:300]}")
+
+    raise Exception(
+        "Voice transcription could not be completed. "
+        + " | ".join(errors[-2:])
+    )
+
+
+def _speech_text(text):
+    value = str(text or "")
+    value = re.sub(r"\[(?:DOC|WEB)\s+\d+\]", "", value, flags=re.I)
+    value = re.sub(r"[#*_>|]", " ", value)
+    value = re.sub(r"\s+", " ", value).strip()
+    return value
+
+
+def render_read_aloud_button(text, key_hint="answer"):
+    """Browser-native text-to-speech; no external TTS service required."""
+    spoken = _speech_text(text)
+    if not spoken:
+        return
+
+    language = (
+        "ar-SA"
+        if re.search(r"[\u0600-\u06FF]", spoken)
+        else "en-US"
+    )
+    button_id = "speak_" + hashlib.sha1(
+        f"{key_hint}:{spoken}".encode("utf-8")
+    ).hexdigest()[:10]
+    spoken_json = json.dumps(spoken)
+    language_json = json.dumps(language)
+
+    components.html(
+        f"""
+        <div style="display:flex;gap:8px;align-items:center;margin:2px 0 8px 0;">
+          <button id="{button_id}" style="
+            border:1px solid rgba(120,120,120,.28);
+            background:white;
+            border-radius:10px;
+            padding:7px 11px;
+            cursor:pointer;
+            font:inherit;
+          ">🔊 Read Answer Aloud</button>
+          <button id="{button_id}_stop" style="
+            border:1px solid rgba(120,120,120,.18);
+            background:white;
+            border-radius:10px;
+            padding:7px 10px;
+            cursor:pointer;
+            font:inherit;
+          ">■ Stop</button>
+        </div>
+        <script>
+          const speechText = {spoken_json};
+          const speechLang = {language_json};
+          document.getElementById("{button_id}").onclick = () => {{
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(speechText);
+            utterance.lang = speechLang;
+            utterance.rate = 1.0;
+            utterance.pitch = 1.0;
+            window.speechSynthesis.speak(utterance);
+          }};
+          document.getElementById("{button_id}_stop").onclick = () => {{
+            window.speechSynthesis.cancel();
+          }};
+        </script>
+        """,
+        height=48,
+    )
 
 @st.cache_data(ttl=300, show_spinner=False)
 def get_available_hf_model_ids():
@@ -5875,6 +6004,7 @@ if uploaded_images:
             visual_item = {
                 "file_name": visual_source_name,
                 "analysis": visual_analysis,
+                "image_bytes": uploaded_image.getvalue(),
             }
             current_visual_items.append(visual_item)
             st.session_state[
@@ -6045,6 +6175,11 @@ if package_data:
     report_bytes = build_site_survey_report_docx(
         package_data
     )
+    final_report_bytes = (
+        build_final_professional_site_report_docx(
+            package_data
+        )
+    )
 
     project_info = package_data.get("project_info") or {}
     project_name = (
@@ -6057,7 +6192,7 @@ if package_data:
         str(project_name),
     ).strip("_")
 
-    download_col1, download_col2 = st.columns(2)
+    download_col1, download_col2, download_col3 = st.columns(3)
 
     with download_col1:
         if checklist_bytes:
@@ -6091,11 +6226,33 @@ if package_data:
                 key="download_inspection_report",
             )
 
+    with download_col3:
+        if final_report_bytes:
+            st.download_button(
+                label="🏁 Download Final Professional Report",
+                data=final_report_bytes,
+                file_name=(
+                    f"{safe_project_name}_Final_AV_Site_Report.docx"
+                ),
+                mime=(
+                    "application/vnd.openxmlformats-officedocument."
+                    "wordprocessingml.document"
+                ),
+                use_container_width=True,
+                key="download_final_inspection_report",
+            )
+
 # Display conversation history
 if st.session_state.messages:
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
+
+            if message.get("role") == "assistant":
+                render_read_aloud_button(
+                    message["content"],
+                    key_hint=f"history_{len(str(message.get('content', '')))}",
+                )
 
             if message.get("verified"):
                 st.success("✅ Verified against cited sources")
@@ -6178,6 +6335,41 @@ def submit_question():
     if current_question:
         st.session_state.pending_question = current_question
         st.session_state.question_input = ""
+voice_clip = None
+if hasattr(st, "audio_input"):
+    voice_clip = st.audio_input(
+        "🎙️ Voice message",
+        key="voice_message_input",
+    )
+
+if voice_clip is not None:
+    voice_bytes = voice_clip.getvalue()
+    voice_digest = hashlib.sha256(voice_bytes).hexdigest()
+
+    if (
+        voice_digest
+        and voice_digest
+        != st.session_state.get("last_voice_transcription_digest")
+    ):
+        try:
+            with st.spinner("Transcribing voice message..."):
+                voice_transcript = transcribe_audio_hf(
+                    voice_bytes,
+                    getattr(voice_clip, "type", "audio/wav"),
+                )
+
+            if voice_transcript:
+                st.session_state["question_input"] = voice_transcript
+                st.session_state[
+                    "last_voice_transcription_digest"
+                ] = voice_digest
+                st.success(
+                    "Voice message transcribed. Review the text below, then send."
+                )
+                st.rerun()
+        except Exception as voice_error:
+            st.warning(f"Voice transcription failed: {voice_error}")
+
 question = st.text_area(
     "Message AV Intelligence Assistant",
     placeholder="Ask about AV systems, uploaded documents, products, troubleshooting, or current technical information...",
@@ -8743,6 +8935,7 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
             )
         
             st.markdown(answer)
+            render_read_aloud_button(answer, key_hint="drawing_answer")
         
             st.stop()
         
@@ -8987,6 +9180,7 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
                 )
             
                 st.markdown(answer)
+                render_read_aloud_button(answer, key_hint="casual_answer")
             
                 # Casual conversation ends here.
                 # Never send casual answers through RAG/citation/technical post-processing.
@@ -10176,6 +10370,7 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
         )
         
         st.markdown(answer)
+        render_read_aloud_button(answer, key_hint="grounded_answer")
         
         if claim_verification_passed and (final_cited_docs or final_cited_web):
             st.success("✅ Verified against cited sources")

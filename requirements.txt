@@ -13,3 +13,4 @@ PyMuPDF
 Pillow
 langfuse
 python-docx
+langdetect

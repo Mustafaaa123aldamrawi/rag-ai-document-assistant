@@ -657,33 +657,35 @@ def test_app_exposes_voice_and_final_report_workflows():
 
     assert "def transcribe_audio_hf(" in app_source
     assert 'st.audio_input(' in app_source
-    assert 'st.session_state["question_input"] = voice_transcript' in app_source
-    assert "def render_read_aloud_button(" in app_source
+    assert 'st.session_state["pending_question"] = voice_transcript' in app_source
+    assert 'st.session_state["pending_input_mode"] = "voice"' in app_source
+    assert "def render_voice_reply(" in app_source
     assert "build_final_professional_site_report_docx(" in app_source
     assert "🏁 Download Final Professional Report" in app_source
     assert '"image_bytes": uploaded_image.getvalue()' in app_source
 
 
 
-def test_voice_ui_has_language_control_and_defaults_to_arabic():
+def test_voice_ui_is_separate_and_has_no_manual_language_selector():
     app_source = (
         Path(__file__).resolve().parents[1] / "app.py"
     ).read_text(encoding="utf-8")
 
-    assert '"🎙️ Voice language"' in app_source
-    assert 'options=["Arabic", "English", "Greek", "Auto"]' in app_source
-    assert 'index=0' in app_source
-    assert 'language=voice_language' in app_source
+    assert 'options=["💬 Chat", "🎙️ Voice"]' in app_source
+    assert 'assistant_interaction_mode == "🎙️ Voice"' in app_source
+    assert '"🎙️ Voice language"' not in app_source
+    assert 'options=["Arabic", "English", "Greek", "Auto"]' not in app_source
+    assert 'language=voice_language' not in app_source
 
 
-def test_voice_transcription_uses_whisper_large_v3_and_language_hint():
+def test_voice_transcription_uses_whisper_large_v3_with_auto_language_detection():
     app_source = (
         Path(__file__).resolve().parents[1] / "app.py"
     ).read_text(encoding="utf-8")
 
     assert 'model="openai/whisper-large-v3"' in app_source
     assert '"task": "transcribe"' in app_source
-    assert '"language": language_code' in app_source
+    assert '"language": language_code' not in app_source
     assert "InferenceClient(" in app_source
 
 
@@ -697,12 +699,18 @@ def test_voice_transcript_deduplication_exists():
     assert "_dedupe_adjacent_voice_tokens(value)" in app_source
 
 
-def test_read_aloud_supports_arabic_english_and_greek_voice_selection():
+def test_voice_reply_uses_automatic_multilingual_language_detection():
     app_source = (
         Path(__file__).resolve().parents[1] / "app.py"
     ).read_text(encoding="utf-8")
 
+    assert "from langdetect import detect, DetectorFactory" in app_source
     assert 'return "ar-SA"' in app_source
     assert 'return "el-GR"' in app_source
     assert 'return "en-US"' in app_source
+    assert 'return "he-IL"' in app_source
+    assert 'return "ko-KR"' in app_source
+    assert 'return "ja-JP"' in app_source
+    assert 'return "zh-CN"' in app_source
     assert "matching.find(v => v.localService) || matching[0]" in app_source
+    assert "def render_voice_reply(" in app_source

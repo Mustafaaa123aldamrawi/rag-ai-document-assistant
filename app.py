@@ -16,6 +16,7 @@ import streamlit.components.v1 as components
 
 from PIL import Image
 from huggingface_hub import InferenceClient
+from langdetect import detect, DetectorFactory
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
@@ -49,13 +50,8 @@ os.environ["LANGFUSE_BASE_URL"] = st.secrets["LANGFUSE_BASE_URL"]
 
 langfuse = get_client()
 
-
-VOICE_LANGUAGE_CODES = {
-    "Auto": None,
-    "Arabic": "ar",
-    "English": "en",
-    "Greek": "el",
-}
+# Keep automatic language detection deterministic for the same text.
+DetectorFactory.seed = 0
 
 
 def _dedupe_adjacent_voice_tokens(text):
@@ -140,48 +136,34 @@ def _normalize_voice_transcript(text):
 def transcribe_audio_hf(
     audio_bytes,
     content_type="audio/wav",
-    language="Arabic",
 ):
-    """High-accuracy multilingual transcription with explicit language control."""
+    """High-accuracy multilingual transcription with automatic language detection."""
     if not audio_bytes:
         return ""
 
     token = st.secrets["HF_TOKEN"]
-    language_code = VOICE_LANGUAGE_CODES.get(language)
 
-    # Prefer the supported Inference Providers client. Whisper can keep the
-    # spoken language when task=transcribe, and explicit language hints reduce
-    # incorrect auto-detection for short Arabic/English AV phrases.
+    # Whisper detects the spoken language automatically. task=transcribe keeps
+    # the original spoken language instead of translating it to English.
     client = InferenceClient(
         provider="auto",
         api_key=token,
     )
 
-    attempts = []
-    if language_code:
-        attempts.append(
-            {
-                "language": language_code,
-                "task": "transcribe",
-            }
-        )
-    attempts.append({})
-
     errors = []
-    for extra_body in attempts:
-        try:
-            result = client.automatic_speech_recognition(
-                audio=audio_bytes,
-                model="openai/whisper-large-v3",
-                extra_body=extra_body or None,
-            )
-            transcript = _normalize_voice_transcript(
-                getattr(result, "text", "") or ""
-            )
-            if transcript:
-                return transcript
-        except Exception as error:
-            errors.append(str(error))
+    try:
+        result = client.automatic_speech_recognition(
+            audio=audio_bytes,
+            model="openai/whisper-large-v3",
+            extra_body={"task": "transcribe"},
+        )
+        transcript = _normalize_voice_transcript(
+            getattr(result, "text", "") or ""
+        )
+        if transcript:
+            return transcript
+    except Exception as error:
+        errors.append(str(error))
 
     # Backward-compatible raw HF inference fallback.
     headers = {
@@ -234,16 +216,50 @@ def transcribe_audio_hf(
 
 
 def _detect_speech_language(text):
-    value = str(text or "")
+    """Return a browser-friendly BCP-47 language tag without user selection."""
+    value = str(text or "").strip()
+    if not value:
+        return "en-US"
+
+    # Script-first checks are more reliable than statistical detection for
+    # short AV answers, product names, acronyms, and mixed technical wording.
     arabic_chars = len(re.findall(r"[\u0600-\u06FF]", value))
     greek_chars = len(re.findall(r"[\u0370-\u03FF]", value))
-    latin_chars = len(re.findall(r"[A-Za-z]", value))
+    hebrew_chars = len(re.findall(r"[\u0590-\u05FF]", value))
+    korean_chars = len(re.findall(r"[\uAC00-\uD7AF]", value))
+    japanese_kana = len(re.findall(r"[\u3040-\u30FF]", value))
+    han_chars = len(re.findall(r"[\u4E00-\u9FFF]", value))
 
-    if arabic_chars >= max(greek_chars, latin_chars):
+    if arabic_chars:
         return "ar-SA"
-    if greek_chars > max(arabic_chars, latin_chars):
+    if greek_chars:
         return "el-GR"
-    return "en-US"
+    if hebrew_chars:
+        return "he-IL"
+    if korean_chars:
+        return "ko-KR"
+    if japanese_kana:
+        return "ja-JP"
+    if han_chars:
+        return "zh-CN"
+
+    try:
+        language_code = detect(value)
+    except Exception:
+        language_code = "en"
+
+    locale_overrides = {
+        "en": "en-US",
+        "ar": "ar-SA",
+        "el": "el-GR",
+        "he": "he-IL",
+        "ja": "ja-JP",
+        "ko": "ko-KR",
+        "zh-cn": "zh-CN",
+        "zh-tw": "zh-TW",
+    }
+
+    return locale_overrides.get(language_code.lower(), language_code)
 
 
 def _speech_text(text):
@@ -313,6 +329,82 @@ def render_read_aloud_button(text, key_hint="answer"):
         """,
         height=48,
     )
+
+def render_voice_reply(text, key_hint="voice_answer"):
+    """Automatically speak a voice-mode answer in the answer's detected language."""
+    spoken = _speech_text(text)
+    if not spoken:
+        return
+
+    language = _detect_speech_language(spoken)
+    component_id = "voice_reply_" + hashlib.sha1(
+        f"{key_hint}:{spoken}".encode("utf-8")
+    ).hexdigest()[:10]
+    spoken_json = json.dumps(spoken)
+    language_json = json.dumps(language)
+
+    components.html(
+        f"""
+        <div style="display:flex;gap:8px;align-items:center;margin:4px 0 8px 0;">
+          <span style="font-size:13px;opacity:.72;">🔊 Voice reply</span>
+          <button id="{component_id}_replay" style="
+            border:1px solid rgba(120,120,120,.24);
+            background:white;
+            border-radius:10px;
+            padding:6px 10px;
+            cursor:pointer;
+            font:inherit;
+          ">Replay</button>
+          <button id="{component_id}_stop" style="
+            border:1px solid rgba(120,120,120,.18);
+            background:white;
+            border-radius:10px;
+            padding:6px 10px;
+            cursor:pointer;
+            font:inherit;
+          ">Stop</button>
+        </div>
+        <script>
+          const speechText = {spoken_json};
+          const speechLang = {language_json};
+
+          function speakVoiceReply() {{
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(speechText);
+            utterance.lang = speechLang;
+
+            const voices = window.speechSynthesis.getVoices();
+            const prefix = speechLang.split("-")[0].toLowerCase();
+            const matching = voices.filter(v =>
+              (v.lang || "").toLowerCase().startsWith(prefix)
+            );
+
+            if (matching.length) {{
+              utterance.voice = matching.find(v => v.localService) || matching[0];
+            }}
+
+            utterance.rate = 0.98;
+            utterance.pitch = 1.0;
+            window.speechSynthesis.speak(utterance);
+          }}
+
+          document.getElementById("{component_id}_replay").onclick = speakVoiceReply;
+          document.getElementById("{component_id}_stop").onclick = () => {{
+            window.speechSynthesis.cancel();
+          }};
+
+          if (window.speechSynthesis.getVoices().length === 0) {{
+            window.speechSynthesis.onvoiceschanged = () => {{
+              setTimeout(speakVoiceReply, 250);
+            }};
+          }} else {{
+            setTimeout(speakVoiceReply, 250);
+          }}
+        </script>
+        """,
+        height=48,
+    )
+
 
 @st.cache_data(ttl=300, show_spinner=False)
 def get_available_hf_model_ids():
@@ -6385,17 +6477,22 @@ if package_data:
                 key="download_final_inspection_report",
             )
 
-# Display conversation history
-if st.session_state.messages:
+assistant_interaction_mode = st.radio(
+    "Assistant interaction mode",
+    options=["💬 Chat", "🎙️ Voice"],
+    horizontal=True,
+    key="assistant_interaction_mode",
+    label_visibility="collapsed",
+)
+
+# Text chat history stays separate from voice conversations.
+if assistant_interaction_mode == "💬 Chat" and st.session_state.messages:
     for message in st.session_state.messages:
+        if message.get("mode", "text") == "voice":
+            continue
+
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
-
-            if message.get("role") == "assistant":
-                render_read_aloud_button(
-                    message["content"],
-                    key_hint=f"history_{len(str(message.get('content', '')))}",
-                )
 
             if message.get("verified"):
                 st.success("✅ Verified against cited sources")
@@ -6433,121 +6530,151 @@ if st.session_state.messages:
                                 f"[{title}]({url})"
                             )
 # Main interface
-st.markdown(
-"""
-<div style="padding:20px 22px; border-radius:16px; border:1px solid rgba(120,120,120,0.16); background:rgba(255,255,255,0.72); margin-bottom:12px;">
-<div style="font-size:26px; font-weight:750; margin-bottom:6px;">
-💬 Ask Your AV Assistant
-</div>
-<div style="font-size:14px; opacity:0.68;">
-Ask about AV systems, products, troubleshooting, uploaded documents, or current technical information.
-</div>
-</div>
-""",
-unsafe_allow_html=True
-)
-if st.button("🗑️ Clear Chat"):
-    st.session_state.messages = []
-    st.session_state.last_resolved_query = None
-    st.session_state.question_input = ""
-    st.rerun()
-st.caption("⚡ Quick prompts")
+if assistant_interaction_mode == "💬 Chat":
+    st.markdown(
+        """
+        <div style="padding:20px 22px; border-radius:16px; border:1px solid rgba(120,120,120,0.16); background:rgba(255,255,255,0.72); margin-bottom:12px;">
+        <div style="font-size:26px; font-weight:750; margin-bottom:6px;">
+        💬 Ask Your AV Assistant
+        </div>
+        <div style="font-size:14px; opacity:0.68;">
+        Ask about AV systems, products, troubleshooting, uploaded documents, or current technical information.
+        </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-quick_col1, quick_col2 = st.columns(2)
-
-with quick_col1:
-    if st.button("🔧 Troubleshoot an AV issue", use_container_width=True):
-        st.session_state.question_input = "Help me troubleshoot an AV system issue."
+    if st.button("🗑️ Clear Chat"):
+        st.session_state.messages = [
+            message
+            for message in st.session_state.messages
+            if message.get("mode", "text") == "voice"
+        ]
+        st.session_state.last_resolved_query = None
+        st.session_state.question_input = ""
         st.rerun()
 
-    if st.button("📄 Search my documents", use_container_width=True):
-        st.session_state.question_input = "Search my uploaded documents and summarize the most relevant information."
-        st.rerun()
+    st.caption("⚡ Quick prompts")
 
-with quick_col2:
-    if st.button("🎛️ Explain a product", use_container_width=True):
-        st.session_state.question_input = "Explain an AV product and its main capabilities."
-        st.rerun()
+    quick_col1, quick_col2 = st.columns(2)
 
-    if st.button("⚖️ Compare technologies", use_container_width=True):
-        st.session_state.question_input = "Compare two AV technologies and explain their main differences."
-        st.rerun()
+    with quick_col1:
+        if st.button("🔧 Troubleshoot an AV issue", use_container_width=True):
+            st.session_state.question_input = "Help me troubleshoot an AV system issue."
+            st.rerun()
+
+        if st.button("📄 Search my documents", use_container_width=True):
+            st.session_state.question_input = "Search my uploaded documents and summarize the most relevant information."
+            st.rerun()
+
+    with quick_col2:
+        if st.button("🎛️ Explain a product", use_container_width=True):
+            st.session_state.question_input = "Explain an AV product and its main capabilities."
+            st.rerun()
+
+        if st.button("⚖️ Compare technologies", use_container_width=True):
+            st.session_state.question_input = "Compare two AV technologies and explain their main differences."
+            st.rerun()
+else:
+    st.markdown(
+        """
+        <div style="padding:20px 22px; border-radius:16px; border:1px solid rgba(120,120,120,0.16); background:rgba(255,255,255,0.72); margin-bottom:12px;">
+        <div style="font-size:26px; font-weight:750; margin-bottom:6px;">
+        🎙️ Voice Assistant
+        </div>
+        <div style="font-size:14px; opacity:0.68;">
+        Speak naturally in any language. The assistant detects your language automatically and replies by voice in the same language.
+        </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def submit_question():
     current_question = st.session_state.get("question_input", "").strip()
 
     if current_question:
         st.session_state.pending_question = current_question
+        st.session_state.pending_input_mode = "text"
         st.session_state.question_input = ""
-voice_language = st.selectbox(
-    "🎙️ Voice language",
-    options=["Arabic", "English", "Greek", "Auto"],
-    index=0,
-    key="voice_language",
-    help=(
-        "Choose the language you are speaking. Arabic is the default. "
-        "Use Auto only when you intentionally switch languages."
-    ),
-)
 
-voice_clip = None
-if hasattr(st, "audio_input"):
-    voice_clip = st.audio_input(
-        "🎙️ Voice message",
-        key="voice_message_input",
+
+submitted = False
+
+if assistant_interaction_mode == "🎙️ Voice":
+    voice_clip = None
+    if hasattr(st, "audio_input"):
+        voice_clip = st.audio_input(
+            "🎙️ Speak to AV Intelligence Assistant",
+            key="voice_message_input",
+        )
+    else:
+        st.warning("Voice recording is not supported by this Streamlit version.")
+
+    if voice_clip is not None:
+        voice_bytes = voice_clip.getvalue()
+        voice_digest = hashlib.sha256(voice_bytes).hexdigest()
+
+        if (
+            voice_digest
+            and voice_digest
+            != st.session_state.get("last_voice_transcription_digest")
+        ):
+            try:
+                with st.spinner("Listening and understanding..."):
+                    voice_transcript = transcribe_audio_hf(
+                        voice_bytes,
+                        getattr(voice_clip, "type", "audio/wav"),
+                    )
+
+                if voice_transcript:
+                    st.session_state["pending_question"] = voice_transcript
+                    st.session_state["pending_input_mode"] = "voice"
+                    st.session_state["last_voice_transcript"] = voice_transcript
+                    st.session_state[
+                        "last_voice_transcription_digest"
+                    ] = voice_digest
+                    st.rerun()
+            except Exception as voice_error:
+                st.warning(f"Voice transcription failed: {voice_error}")
+
+    last_voice_transcript = st.session_state.get("last_voice_transcript", "")
+    if last_voice_transcript:
+        st.caption(f"🎧 Heard: {last_voice_transcript}")
+
+else:
+    question = st.text_area(
+        "Message AV Intelligence Assistant",
+        placeholder="Ask about AV systems, uploaded documents, products, troubleshooting, or current technical information...",
+        key="question_input",
+        height=90,
     )
 
-if voice_clip is not None:
-    voice_bytes = voice_clip.getvalue()
-    voice_digest = hashlib.sha256(voice_bytes).hexdigest()
+    send_col1, send_col2 = st.columns([12, 1])
 
-    if (
-        voice_digest
-        and voice_digest
-        != st.session_state.get("last_voice_transcription_digest")
-    ):
-        try:
-            with st.spinner("Transcribing voice message..."):
-                voice_transcript = transcribe_audio_hf(
-                    voice_bytes,
-                    getattr(voice_clip, "type", "audio/wav"),
-                    language=voice_language,
-                )
+    with send_col2:
+        submitted = st.button(
+            "↑",
+            type="primary",
+            use_container_width=True,
+            on_click=submit_question,
+        )
 
-            if voice_transcript:
-                st.session_state["question_input"] = voice_transcript
-                st.session_state[
-                    "last_voice_transcription_digest"
-                ] = voice_digest
-                st.success(
-                    "Voice message transcribed. Review the text below, then send."
-                )
-                st.rerun()
-        except Exception as voice_error:
-            st.warning(f"Voice transcription failed: {voice_error}")
-
-question = st.text_area(
-    "Message AV Intelligence Assistant",
-    placeholder="Ask about AV systems, uploaded documents, products, troubleshooting, or current technical information...",
-    key="question_input",
-    height=90
+should_process_question = bool(
+    st.session_state.get("pending_question")
 )
 
-send_col1, send_col2 = st.columns([12, 1])
-
-with send_col2:
-    submitted = st.button(
-        "↑",
-        type="primary",
-        use_container_width=True,
-        on_click=submit_question
-    )
-
-if submitted:
+if should_process_question:
     question = st.session_state.pop("pending_question", "")
+    input_mode = st.session_state.pop("pending_input_mode", "text")
+
     if question:
         st.session_state.messages.append({
             "role": "user",
-            "content": question
+            "content": question,
+            "mode": input_mode,
         })
     question_lower = question.lower() if question else ""
 
@@ -6787,7 +6914,8 @@ if submitted:
         if direct_answer:
             st.session_state.messages.append({
                 "role": "assistant",
-                "content": direct_answer
+                "content": direct_answer,
+                "mode": input_mode,
             })
     
             st.markdown(
@@ -6802,6 +6930,8 @@ if submitted:
             )
     
             st.markdown(direct_answer)
+            if input_mode == "voice":
+                render_voice_reply(direct_answer, key_hint="writing_voice_answer")
             st.stop()
     elif is_translation_request:
         translation_prompt = f"""
@@ -6839,7 +6969,8 @@ if submitted:
         if direct_answer:
             st.session_state.messages.append({
                 "role": "assistant",
-                "content": direct_answer
+                "content": direct_answer,
+                "mode": input_mode,
             })
     
             st.markdown(
@@ -6854,6 +6985,8 @@ if submitted:
             )
     
             st.markdown(direct_answer)
+            if input_mode == "voice":
+                render_voice_reply(direct_answer, key_hint="translation_voice_answer")
             st.stop()
     
     elif search_mode == "Web Only" and not is_casual_chat:
@@ -7070,6 +7203,8 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
             )
             
             st.markdown(answer)
+            if input_mode == "voice":
+                render_voice_reply(answer, key_hint="web_voice_answer")
     
             st.markdown(
             """
@@ -9076,6 +9211,7 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
             st.session_state.messages.append({
                 "role": "assistant",
                 "content": answer,
+                "mode": input_mode,
             })
         
             st.markdown(
@@ -9090,7 +9226,8 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
             )
         
             st.markdown(answer)
-            render_read_aloud_button(answer, key_hint="drawing_answer")
+            if input_mode == "voice":
+                render_voice_reply(answer, key_hint="drawing_voice_answer")
         
             st.stop()
         
@@ -9320,7 +9457,8 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
             
                 st.session_state.messages.append({
                     "role": "assistant",
-                    "content": answer
+                    "content": answer,
+                    "mode": input_mode,
                 })
             
                 st.markdown(
@@ -9335,7 +9473,8 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
                 )
             
                 st.markdown(answer)
-                render_read_aloud_button(answer, key_hint="casual_answer")
+                if input_mode == "voice":
+                    render_voice_reply(answer, key_hint="casual_voice_answer")
             
                 # Casual conversation ends here.
                 # Never send casual answers through RAG/citation/technical post-processing.
@@ -10505,6 +10644,7 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
         st.session_state.messages.append({
             "role": "assistant",
             "content": answer,
+            "mode": input_mode,
             "document_sources": saved_document_sources,
             "web_sources": saved_web_sources,
             "verified": bool(
@@ -10525,7 +10665,8 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
         )
         
         st.markdown(answer)
-        render_read_aloud_button(answer, key_hint="grounded_answer")
+        if input_mode == "voice":
+            render_voice_reply(answer, key_hint="grounded_voice_answer")
         
         if claim_verification_passed and (final_cited_docs or final_cited_web):
             st.success("✅ Verified against cited sources")

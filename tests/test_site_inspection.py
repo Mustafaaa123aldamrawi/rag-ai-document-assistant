@@ -19,7 +19,7 @@ def sample_visual_items():
                 ],
                 "possible_issues": [],
                 "uncertainties": [
-                    "Manufacturer and model are not readable."
+                    "The cable destination cannot be confirmed from the visible area."
                 ],
             },
         },
@@ -99,3 +99,87 @@ def test_merge_preserves_scope_inspection_sections():
     assert merged["inspection_sections"][0]["section_title"] == "Scope Verification"
     assert merged["inspection_sections"][1]["section_title"] == "Visual Evidence / Site Findings"
     assert merged["visual_findings"]
+
+
+
+def test_multi_image_summary_filters_low_value_verify_noise_and_caps_per_photo():
+    items = [
+        {
+            "file_name": "room.jpg",
+            "analysis": {
+                "category": "SITE_PHOTO",
+                "summary": "Meeting room visible.",
+                "visible_text": [],
+                "devices": [],
+                "observations": ["Meeting room visible."],
+                "possible_issues": [],
+                "uncertainties": [
+                    "Manufacturer and model are not readable.",
+                    "Exact labels are not fully readable.",
+                    "Partition sensor location requires site verification.",
+                    "Cable route above the ceiling requires site verification.",
+                    "Another unrelated uncertain detail.",
+                ],
+            },
+        }
+    ]
+
+    summary = build_site_inspection_summary(items)
+    assert summary["inspection_meta"]["verify_items"] == 2
+    verify_text = " ".join(
+        item["item"] for item in summary["verification_items"]
+    ).lower()
+    assert "manufacturer and model" not in verify_text
+    assert "exact labels" not in verify_text
+
+
+def test_high_confidence_noncritical_finding_is_action_required_not_hold():
+    items = [
+        {
+            "file_name": "rack.jpg",
+            "analysis": {
+                "category": "AV_EQUIPMENT",
+                "summary": "Rack visible.",
+                "visible_text": [],
+                "devices": [],
+                "observations": ["Rack visible."],
+                "possible_issues": [
+                    {
+                        "issue": "A connector appears partially seated.",
+                        "confidence": "high",
+                        "basis": "Visible connector position.",
+                    }
+                ],
+                "uncertainties": [],
+            },
+        }
+    ]
+
+    summary = build_site_inspection_summary(items)
+    assert summary["inspection_meta"]["overall_status"] == "ACTION REQUIRED"
+
+
+def test_high_confidence_safety_finding_can_hold():
+    items = [
+        {
+            "file_name": "ceiling.jpg",
+            "analysis": {
+                "category": "SITE_PHOTO",
+                "summary": "Ceiling area visible.",
+                "visible_text": [],
+                "devices": [],
+                "observations": ["Overhead area visible."],
+                "possible_issues": [
+                    {
+                        "issue": "An exposed live electrical conductor is visible.",
+                        "confidence": "high",
+                        "basis": "Bare energized conductor is visibly exposed.",
+                    }
+                ],
+                "uncertainties": [],
+            },
+        }
+    ]
+
+    summary = build_site_inspection_summary(items)
+    assert summary["inspection_meta"]["overall_status"] == "HOLD / INVESTIGATE"

@@ -53,7 +53,7 @@ def test_multi_image_summary_aggregates_photos_findings_and_verify_items():
 
     assert summary["inspection_meta"]["photos_reviewed"] == 2
     assert summary["inspection_meta"]["possible_issues"] == 1
-    assert summary["inspection_meta"]["verify_items"] == 1
+    assert summary["inspection_meta"]["verify_items"] == 0
     assert summary["inspection_meta"]["overall_status"] == "REVIEW REQUIRED"
     assert len(summary["photo_register"]) == 2
     assert summary["visual_findings"][0]["source_photo"] == "rack.jpg"
@@ -126,12 +126,8 @@ def test_multi_image_summary_filters_low_value_verify_noise_and_caps_per_photo()
     ]
 
     summary = build_site_inspection_summary(items)
-    assert summary["inspection_meta"]["verify_items"] == 2
-    verify_text = " ".join(
-        item["item"] for item in summary["verification_items"]
-    ).lower()
-    assert "manufacturer and model" not in verify_text
-    assert "exact labels" not in verify_text
+    assert summary["inspection_meta"]["verify_items"] == 0
+    assert summary["verification_items"] == []
 
 
 def test_high_confidence_noncritical_finding_is_observation_not_action():
@@ -395,3 +391,146 @@ def test_scope_items_receive_relevant_photo_refs():
     items = merged["inspection_sections"][0]["items"]
     assert "P01" in items[0]["photo_ref"]
     assert "P02" in items[1]["photo_ref"]
+
+
+
+def test_client_facing_verify_suppresses_generic_not_visible_items():
+    items = [
+        {
+            "file_name": "rack.jpg",
+            "analysis": {
+                "category": "AV_EQUIPMENT",
+                "summary": "AV rack visible.",
+                "visible_text": [],
+                "devices": [],
+                "observations": ["Rack equipment is visible."],
+                "possible_issues": [],
+                "uncertainties": [
+                    "Rear cabling and connections behind the devices are not visible; connectivity cannot be confirmed.",
+                    "The function of the top-right black box is not labeled and cannot be identified.",
+                ],
+            },
+        }
+    ]
+    summary = build_site_inspection_summary(items)
+    assert summary["verification_items"] == []
+    assert summary["inspection_meta"]["verify_items"] == 0
+
+
+def test_uncertainty_that_duplicates_visual_finding_is_not_repeated():
+    items = [
+        {
+            "file_name": "ceiling.jpg",
+            "analysis": {
+                "category": "SITE_PHOTO",
+                "summary": "Ceiling area visible.",
+                "visible_text": [],
+                "devices": [],
+                "observations": ["A hanging cable is visible."],
+                "possible_issues": [
+                    {
+                        "issue": "A loose cable appears to hang from the ceiling.",
+                        "confidence": "medium",
+                        "basis": "The cable is visibly unsupported near the ceiling fixture.",
+                    }
+                ],
+                "uncertainties": [
+                    "Whether the hanging cable is intended support or an unsecured cable requires site verification."
+                ],
+            },
+        }
+    ]
+    summary = build_site_inspection_summary(items)
+    assert len(summary["visual_findings"]) == 1
+    assert summary["verification_items"] == []
+
+
+def test_photo_linking_does_not_use_generic_poly_rack_for_tc10_or_g62():
+    base = {
+        "project_info": {"project_name": "Mastercard Riyadh"},
+        "inspection_sections": [
+            {
+                "section_title": "Existing equipment to retain / reuse",
+                "items": [
+                    {
+                        "inspection_item": "Verify retained 10” controller (Poly TC10 touch panel)",
+                        "status": "VERIFY",
+                    }
+                ],
+            },
+            {
+                "section_title": "New equipment / installation verification",
+                "items": [
+                    {
+                        "inspection_item": "Verify installation feasibility for 1 x Poly Studio G62 codec",
+                        "status": "VERIFY",
+                    }
+                ],
+            },
+        ],
+    }
+    summary = {
+        "inspection_meta": {
+            "overall_status": "REVIEW REQUIRED",
+            "visual_status": "REVIEW REQUIRED",
+            "photos_reviewed": 1,
+            "possible_issues": 0,
+            "observations": 0,
+            "actions": 0,
+            "verify_items": 0,
+        },
+        "executive_summary": "One photo reviewed.",
+        "photo_register": [
+            {
+                "photo_ref": "P05",
+                "category": "AV_EQUIPMENT",
+                "subject_equipment": "AV rack with a Poly-branded VTC device and multiple rack units.",
+                "notes": "Poly logo and VTC-01 asset tag are visible.",
+            }
+        ],
+        "visual_findings": [],
+        "verification_items": [],
+    }
+
+    merged = merge_site_inspection_into_survey_data(base, summary)
+    assert merged["inspection_sections"][0]["items"][0].get("photo_ref", "") == ""
+    assert merged["inspection_sections"][1]["items"][0].get("photo_ref", "") == ""
+
+
+def test_merge_builds_deviation_action_rows_from_visual_observations():
+    base = {
+        "project_info": {"project_name": "Project X"},
+        "inspection_sections": [],
+    }
+    summary = {
+        "inspection_meta": {
+            "overall_status": "REVIEW REQUIRED",
+            "visual_status": "REVIEW REQUIRED",
+            "photos_reviewed": 1,
+            "possible_issues": 1,
+            "observations": 1,
+            "actions": 0,
+            "verify_items": 0,
+        },
+        "executive_summary": "One photo reviewed.",
+        "photo_register": [],
+        "visual_findings": [
+            {
+                "id": "F-01",
+                "source_photo_ref": "P01",
+                "finding": "A loose cable is visible.",
+                "confidence": "MEDIUM",
+                "priority": "MEDIUM",
+                "status": "OBSERVATION",
+                "required_action": "Verify the condition on site.",
+            }
+        ],
+        "verification_items": [],
+    }
+
+    merged = merge_site_inspection_into_survey_data(base, summary)
+    rows = merged["deviations_risks_actions"]
+    assert len(rows) == 1
+    assert rows[0]["id"] == "F-01"
+    assert rows[0]["photo_ref"] == "P01"
+    assert rows[0]["priority"] == "MEDIUM"

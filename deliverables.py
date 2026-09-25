@@ -17,6 +17,7 @@ LIGHT_BLUE = "D9EAF7"
 LIGHT_GRAY = "F2F2F2"
 LIGHT_GREEN = "E2F0D9"
 LIGHT_ORANGE = "FCE4D6"
+LIGHT_YELLOW = "FFF2CC"
 WHITE = "FFFFFF"
 DARK_GRAY = "5B6573"
 
@@ -113,7 +114,7 @@ def _add_header_footer(document: Document, project_name: str, document_type: str
         p.text = ""
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
         run = p.add_run(
-            "AV Intelligence Assistant  |  Unconfirmed items require field verification"
+            "Draft | Unconfirmed items require field verification before final acceptance"
         )
         run.font.name = "Aptos"
         run.font.size = Pt(7.5)
@@ -240,12 +241,21 @@ def _visual_summary(checklist_data: dict[str, Any]) -> dict[str, Any]:
     return visual if isinstance(visual, dict) else {}
 
 
+def _compact_text(value: Any, max_chars: int = 170) -> str:
+    text = " ".join(str(value or "").split())
+    if len(text) <= max_chars:
+        return text
+    return text[: max_chars - 1].rstrip() + "…"
+
+
 def _status_fill(status: str) -> str | None:
     status = str(status or "").upper()
     if status == "PASS":
         return LIGHT_GREEN
     if status == "VERIFY":
         return LIGHT_BLUE
+    if status == "OBSERVATION":
+        return LIGHT_YELLOW
     if status in {"ACTION", "RISK", "BLOCKER", "HOLD"}:
         return LIGHT_ORANGE
     return None
@@ -289,12 +299,12 @@ def _add_visual_findings_section(document: Document, checklist_data: dict[str, A
     if not findings and not verify_items:
         return
 
-    _add_section_heading(document, f"{number}. Visual Findings & Field Verification")
+    _add_section_heading(document, f"{number}. Visual Observations & Field Verification")
 
     if findings:
-        table = document.add_table(rows=1, cols=7)
+        table = document.add_table(rows=1, cols=6)
         _format_table(table)
-        headers = ["ID", "Photo", "Finding", "Confidence", "Priority", "Status", "Action"]
+        headers = ["ID", "Photo Ref.", "Observation / Finding", "Confidence", "Status", "Required Follow-up"]
         for idx, header in enumerate(headers):
             _set_cell_text(table.rows[0].cells[idx], header, bold=True, color=WHITE)
             _shade_cell(table.rows[0].cells[idx], NAVY)
@@ -303,32 +313,32 @@ def _add_visual_findings_section(document: Document, checklist_data: dict[str, A
         for finding in findings:
             if not isinstance(finding, dict):
                 continue
+            status = str(finding.get("status") or "VERIFY").upper()
             row = table.add_row().cells
             values = [
                 finding.get("id") or "",
-                finding.get("source_photo") or "",
-                finding.get("finding") or "",
+                finding.get("source_photo_ref") or finding.get("source_photo") or "",
+                _compact_text(finding.get("finding"), 220),
                 finding.get("confidence") or "",
-                finding.get("priority") or "",
-                finding.get("status") or "OPEN",
-                finding.get("required_action") or "",
+                status,
+                _compact_text(finding.get("required_action"), 220),
             ]
             for idx, value in enumerate(values):
                 _set_cell_text(row[idx], value, size=8.5)
-            fill = _status_fill(str(finding.get("priority") or ""))
+            fill = _status_fill(status)
             if fill:
                 _shade_cell(row[4], fill)
 
     if verify_items:
         document.add_paragraph()
         p = document.add_paragraph()
-        run = p.add_run("Items requiring verification")
+        run = p.add_run("Open verification items")
         run.bold = True
         run.font.color.rgb = _rgb(BLUE)
 
         table = document.add_table(rows=1, cols=5)
         _format_table(table)
-        for idx, header in enumerate(["ID", "Photo", "Item", "Status", "Required Action"]):
+        for idx, header in enumerate(["ID", "Photo Ref.", "Item", "Status", "Required Follow-up"]):
             _set_cell_text(table.rows[0].cells[idx], header, bold=True, color=WHITE)
             _shade_cell(table.rows[0].cells[idx], NAVY)
         _set_repeat_table_header(table.rows[0])
@@ -339,10 +349,10 @@ def _add_visual_findings_section(document: Document, checklist_data: dict[str, A
             row = table.add_row().cells
             values = [
                 item.get("id") or "",
-                item.get("source_photo") or "",
-                item.get("item") or "",
+                item.get("source_photo_ref") or item.get("source_photo") or "",
+                _compact_text(item.get("item"), 220),
                 item.get("status") or "VERIFY",
-                item.get("required_action") or "Verify on site",
+                _compact_text(item.get("required_action") or "Verify on site", 220),
             ]
             for idx, value in enumerate(values):
                 _set_cell_text(row[idx], value, size=8.5)
@@ -355,9 +365,9 @@ def _add_photo_register(document: Document, checklist_data: dict[str, Any], numb
         return
 
     _add_section_heading(document, f"{number}. Photo Evidence Register")
-    table = document.add_table(rows=1, cols=6)
+    table = document.add_table(rows=1, cols=5)
     _format_table(table)
-    headers = ["Photo", "File / Ref.", "Category", "Subject / Area", "Status", "Notes"]
+    headers = ["Ref.", "Category", "Subject / Area", "Status", "Notes"]
     for idx, header in enumerate(headers):
         _set_cell_text(table.rows[0].cells[idx], header, bold=True, color=WHITE)
         _shade_cell(table.rows[0].cells[idx], NAVY)
@@ -366,18 +376,20 @@ def _add_photo_register(document: Document, checklist_data: dict[str, Any], numb
     for entry in photo_register:
         if isinstance(entry, dict):
             values = [
-                entry.get("photo_number") or "",
-                entry.get("file_name") or "",
+                entry.get("photo_ref") or entry.get("photo_number") or "",
                 entry.get("category") or "",
-                entry.get("photo_subject")
-                or entry.get("subject")
-                or entry.get("subject_equipment")
-                or "",
+                _compact_text(
+                    entry.get("photo_subject")
+                    or entry.get("subject")
+                    or entry.get("subject_equipment")
+                    or "",
+                    180,
+                ),
                 entry.get("status") or "PENDING",
-                entry.get("photo_notes") or entry.get("notes") or "",
+                _compact_text(entry.get("photo_notes") or entry.get("notes") or "", 180),
             ]
         else:
-            values = ["", "", "", str(entry), "PENDING", ""]
+            values = ["", "", _compact_text(entry, 180), "PENDING", ""]
         row = table.add_row().cells
         for idx, value in enumerate(values):
             _set_cell_text(row[idx], value, size=8.5)
@@ -402,10 +414,10 @@ def build_site_survey_report_docx(checklist_data: dict[str, Any]) -> bytes | Non
     document.styles["Normal"].font.name = "Aptos"
     document.styles["Normal"].font.size = Pt(9.5)
 
-    _add_header_footer(document, project_name, "AV SITE SURVEY / INSPECTION REPORT")
+    _add_header_footer(document, project_name, "AV SITE SURVEY & INSPECTION REPORT")
     _add_title_block(
         document,
-        "AV SITE SURVEY REPORT / INSPECTION REPORT",
+        "AV SITE SURVEY & INSPECTION REPORT",
         project_name,
         "Scope verification + visual site evidence | Draft until field sign-off",
     )
@@ -425,7 +437,7 @@ def build_site_survey_report_docx(checklist_data: dict[str, Any]) -> bytes | Non
         location=location,
         rooms=rooms,
         status=overall_status,
-        document_type="AV Site Survey / Inspection Report",
+        document_type="AV Site Survey & Inspection Report",
     )
 
     _add_section_heading(document, "1. Executive Summary")
@@ -442,13 +454,14 @@ def build_site_survey_report_docx(checklist_data: dict[str, Any]) -> bytes | Non
     document.add_paragraph(str(summary))
 
     if visual_meta:
-        dashboard = document.add_table(rows=2, cols=4)
+        dashboard = document.add_table(rows=2, cols=5)
         _format_table(dashboard)
-        headers = ["Overall Status", "Photos Reviewed", "Possible Issues", "Verify Items"]
+        headers = ["Overall Status", "Photos", "Observations", "Actions", "Verify"]
         values = [
             visual_meta.get("overall_status") or "",
             visual_meta.get("photos_reviewed") or 0,
-            visual_meta.get("possible_issues") or 0,
+            visual_meta.get("observations") or 0,
+            visual_meta.get("actions") or 0,
             visual_meta.get("verify_items") or 0,
         ]
         for idx, header in enumerate(headers):
@@ -528,12 +541,21 @@ def build_site_survey_report_docx(checklist_data: dict[str, Any]) -> bytes | Non
     if open_items:
         for item in open_items:
             document.add_paragraph(f"• {item}")
-    if findings:
-        for finding in findings:
-            if isinstance(finding, dict):
-                document.add_paragraph(
-                    f"• {finding.get('id') or ''} {finding.get('required_action') or 'Verify and close with evidence.'}".strip()
-                )
+    action_findings = [
+        finding
+        for finding in findings
+        if isinstance(finding, dict)
+        and str(finding.get("status") or "").upper() == "ACTION"
+    ]
+    if action_findings:
+        for finding in action_findings:
+            document.add_paragraph(
+                f"• {finding.get('id') or ''} {_compact_text(finding.get('required_action') or 'Correct and close with evidence.', 220)}".strip()
+            )
+    elif findings:
+        document.add_paragraph(
+            "• Review visual observations against the Scope and actual site state before assigning corrective action."
+        )
     if not open_items and not findings:
         document.add_paragraph(
             "No open actions have been recorded yet. Confirm all VERIFY items before issuing a final status."
@@ -605,7 +627,7 @@ def build_professional_site_survey_checklist_docx(
         document,
         "AV SITE SURVEY CHECKLIST",
         project_name,
-        "Field verification checklist | PASS / VERIFY / ACTION / N/A",
+        "Field verification checklist | PASS / OBSERVATION / VERIFY / ACTION / N/A",
     )
     document.add_paragraph()
     _add_document_control_table(
@@ -622,8 +644,9 @@ def build_professional_site_survey_checklist_docx(
     run = p.add_run("Status guide: ")
     run.bold = True
     p.add_run(
-        "PASS = verified acceptable; VERIFY = requires confirmation; "
-        "ACTION = corrective action / coordination required; N/A = not applicable."
+        "PASS = verified acceptable; OBSERVATION = visible condition for review; "
+        "VERIFY = requires confirmation; ACTION = corrective action / coordination required; "
+        "N/A = not applicable."
     )
 
     survey_priorities = checklist_data.get("survey_priorities", []) or []

@@ -5318,10 +5318,14 @@ st.markdown(
         margin: 2px 0 18px 0;
     }
     .av-home-title {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
         font-size: 34px;
-        font-weight: 760;
-        letter-spacing: -0.02em;
+        font-weight: 700;
+        letter-spacing: 0;
+        line-height: 1.2;
         margin: 16px 0 6px 0;
+        text-rendering: geometricPrecision;
+        -webkit-font-smoothing: antialiased;
     }
     .av-home-subtitle {
         font-size: 14px;
@@ -6659,13 +6663,9 @@ if package_data:
                 key="download_final_inspection_report",
             )
 
-assistant_interaction_mode = st.radio(
-    "Assistant interaction mode",
-    options=["💬 Chat", "🎙️ Voice"],
-    horizontal=True,
-    key="assistant_interaction_mode",
-    label_visibility="collapsed",
-)
+# Chat is the default surface. Voice entry now lives beside the prompt,
+# so there is no separate Chat / Voice selector at the top of the page.
+assistant_interaction_mode = "💬 Chat"
 
 # Text chat history stays separate from voice conversations.
 if assistant_interaction_mode == "💬 Chat" and st.session_state.messages:
@@ -6712,30 +6712,19 @@ if assistant_interaction_mode == "💬 Chat" and st.session_state.messages:
                                 f"[{title}]({url})"
                             )
 # Main interface
-if assistant_interaction_mode == "💬 Chat":
-    st.markdown(
-        """
-        <div style="margin:8px 0 16px 0;">
-            <div style="font-size:25px; font-weight:720;">Ask AV Assistant</div>
-            <div style="font-size:14px; opacity:.62; margin-top:4px;">
-                Ask naturally. The assistant automatically decides when to use your files, drawings, site photos, trusted web sources, or both.
-            </div>
+st.markdown(
+    """
+    <div style="margin:8px 0 16px 0;">
+        <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif; font-size:25px; font-weight:700; letter-spacing:0;">
+            Ask AV Assistant
         </div>
-        """,
-        unsafe_allow_html=True,
-    )
-else:
-    st.markdown(
-        """
-        <div style="margin:8px 0 16px 0;">
-            <div style="font-size:25px; font-weight:720;">Voice Assistant</div>
-            <div style="font-size:14px; opacity:.62; margin-top:4px;">
-                Voice improvements are being handled separately; the current voice workflow remains available.
-            </div>
+        <div style="font-size:14px; opacity:.62; margin-top:4px;">
+            Ask naturally. AV Assistant automatically decides when to use your files, drawings, site photos, trusted web sources, or both.
         </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 
 def submit_question():
@@ -6749,141 +6738,143 @@ def submit_question():
 
 submitted = False
 
-if assistant_interaction_mode == "🎙️ Voice":
-    voice_clip = None
-    if hasattr(st, "audio_input"):
-        voice_clip = st.audio_input(
-            "🎙️ Speak to AV Intelligence Assistant",
-            key="voice_message_input",
-        )
-    else:
-        st.warning("Voice recording is not supported by this Streamlit version.")
+plus_col, prompt_col, mic_col, send_col = st.columns(
+    [0.72, 10.8, 0.72, 0.72],
+    gap="small",
+    vertical_alignment="bottom",
+)
 
-    if voice_clip is not None:
-        voice_bytes = voice_clip.getvalue()
-        voice_digest = hashlib.sha256(voice_bytes).hexdigest()
+with plus_col:
+    with st.popover("＋", use_container_width=True):
+        st.markdown("#### Add to AV Assistant")
 
-        if (
-            voice_digest
-            and voice_digest
-            != st.session_state.get("last_voice_transcription_digest")
-        ):
-            try:
-                with st.spinner("Listening and understanding..."):
-                    voice_transcript = transcribe_audio_hf(
-                        voice_bytes,
-                        getattr(voice_clip, "type", "audio/wav"),
-                    )
-
-                if voice_transcript:
-                    st.session_state["pending_question"] = voice_transcript
-                    st.session_state["pending_input_mode"] = "voice"
-                    st.session_state["last_voice_transcript"] = voice_transcript
-                    st.session_state["last_voice_transcription_digest"] = voice_digest
-                    st.rerun()
-            except Exception as voice_error:
-                st.warning(f"Voice transcription failed: {voice_error}")
-
-    last_voice_transcript = st.session_state.get("last_voice_transcript", "")
-    if last_voice_transcript:
-        st.caption(f"🎧 Heard: {last_voice_transcript}")
-
-else:
-    plus_col, prompt_col, send_col = st.columns([1.0, 11.0, 1.0], vertical_alignment="bottom")
-
-    with plus_col:
-        with st.popover("＋", use_container_width=True):
-            st.markdown("#### Add to AV Assistant")
-
-            st.file_uploader(
-                "Upload files",
-                type=["pdf", "docx", "pptx", "xlsx"],
-                accept_multiple_files=True,
-                key="assistant_files",
-                help="PDF, Word, PowerPoint, and Excel files are searchable automatically.",
-            )
-
-            st.file_uploader(
-                "Upload site photos",
-                type=["png", "jpg", "jpeg", "webp"],
-                accept_multiple_files=True,
-                key="assistant_site_photos",
-                help="Add site photos, screenshots, rack photos, or field evidence.",
-            )
-
-            st.divider()
-            st.markdown("**Quick prompts**")
-
-            quick_prompts = (
-                ("🔧 Troubleshoot an AV issue", "Help me troubleshoot an AV system issue."),
-                ("📄 Analyze my files", "Analyze my uploaded files and summarize the most relevant AV/UC information."),
-                ("🎛️ Explain a product", "Explain an AV product and its main capabilities."),
-                ("⚖️ Compare technologies", "Compare two AV technologies and explain their main differences."),
-            )
-
-            for prompt_label, prompt_value in quick_prompts:
-                if st.button(prompt_label, use_container_width=True, key=f"quick_{prompt_label}"):
-                    st.session_state["pending_question"] = prompt_value
-                    st.session_state["pending_input_mode"] = "text"
-                    st.rerun()
-
-            st.divider()
-            st.markdown("**Site survey tools**")
-
-            files_available = bool(st.session_state.get("assistant_files"))
-            photos_available = bool(st.session_state.get("assistant_site_photos")) or bool(
-                st.session_state.get("site_inspection_photo_registry", {})
-            )
-
-            if st.button(
-                "📋 Create Site Survey Checklist",
-                use_container_width=True,
-                disabled=not files_available,
-                key="plus_site_survey_checklist",
-            ):
-                st.session_state["requested_document_action"] = "site_survey_checklist"
-                st.rerun()
-
-            if st.button(
-                "📦 Build Site Survey Package",
-                use_container_width=True,
-                disabled=not photos_available,
-                key="plus_site_survey_package",
-            ):
-                st.session_state["requested_document_action"] = "site_inspection_package"
-                st.rerun()
-
-            retained_photo_count = len(
-                st.session_state.get("site_inspection_photo_registry", {})
-            )
-            if retained_photo_count:
-                st.caption(f"{retained_photo_count} site photo(s) retained in this session.")
-                if st.button(
-                    "🧹 Clear Inspection Photos",
-                    use_container_width=True,
-                    key="plus_clear_site_photos",
-                ):
-                    st.session_state["site_inspection_photo_registry"] = {}
-                    st.session_state.pop("current_visual_inspection_items", None)
-                    st.session_state.pop("site_inspection_package_data", None)
-                    st.rerun()
-
-    with prompt_col:
-        question = st.text_input(
-            "Ask AV Assistant",
-            placeholder="Ask AV Assistant",
-            key="question_input",
-            label_visibility="collapsed",
+        st.file_uploader(
+            "Upload files",
+            type=["pdf", "docx", "pptx", "xlsx"],
+            accept_multiple_files=True,
+            key="assistant_files",
+            help="PDF, Word, PowerPoint, and Excel files are searchable automatically.",
         )
 
-    with send_col:
-        submitted = st.button(
-            "↑",
-            type="primary",
+        st.file_uploader(
+            "Upload site photos",
+            type=["png", "jpg", "jpeg", "webp"],
+            accept_multiple_files=True,
+            key="assistant_site_photos",
+            help="Add site photos, screenshots, rack photos, or field evidence.",
+        )
+
+        st.divider()
+        st.markdown("**Quick prompts**")
+
+        quick_prompts = (
+            ("🔧 Troubleshoot an AV issue", "Help me troubleshoot an AV system issue."),
+            ("📄 Analyze my files", "Analyze my uploaded files and summarize the most relevant AV/UC information."),
+            ("🎛️ Explain a product", "Explain an AV product and its main capabilities."),
+            ("⚖️ Compare technologies", "Compare two AV technologies and explain their main differences."),
+        )
+
+        for prompt_label, prompt_value in quick_prompts:
+            if st.button(prompt_label, use_container_width=True, key=f"quick_{prompt_label}"):
+                st.session_state["pending_question"] = prompt_value
+                st.session_state["pending_input_mode"] = "text"
+                st.rerun()
+
+        st.divider()
+        st.markdown("**Site survey tools**")
+
+        files_available = bool(st.session_state.get("assistant_files"))
+        photos_available = bool(st.session_state.get("assistant_site_photos")) or bool(
+            st.session_state.get("site_inspection_photo_registry", {})
+        )
+
+        if st.button(
+            "📋 Create Site Survey Checklist",
             use_container_width=True,
-            on_click=submit_question,
-            key="send_chat_message",
+            disabled=not files_available,
+            key="plus_site_survey_checklist",
+        ):
+            st.session_state["requested_document_action"] = "site_survey_checklist"
+            st.rerun()
+
+        if st.button(
+            "📦 Build Site Survey Package",
+            use_container_width=True,
+            disabled=not photos_available,
+            key="plus_site_survey_package",
+        ):
+            st.session_state["requested_document_action"] = "site_inspection_package"
+            st.rerun()
+
+        retained_photo_count = len(
+            st.session_state.get("site_inspection_photo_registry", {})
         )
+        if retained_photo_count:
+            st.caption(f"{retained_photo_count} site photo(s) retained in this session.")
+            if st.button(
+                "🧹 Clear Inspection Photos",
+                use_container_width=True,
+                key="plus_clear_site_photos",
+            ):
+                st.session_state["site_inspection_photo_registry"] = {}
+                st.session_state.pop("current_visual_inspection_items", None)
+                st.session_state.pop("site_inspection_package_data", None)
+                st.rerun()
+
+with prompt_col:
+    question = st.text_input(
+        "Ask AV Assistant",
+        placeholder="Ask AV Assistant",
+        key="question_input",
+        label_visibility="collapsed",
+    )
+
+with mic_col:
+    with st.popover("🎙️", use_container_width=True):
+        st.caption("Voice input")
+        voice_clip = None
+        if hasattr(st, "audio_input"):
+            voice_clip = st.audio_input(
+                "Speak to AV Assistant",
+                key="voice_message_input",
+                label_visibility="collapsed",
+            )
+        else:
+            st.caption("Voice recording is not supported by this Streamlit version.")
+
+        if voice_clip is not None:
+            voice_bytes = voice_clip.getvalue()
+            voice_digest = hashlib.sha256(voice_bytes).hexdigest()
+
+            if (
+                voice_digest
+                and voice_digest
+                != st.session_state.get("last_voice_transcription_digest")
+            ):
+                try:
+                    with st.spinner("Listening..."):
+                        voice_transcript = transcribe_audio_hf(
+                            voice_bytes,
+                            getattr(voice_clip, "type", "audio/wav"),
+                        )
+
+                    if voice_transcript:
+                        st.session_state["pending_question"] = voice_transcript
+                        st.session_state["pending_input_mode"] = "voice"
+                        st.session_state["last_voice_transcript"] = voice_transcript
+                        st.session_state["last_voice_transcription_digest"] = voice_digest
+                        st.rerun()
+                except Exception as voice_error:
+                    st.warning(f"Voice transcription failed: {voice_error}")
+
+with send_col:
+    submitted = st.button(
+        "↑",
+        type="primary",
+        use_container_width=True,
+        on_click=submit_question,
+        key="send_chat_message",
+    )
 
 should_process_question = bool(
     st.session_state.get("pending_question")

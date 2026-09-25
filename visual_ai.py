@@ -80,6 +80,49 @@ Rules:
     ]
 
 
+def build_visual_reasoning_recovery_prompt(reasoning: str) -> str:
+    return f"""
+Convert the visual-analysis notes below into the required strict JSON schema.
+
+Rules:
+- Use ONLY facts explicitly present in the notes.
+- Do not add new observations, devices, model numbers, issues, or conclusions.
+- Preserve uncertainty exactly. If a model number is described as uncertain,
+  partially readable, or ambiguous, use null for that model and explain the
+  uncertainty under uncertainties.
+- Do not infer device state from LED color alone.
+- Do not infer hidden wiring, compliance, installation quality, or root cause.
+- Return JSON only. No markdown and no commentary.
+
+Use exactly this structure:
+{{
+  "category": "SITE_PHOTO|ERROR_SCREENSHOT|AV_EQUIPMENT|DRAWING_SNIPPET|OTHER",
+  "summary": "",
+  "visible_text": [],
+  "devices": [
+    {{
+      "manufacturer": null,
+      "model": null,
+      "device_type": null,
+      "visible_evidence": ""
+    }}
+  ],
+  "observations": [],
+  "possible_issues": [
+    {{
+      "issue": "",
+      "confidence": "high|medium|low",
+      "basis": ""
+    }}
+  ],
+  "uncertainties": []
+}}
+
+VISUAL ANALYSIS NOTES:
+{str(reasoning or "").strip()}
+""".strip()
+
+
 def build_visual_json_repair_prompt(raw: str) -> str:
     return f"""
 Repair the malformed JSON below.

@@ -17,7 +17,12 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from core_ai import (build_grounded_verification_prompt, build_recent_history, build_response_plan, classify_intent, preserve_follow_up_intent, should_verify_grounded_answer, unsupported_citation_labels, select_available_model, restore_source_technical_terms, is_safe_verifier_output)
-from visual_ai import build_visual_analysis_messages, build_visual_evidence_text, parse_visual_analysis
+from visual_ai import (
+    build_visual_analysis_messages,
+    build_visual_diagnostic_context,
+    build_visual_evidence_text,
+    parse_visual_analysis,
+)
 from deliverables import build_professional_site_survey_checklist_docx, build_site_survey_report_docx
 from langfuse import get_client, observe
 
@@ -5594,6 +5599,12 @@ if uploaded_images:
                 visual_analysis,
                 file_name=visual_source_name,
             )
+            visual_diagnostic_context = build_visual_diagnostic_context(
+                visual_analysis,
+            )
+            visual_evidence = (
+                f"{visual_evidence}\n\n{visual_diagnostic_context}"
+            )
             document_pages.append(
                 {
                     "page_number": 1,
@@ -8071,14 +8082,19 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
         if visual_evidence_available:
             visual_grounding_instruction = """
         Visual grounding rules:
-        - The Combined context contains structured evidence extracted from the uploaded image.
+        - The Combined context contains structured visual evidence plus a deterministic VISUAL DIAGNOSTIC PLAN.
         - Treat DIRECT VISUAL OBSERVATIONS and VISIBLE TEXT as the primary evidence for what can be seen.
+        - Follow VISIBLE FAULT STATUS exactly. If it says NO_OBVIOUS_VISIBLE_FAULT, explicitly state that no obvious fault is visible in the image.
         - Treat POSSIBLE VISUAL ISSUES as hypotheses only, preserving their confidence and visible basis.
-        - Treat UNCERTAINTIES / VERIFY as unknowns that require site verification.
-        - Answer what is visibly present first, then what may look wrong, then practical checks the user can perform next.
+        - Treat UNCERTAINTIES / VERIFY as unknowns, not as faults and not automatically as troubleshooting priorities.
+        - Use RECOMMENDED FIELD CHECKS as practical next actions. These are engineering checks, not claims that the fault exists.
+        - Structure the answer around: What I can see → What looks wrong → What to check next.
+        - Prioritize checks that could explain the user's concern before low-value items such as icon labels, wallpaper details, or operating-system version.
+        - If there is no visible issue, do not manufacture one. Say that the image does not show an obvious fault, then give the most relevant verification steps.
         - Do not say the information was not found in the document when visual evidence is present.
         - Do not invent a manufacturer, model number, hidden cable state, signal path, fault cause, or installation defect that the visual evidence does not support.
         - A visual symptom may justify a check, but not a confirmed root-cause claim.
+        - Keep the answer field-oriented and concise; avoid narrating decorative background details unless they matter to the issue.
         """.strip()
 
         customer_responsibility_instruction = ""

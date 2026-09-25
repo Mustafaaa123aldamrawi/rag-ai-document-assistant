@@ -316,3 +316,82 @@ def test_app_deduplicates_equipment_identity_components():
     ).read_text(encoding="utf-8")
     assert "def format_equipment_identity(equipment):" in app_source
     assert "if value.lower() in identity.lower():" in app_source
+
+
+
+def test_low_value_model_and_room_uncertainties_are_filtered():
+    items = [
+        {
+            "file_name": "room.jpg",
+            "analysis": {
+                "category": "SITE_PHOTO",
+                "summary": "Meeting room visible.",
+                "visible_text": [],
+                "devices": [],
+                "observations": ["Meeting room visible."],
+                "possible_issues": [],
+                "uncertainties": [
+                    "The exact Crestron model number is not visible on the device.",
+                    "The exact function of the space (meeting room, training room, open workspace) is not labeled and is inferred only from furniture.",
+                    "The make/model and power state of the background flat-panel screen are not visible.",
+                ],
+            },
+        }
+    ]
+    summary = build_site_inspection_summary(items)
+    assert summary["verification_items"] == []
+    assert summary["inspection_meta"]["verify_items"] == 0
+
+
+def test_scope_items_receive_relevant_photo_refs():
+    base = {
+        "project_info": {"project_name": "Project X"},
+        "inspection_sections": [
+            {
+                "section_title": "Existing equipment to retain / reuse",
+                "items": [
+                    {
+                        "inspection_item": "Verify retained Crestron Room Scheduling Touch Panel",
+                        "status": "VERIFY",
+                    },
+                    {
+                        "inspection_item": "Verify existing rack capacity and PDU",
+                        "status": "VERIFY",
+                    },
+                ],
+            }
+        ],
+    }
+    summary = {
+        "inspection_meta": {
+            "overall_status": "REVIEW REQUIRED",
+            "visual_status": "REVIEW REQUIRED",
+            "photos_reviewed": 2,
+            "possible_issues": 0,
+            "observations": 0,
+            "actions": 0,
+            "verify_items": 0,
+        },
+        "executive_summary": "Two photos reviewed.",
+        "photo_register": [
+            {
+                "photo_ref": "P01",
+                "category": "AV_EQUIPMENT",
+                "subject_equipment": "Wall-mounted Crestron room scheduling touch panel.",
+                "notes": "Crestron touch panel powered on.",
+            },
+            {
+                "photo_ref": "P02",
+                "category": "AV_EQUIPMENT",
+                "subject_equipment": "AV equipment rack with rack-mounted devices.",
+                "notes": "Rack and power distribution equipment visible.",
+            },
+        ],
+        "visual_findings": [],
+        "verification_items": [],
+    }
+
+    merged = merge_site_inspection_into_survey_data(base, summary)
+    items = merged["inspection_sections"][0]["items"]
+    assert "P01" in items[0]["photo_ref"]
+    assert "P02" in items[1]["photo_ref"]

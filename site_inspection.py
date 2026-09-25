@@ -44,6 +44,20 @@ def _uncertainty_is_actionable(value: Any) -> bool:
         "exact labels",
         "cannot be determined from the image",
         "cannot be confirmed from the image",
+        "manufacturers and models cannot be determined",
+        "manufacturer and model cannot be determined",
+        "make/model",
+        "make and model",
+        "model number is not visible",
+        "exact crestron model",
+        "background flat-panel",
+        "background flat panel",
+        "function of the space",
+        "space (meeting room",
+        "space is not labeled",
+        "purpose (decorative",
+        "purpose is not visually confirmed",
+        "power state of the background",
     )
     return not any(phrase in text for phrase in low_value_phrases)
 
@@ -378,12 +392,12 @@ def build_inspection_only_survey_data(
         checklist_items.append(
             {
                 "item": _clean_text(finding.get("finding")),
-                "status": "ACTION",
+                "status": _clean_text(finding.get("status")) or "VERIFY",
                 "notes": (
-                    f"Source: {_clean_text(finding.get('source_photo'))}. "
+                    f"Source: {_clean_text(finding.get('source_photo_ref') or finding.get('source_photo'))}. "
                     f"Basis: {_clean_text(finding.get('basis'))}"
                 ).strip(),
-                "photo_ref": _clean_text(finding.get("source_photo")),
+                "photo_ref": _clean_text(finding.get("source_photo_ref") or finding.get("source_photo")),
             }
         )
 
@@ -394,8 +408,8 @@ def build_inspection_only_survey_data(
             {
                 "item": _clean_text(verify_item.get("item")),
                 "status": "VERIFY",
-                "notes": f"Source: {_clean_text(verify_item.get('source_photo'))}",
-                "photo_ref": _clean_text(verify_item.get("source_photo")),
+                "notes": f"Source: {_clean_text(verify_item.get('source_photo_ref') or verify_item.get('source_photo'))}",
+                "photo_ref": _clean_text(verify_item.get("source_photo_ref") or verify_item.get("source_photo")),
             }
         )
 
@@ -452,6 +466,127 @@ def build_inspection_only_survey_data(
     }
 
 
+PHOTO_SCOPE_TERM_GROUPS = {
+    "display": ("display", "flat panel", "screen", "monitor"),
+    "camera": ("camera",),
+    "scheduler": ("crestron", "scheduler", "scheduling", "touch panel", "tc10"),
+    "rack": ("rack", "headend", "pdu", "power distribution"),
+    "dsp": ("dsp", "biamp", "tesira"),
+    "amplifier": ("amplifier", "amp", "netpa"),
+    "codec": ("codec", "poly", "g62", "vtc"),
+    "switcher": ("switcher", "sw-01"),
+    "extender": ("extender", "receiver", "transmitter", "rx-01", "wrx-01"),
+    "microphone": ("microphone", "mic", "array microphone"),
+    "speaker": ("speaker", "loudspeaker"),
+    "ceiling": ("ceiling", "above-ceiling", "above ceiling", "plenum"),
+    "partition": ("partition", "divisible", "combined room", "room-combining"),
+    "cable": ("cable", "pathway", "containment", "conduit", "hdmi", "usb"),
+    "dante": ("dante",),
+    "room": ("meeting room", "conference room", "room-1", "room-2"),
+}
+
+
+def _photo_scope_tokens(text: Any) -> set[str]:
+    normalized = _normalized_key(text)
+    matched = set()
+    for canonical, variants in PHOTO_SCOPE_TERM_GROUPS.items():
+        if any(variant in normalized for variant in variants):
+            matched.add(canonical)
+    return matched
+
+
+def _photo_search_text(photo: dict[str, Any]) -> str:
+    return " ".join(
+        _clean_text(photo.get(key))
+        for key in (
+            "subject_equipment",
+            "notes",
+            "visible_text",
+            "category",
+        )
+        if _clean_text(photo.get(key))
+    )
+
+
+def _link_photo_refs_to_scope(merged: dict[str, Any]) -> None:
+    photos = [
+        photo for photo in merged.get("photo_register", []) or []
+        if isinstance(photo, dict)
+    ]
+    if not photos:
+        return
+
+    photo_tokens = []
+    for photo in photos:
+        text = _photo_search_text(photo)
+        photo_tokens.append(
+            (
+                _clean_text(photo.get("photo_ref")),
+                _photo_scope_tokens(text),
+                _normalized_key(text),
+            )
+        )
+
+    for section in merged.get("inspection_sections", []) or []:
+        if not isinstance(section, dict):
+            continue
+        section_text = _clean_text(
+            section.get("section_title") or section.get("section")
+        )
+        for item in section.get("items", []) or []:
+            if not isinstance(item, dict):
+                continue
+
+            item_text = " ".join(
+                (
+                    section_text,
+                    _clean_text(item.get("inspection_item") or item.get("item")),
+                )
+            )
+            item_tokens = _photo_scope_tokens(item_text)
+            normalized_item = _normalized_key(item_text)
+
+            scored = []
+            for photo_ref, tokens, photo_text in photo_tokens:
+                if not photo_ref:
+                    continue
+                overlap = len(item_tokens & tokens)
+                exact_bonus = 0
+
+                # Strong evidence terms should beat broad room/ceiling matches.
+                for phrase in (
+                    "crestron",
+                    "tc10",
+                    "rack",
+                    "biamp",
+                    "dsp",
+                    "codec",
+                    "poly",
+                    "display",
+                    "camera",
+                    "ceiling",
+                    "cable",
+                    "partition",
+                ):
+                    if phrase in normalized_item and phrase in photo_text:
+                        exact_bonus += 2
+
+                score = overlap + exact_bonus
+                if score >= 2:
+                    scored.append((score, photo_ref))
+
+            scored.sort(key=lambda pair: (-pair[0], pair[1]))
+            refs = []
+            for _, ref in scored:
+                if ref not in refs:
+                    refs.append(ref)
+                if len(refs) >= 2:
+                    break
+
+            if refs:
+                item["photo_ref"] = ", ".join(refs)
+
+
 def merge_site_inspection_into_survey_data(
     survey_data: dict[str, Any] | None,
     inspection_summary: dict[str, Any],
@@ -501,6 +636,8 @@ def merge_site_inspection_into_survey_data(
                 non_blank_existing.append(row)
 
         merged["photo_register"] = non_blank_existing + visual_photo_register
+
+    _link_photo_refs_to_scope(merged)
 
     # Visual findings remain in dedicated visual_findings / verification_items
     # collections. They are intentionally NOT injected into the Scope-derived

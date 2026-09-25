@@ -248,3 +248,40 @@ def test_word_outputs_separate_survey_and_visual_status():
     assert "NO OBVIOUS VISUAL FAULT" in report_text
     assert "FIELD VERIFICATION REQUIRED" in checklist_text
     assert "Visual status: NO OBVIOUS VISUAL FAULT" in checklist_text
+
+
+
+def test_report_uses_scope_summary_instead_of_repeating_every_scope_row():
+    data = sample_data()
+    data["scope_available"] = True
+    output = build_site_survey_report_docx(data)
+    document = Document(BytesIO(output))
+    combined = "\n".join(
+        [p.text for p in document.paragraphs]
+        + [
+            cell.text
+            for table in document.tables
+            for row in table.rows
+            for cell in row.cells
+        ]
+    )
+    assert "Design / Scope Verification Summary" in combined
+    assert "Detailed item-by-item verification is provided in the companion AV Site Survey Checklist." in combined
+
+
+def test_checklist_signoff_uses_same_survey_status_as_header():
+    data = visual_sample_data()
+    data["survey_status"] = "FIELD VERIFICATION REQUIRED"
+    data["visual_status"] = "REVIEW REQUIRED"
+    output = build_professional_site_survey_checklist_docx(data)
+    document = Document(BytesIO(output))
+    combined = "\n".join(
+        [p.text for p in document.paragraphs]
+        + [
+            cell.text
+            for table in document.tables
+            for row in table.rows
+            for cell in row.cells
+        ]
+    )
+    assert combined.count("FIELD VERIFICATION REQUIRED") >= 2

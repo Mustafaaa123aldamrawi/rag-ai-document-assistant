@@ -208,6 +208,59 @@ def _normalized_checklist_sections(checklist_data: dict[str, Any]) -> list[dict[
     return normalized
 
 
+def _scope_section_summary(checklist_data: dict[str, Any]) -> list[dict[str, Any]]:
+    rows = []
+    for section in _normalized_checklist_sections(checklist_data):
+        items = section.get("items", []) or []
+        if not items:
+            continue
+
+        counts = {"PASS": 0, "OBSERVATION": 0, "VERIFY": 0, "ACTION": 0, "N/A": 0}
+        photo_refs = []
+        for item in items:
+            status = str(item.get("status") or "VERIFY").upper()
+            if status in counts:
+                counts[status] += 1
+            refs = [
+                ref.strip()
+                for ref in str(item.get("photo_ref") or "").split(",")
+                if ref.strip()
+            ]
+            for ref in refs:
+                if ref not in photo_refs:
+                    photo_refs.append(ref)
+
+        if counts["ACTION"]:
+            section_status = "ACTION"
+        elif counts["VERIFY"]:
+            section_status = "VERIFY"
+        elif counts["OBSERVATION"]:
+            section_status = "OBSERVATION"
+        elif counts["PASS"] and not any(
+            counts[key] for key in ("VERIFY", "OBSERVATION", "ACTION")
+        ):
+            section_status = "PASS"
+        else:
+            section_status = "VERIFY"
+
+        key_items = [
+            _compact_text(item.get("item"), 130)
+            for item in items[:2]
+            if str(item.get("item") or "").strip()
+        ]
+
+        rows.append(
+            {
+                "section": section.get("section") or "",
+                "items": len(items),
+                "status": section_status,
+                "photo_refs": ", ".join(photo_refs[:4]),
+                "focus": " | ".join(key_items),
+            }
+        )
+    return rows
+
+
 def _status_summary(checklist_data: dict[str, Any]) -> dict[str, int]:
     counts = {"PASS": 0, "VERIFY": 0, "ACTION": 0, "N/A": 0, "OTHER": 0}
     for section in _normalized_checklist_sections(checklist_data):
@@ -496,43 +549,39 @@ def build_site_survey_report_docx(checklist_data: dict[str, Any]) -> bytes | Non
             or checklist_data.get("survey_priorities")
         )
 
-    _add_section_heading(document, "3. Design / Scope Verification")
+    _add_section_heading(document, "3. Design / Scope Verification Summary")
     sections = _normalized_checklist_sections(checklist_data)
     if scope_available and sections:
-        table = document.add_table(rows=1, cols=6)
+        scope_rows = _scope_section_summary(checklist_data)
+        table = document.add_table(rows=1, cols=5)
         _format_table(table)
-        headers = ["Section", "Verification Item", "Status", "Notes / Evidence", "Photo Ref.", "Action"]
+        headers = ["Scope Section", "Items", "Status", "Photo Ref.", "Key Verification Focus"]
         for idx, header in enumerate(headers):
             _set_cell_text(table.rows[0].cells[idx], header, bold=True, color=WHITE)
             _shade_cell(table.rows[0].cells[idx], NAVY)
         _set_repeat_table_header(table.rows[0])
 
-        for section_data in sections:
-            for item in section_data.get("items", []) or []:
-                status = str(item.get("status") or "VERIFY").upper()
-                action = ""
-                if status == "VERIFY":
-                    action = "Verify on site"
-                elif status == "ACTION":
-                    action = "Corrective action / coordination required"
-                row = table.add_row().cells
-                values = [
-                    section_data.get("section") or "",
-                    item.get("item") or "",
-                    status,
-                    item.get("notes") or "",
-                    item.get("photo_ref") or "",
-                    action,
-                ]
-                for idx, value in enumerate(values):
-                    _set_cell_text(row[idx], value, size=8.5)
-                fill = _status_fill(status)
-                if fill:
-                    _shade_cell(row[2], fill)
+        for entry in scope_rows:
+            row = table.add_row().cells
+            values = [
+                entry.get("section") or "",
+                entry.get("items") or 0,
+                entry.get("status") or "VERIFY",
+                entry.get("photo_refs") or "",
+                entry.get("focus") or "",
+            ]
+            for idx, value in enumerate(values):
+                _set_cell_text(row[idx], value, size=8.5)
+            fill = _status_fill(str(entry.get("status") or ""))
+            if fill:
+                _shade_cell(row[2], fill)
+
+        document.add_paragraph(
+            "Detailed item-by-item verification is provided in the companion AV Site Survey Checklist."
+        )
     else:
         document.add_paragraph(
-            "No Scope-derived verification checklist was available. This section is intentionally left as visual-inspection-only; "
-            "no design requirement is inferred from the uploaded photos."
+            "No Scope-derived verification checklist was available. This report is based on visual inspection evidence only."
         )
 
     _add_visual_findings_section(document, checklist_data, "4")
@@ -566,7 +615,11 @@ def build_site_survey_report_docx(checklist_data: dict[str, Any]) -> bytes | Non
         document.add_paragraph(
             "• Review visual observations against the Scope and actual site state before assigning corrective action."
         )
-    if not open_items and not findings:
+    if survey_status == "FIELD VERIFICATION REQUIRED":
+        document.add_paragraph(
+            "• Complete the outstanding Scope verification items in the companion checklist and attach photo/evidence references before final acceptance."
+        )
+    if not open_items and not findings and survey_status != "FIELD VERIFICATION REQUIRED":
         document.add_paragraph(
             "No open actions have been recorded yet. Confirm all VERIFY items before issuing a final status."
         )
@@ -627,7 +680,7 @@ def build_professional_site_survey_checklist_docx(
         or visual_meta.get("overall_status")
         or "VERIFY"
     )
-    status = str(
+    survey_status = str(
         checklist_data.get("survey_status")
         or visual_status
         or "Pre-Survey / To Be Verified"
@@ -657,7 +710,7 @@ def build_professional_site_survey_checklist_docx(
         client=client,
         location=location,
         rooms=rooms,
-        status=status,
+        status=survey_status,
         document_type="AV Site Survey Checklist",
     )
 
@@ -716,18 +769,18 @@ def build_professional_site_survey_checklist_docx(
         _set_repeat_table_header(table.rows[0])
 
         for item in items:
-            status = str(item.get("status") or "VERIFY").upper()
+            item_status = str(item.get("status") or "VERIFY").upper()
             row = table.add_row().cells
             values = [
                 item_number,
                 item.get("item") or "",
-                status,
+                item_status,
                 item.get("notes") or "",
                 item.get("photo_ref") or "",
             ]
             for idx, value in enumerate(values):
                 _set_cell_text(row[idx], value, size=8.5)
-            fill = _status_fill(status)
+            fill = _status_fill(item_status)
             if fill:
                 _shade_cell(row[2], fill)
             item_number += 1
@@ -787,7 +840,7 @@ def build_professional_site_survey_checklist_docx(
     for row, values in zip(
         outcome.rows,
         [
-            ("Overall Status", status),
+            ("Overall Status", survey_status),
             ("Surveyed By", ""),
             ("Project / Engineering Review", ""),
             ("Client Representative", ""),

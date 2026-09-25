@@ -1,6 +1,8 @@
 from pathlib import Path
 from visual_ai import (
     build_visual_analysis_messages,
+    build_visual_diagnostic_context,
+    build_visual_diagnostic_plan,
     build_visual_evidence_text,
     parse_visual_analysis,
 )
@@ -109,3 +111,83 @@ def test_visual_reference_with_visual_evidence_overrides_casual_routing():
     assert "visual_reference_query = (" in app_source
     assert 'router_intent = "DOCUMENT"' in app_source
     assert 'query_route = "DOCUMENT"' in app_source
+
+
+
+def test_visual_diagnostic_plan_states_no_obvious_fault_when_none_supported():
+    analysis = {
+        "category": "SITE_PHOTO",
+        "summary": "A curved display is active and showing a desktop.",
+        "visible_text": [],
+        "devices": [],
+        "observations": [
+            "A large curved display is active.",
+            "A desktop image is visible across the display.",
+        ],
+        "possible_issues": [],
+        "uncertainties": [
+            "Manufacturer and model are not readable.",
+        ],
+    }
+
+    plan = build_visual_diagnostic_plan(
+        analysis,
+        question="What can you see, what looks wrong, and what should I check next?",
+    )
+
+    assert plan["visible_fault_status"] == "NO_OBVIOUS_VISIBLE_FAULT"
+    assert "No obvious visual fault" in plan["fault_summary"]
+    assert any("geometry" in item.lower() for item in plan["next_checks"])
+    assert any("brightness" in item.lower() for item in plan["next_checks"])
+    assert not any("manufacturer" in item.lower() for item in plan["next_checks"])
+
+
+def test_visual_diagnostic_plan_preserves_possible_issue_confidence():
+    analysis = {
+        "category": "SITE_PHOTO",
+        "summary": "Display image is visible.",
+        "visible_text": [],
+        "devices": [],
+        "observations": ["A vertical discontinuity is visible."],
+        "possible_issues": [
+            {
+                "issue": "Visible vertical discontinuity across the display image.",
+                "confidence": "medium",
+                "basis": "The line is visible across adjacent image areas.",
+            }
+        ],
+        "uncertainties": [],
+    }
+
+    plan = build_visual_diagnostic_plan(analysis)
+
+    assert plan["visible_fault_status"] == "POSSIBLE_VISIBLE_FAULT"
+    assert plan["possible_issues"][0]["confidence"] == "medium"
+    assert "vertical discontinuity" in plan["possible_issues"][0]["issue"].lower()
+
+
+def test_visual_diagnostic_context_labels_checks_as_actions_not_faults():
+    analysis = {
+        "category": "SITE_PHOTO",
+        "summary": "Display is active.",
+        "visible_text": [],
+        "devices": [],
+        "observations": ["Display is active."],
+        "possible_issues": [],
+        "uncertainties": [],
+    }
+
+    context = build_visual_diagnostic_context(analysis)
+
+    assert "VISIBLE FAULT STATUS: NO_OBVIOUS_VISIBLE_FAULT" in context
+    assert "RECOMMENDED FIELD CHECKS:" in context
+    assert "diagnostic actions, not claims that a fault exists" in context
+
+
+def test_app_visual_rules_prioritize_field_diagnostics_over_low_value_details():
+    app_source = (
+        Path(__file__).resolve().parents[1] / "app.py"
+    ).read_text(encoding="utf-8")
+    assert "What I can see → What looks wrong → What to check next." in app_source
+    assert "If there is no visible issue, do not manufacture one." in app_source
+    assert "icon labels, wallpaper details, or operating-system version" in app_source

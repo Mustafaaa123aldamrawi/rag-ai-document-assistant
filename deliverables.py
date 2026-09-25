@@ -402,7 +402,17 @@ def build_site_survey_report_docx(checklist_data: dict[str, Any]) -> bytes | Non
     project_name, client, location, rooms = _project_fields(checklist_data)
     visual = _visual_summary(checklist_data)
     visual_meta = visual.get("inspection_meta") or checklist_data.get("inspection_meta") or {}
-    overall_status = str(visual_meta.get("overall_status") or "Draft / Pre-Survey").strip()
+    visual_status = str(
+        checklist_data.get("visual_status")
+        or visual_meta.get("visual_status")
+        or visual_meta.get("overall_status")
+        or "VERIFY"
+    ).strip()
+    survey_status = str(
+        checklist_data.get("survey_status")
+        or visual_status
+        or "Draft / Pre-Survey"
+    ).strip()
 
     document = Document()
     section = document.sections[0]
@@ -436,7 +446,7 @@ def build_site_survey_report_docx(checklist_data: dict[str, Any]) -> bytes | Non
         client=client,
         location=location,
         rooms=rooms,
-        status=overall_status,
+        status=survey_status,
         document_type="AV Site Survey & Inspection Report",
     )
 
@@ -456,12 +466,12 @@ def build_site_survey_report_docx(checklist_data: dict[str, Any]) -> bytes | Non
     if visual_meta:
         dashboard = document.add_table(rows=2, cols=5)
         _format_table(dashboard)
-        headers = ["Overall Status", "Photos", "Observations", "Actions", "Verify"]
+        headers = ["Survey Status", "Visual Status", "Photos", "Obs / Actions", "Visual Verify"]
         values = [
-            visual_meta.get("overall_status") or "",
+            survey_status,
+            visual_status,
             visual_meta.get("photos_reviewed") or 0,
-            visual_meta.get("observations") or 0,
-            visual_meta.get("actions") or 0,
+            f"{visual_meta.get('observations') or 0} / {visual_meta.get('actions') or 0}",
             visual_meta.get("verify_items") or 0,
         ]
         for idx, header in enumerate(headers):
@@ -566,7 +576,8 @@ def build_site_survey_report_docx(checklist_data: dict[str, Any]) -> bytes | Non
     table = document.add_table(rows=0, cols=2)
     _format_table(table)
     assessment_rows = [
-        ("Overall Status", overall_status),
+        ("Survey Status", survey_status),
+        ("Visual Status", visual_status),
         ("Critical Blockers", conclusion.get("critical_blockers") or ""),
         ("Additional Work Required", conclusion.get("additional_work_required") or ""),
         ("Customer Actions", conclusion.get("customer_actions") or ""),
@@ -610,7 +621,17 @@ def build_professional_site_survey_checklist_docx(
     project_name, client, location, rooms = _project_fields(checklist_data)
     visual = _visual_summary(checklist_data)
     visual_meta = visual.get("inspection_meta") or checklist_data.get("inspection_meta") or {}
-    status = str(visual_meta.get("overall_status") or "Pre-Survey / To Be Verified")
+    visual_status = str(
+        checklist_data.get("visual_status")
+        or visual_meta.get("visual_status")
+        or visual_meta.get("overall_status")
+        or "VERIFY"
+    )
+    status = str(
+        checklist_data.get("survey_status")
+        or visual_status
+        or "Pre-Survey / To Be Verified"
+    )
 
     document = Document()
     section = document.sections[0]
@@ -639,6 +660,11 @@ def build_professional_site_survey_checklist_docx(
         status=status,
         document_type="AV Site Survey Checklist",
     )
+
+    p = document.add_paragraph()
+    run = p.add_run(f"Visual status: {visual_status}")
+    run.bold = True
+    run.font.color.rgb = _rgb(DARK_GRAY)
 
     p = document.add_paragraph()
     run = p.add_run("Status guide: ")

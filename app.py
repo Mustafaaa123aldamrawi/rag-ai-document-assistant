@@ -299,9 +299,9 @@ def render_read_aloud_button(text, key_hint="answer"):
             const matching = voices.filter(v =>
               (v.lang || "").toLowerCase().startsWith(prefix)
             );
-            if (matching.length) {
+            if (matching.length) {{
               utterance.voice = matching.find(v => v.localService) || matching[0];
-            }
+            }}
             utterance.rate = 0.98;
             utterance.pitch = 1.0;
             window.speechSynthesis.speak(utterance);

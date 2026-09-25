@@ -666,13 +666,14 @@ def test_app_exposes_voice_and_final_report_workflows():
 
 
 
-def test_voice_ui_is_separate_and_has_no_manual_language_selector():
+def test_voice_ui_is_integrated_into_chat_composer_without_manual_language_selector():
     app_source = (
         Path(__file__).resolve().parents[1] / "app.py"
     ).read_text(encoding="utf-8")
 
-    assert 'options=["💬 Chat", "🎙️ Voice"]' in app_source
-    assert 'assistant_interaction_mode == "🎙️ Voice"' in app_source
+    assert 'options=["💬 Chat", "🎙️ Voice"]' not in app_source
+    assert 'with st.popover("🎙️", use_container_width=True):' in app_source
+    assert 'placeholder="Ask AV Assistant"' in app_source
     assert '"🎙️ Voice language"' not in app_source
     assert 'options=["Arabic", "English", "Greek", "Auto"]' not in app_source
     assert 'language=voice_language' not in app_source

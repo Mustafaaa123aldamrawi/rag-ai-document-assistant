@@ -16,6 +16,7 @@ import streamlit.components.v1 as components
 
 from PIL import Image
 from huggingface_hub import InferenceClient
+from langdetect import detect, DetectorFactory
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
@@ -48,6 +49,9 @@ os.environ["LANGFUSE_SECRET_KEY"] = st.secrets["LANGFUSE_SECRET_KEY"]
 os.environ["LANGFUSE_BASE_URL"] = st.secrets["LANGFUSE_BASE_URL"]
 
 langfuse = get_client()
+
+# Keep automatic language detection deterministic for the same text.
+DetectorFactory.seed = 0
 
 
 def _dedupe_adjacent_voice_tokens(text):
@@ -212,16 +216,50 @@ def transcribe_audio_hf(
 
 
 def _detect_speech_language(text):
-    value = str(text or "")
+    """Return a browser-friendly BCP-47 language tag without user selection."""
+    value = str(text or "").strip()
+    if not value:
+        return "en-US"
+
+    # Script-first checks are more reliable than statistical detection for
+    # short AV answers, product names, acronyms, and mixed technical wording.
     arabic_chars = len(re.findall(r"[\u0600-\u06FF]", value))
     greek_chars = len(re.findall(r"[\u0370-\u03FF]", value))
-    latin_chars = len(re.findall(r"[A-Za-z]", value))
+    hebrew_chars = len(re.findall(r"[\u0590-\u05FF]", value))
+    korean_chars = len(re.findall(r"[\uAC00-\uD7AF]", value))
+    japanese_kana = len(re.findall(r"[\u3040-\u30FF]", value))
+    han_chars = len(re.findall(r"[\u4E00-\u9FFF]", value))
 
-    if arabic_chars >= max(greek_chars, latin_chars):
+    if arabic_chars:
         return "ar-SA"
-    if greek_chars > max(arabic_chars, latin_chars):
+    if greek_chars:
         return "el-GR"
-    return "en-US"
+    if hebrew_chars:
+        return "he-IL"
+    if korean_chars:
+        return "ko-KR"
+    if japanese_kana:
+        return "ja-JP"
+    if han_chars:
+        return "zh-CN"
+
+    try:
+        language_code = detect(value)
+    except Exception:
+        language_code = "en"
+
+    locale_overrides = {
+        "en": "en-US",
+        "ar": "ar-SA",
+        "el": "el-GR",
+        "he": "he-IL",
+        "ja": "ja-JP",
+        "ko": "ko-KR",
+        "zh-cn": "zh-CN",
+        "zh-tw": "zh-TW",
+    }
+
+    return locale_overrides.get(language_code.lower(), language_code)
 
 
 def _speech_text(text):

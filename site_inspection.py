@@ -90,6 +90,64 @@ def _finding_status(issue_text: str, confidence: str, basis: str) -> str:
     return "VERIFY"
 
 
+def _scope_verification_status(survey_data: dict[str, Any]) -> str:
+    if not isinstance(survey_data, dict):
+        return ""
+
+    statuses = []
+    for section in survey_data.get("inspection_sections", []) or []:
+        if not isinstance(section, dict):
+            continue
+        for item in section.get("items", []) or []:
+            if not isinstance(item, dict):
+                continue
+            status = _clean_text(item.get("status") or "VERIFY").upper()
+            statuses.append(status)
+
+    if any(status == "ACTION" for status in statuses):
+        return "ACTION REQUIRED"
+    if any(status == "VERIFY" for status in statuses):
+        return "FIELD VERIFICATION REQUIRED"
+    if any(status == "OBSERVATION" for status in statuses):
+        return "REVIEW REQUIRED"
+    if statuses and all(status in {"PASS", "N/A"} for status in statuses):
+        return "READY FOR FINAL REVIEW"
+    return ""
+
+
+def derive_survey_status(
+    survey_data: dict[str, Any] | None,
+    inspection_summary: dict[str, Any],
+) -> str:
+    visual_meta = (
+        inspection_summary.get("inspection_meta", {})
+        if isinstance(inspection_summary, dict)
+        else {}
+    )
+    visual_status = _clean_text(visual_meta.get("overall_status")) or "VERIFY"
+
+    if not isinstance(survey_data, dict):
+        return visual_status
+
+    scope_status = _scope_verification_status(survey_data)
+
+    visual_actions = int(visual_meta.get("actions") or 0)
+    visual_observations = int(visual_meta.get("observations") or 0)
+    visual_verify = int(visual_meta.get("verify_items") or 0)
+
+    if visual_actions:
+        return "ACTION REQUIRED"
+    if scope_status == "ACTION REQUIRED":
+        return "ACTION REQUIRED"
+    if scope_status == "FIELD VERIFICATION REQUIRED":
+        return "FIELD VERIFICATION REQUIRED"
+    if visual_observations or scope_status == "REVIEW REQUIRED":
+        return "REVIEW REQUIRED"
+    if visual_verify:
+        return "FIELD VERIFICATION REQUIRED"
+    return scope_status or visual_status
+
+
 def build_site_inspection_summary(
     visual_items: list[dict[str, Any]],
 ) -> dict[str, Any]:
@@ -291,6 +349,7 @@ def build_site_inspection_summary(
             "title": "AV/UC Site Inspection",
             "inspection_type": "Multi-Image Visual Inspection",
             "overall_status": overall_status,
+            "visual_status": overall_status,
             "photos_reviewed": len(items),
             "possible_issues": len(findings),
             "observations": observation_count,
@@ -352,6 +411,8 @@ def build_inspection_only_survey_data(
 
     return {
         "scope_available": False,
+        "survey_status": _clean_text(meta.get("overall_status")) or "VERIFY",
+        "visual_status": _clean_text(meta.get("visual_status") or meta.get("overall_status")) or "VERIFY",
         "document_meta": {
             "title": "AV/UC Site Inspection Checklist",
             "subtitle": "Multi-Image Visual Inspection",
@@ -406,6 +467,11 @@ def merge_site_inspection_into_survey_data(
     summary = inspection_summary if isinstance(inspection_summary, dict) else {}
 
     merged["scope_available"] = True
+    merged["survey_status"] = derive_survey_status(merged, summary)
+    merged["visual_status"] = _clean_text(
+        (summary.get("inspection_meta") or {}).get("visual_status")
+        or (summary.get("inspection_meta") or {}).get("overall_status")
+    ) or "VERIFY"
     merged["visual_inspection"] = summary
     merged["inspection_meta"] = summary.get("inspection_meta") or {}
     merged["executive_summary"] = summary.get("executive_summary") or ""

@@ -2587,9 +2587,49 @@ def generate_site_survey_blueprint(scope_context):
         except json.JSONDecodeError:
             return None
 
+def format_equipment_identity(equipment):
+    if not isinstance(equipment, dict):
+        return ""
+
+    device = str(equipment.get("device") or "").strip()
+    manufacturer = str(equipment.get("manufacturer") or "").strip()
+    model = str(equipment.get("model") or "").strip()
+
+    identity = device
+
+    for value in (manufacturer, model):
+        if not value:
+            continue
+        if value.lower() in identity.lower():
+            continue
+        identity = f"{value} {identity}".strip()
+
+    return " ".join(identity.split())
+
+
 def build_professional_site_survey_data(blueprint):
     if not isinstance(blueprint, dict):
         return None
+
+    # Kept local so this function remains self-contained for regression
+    # extraction and can be reused independently of the Streamlit runtime.
+    def format_equipment_identity(equipment):
+        if not isinstance(equipment, dict):
+            return ""
+
+        device = str(equipment.get("device") or "").strip()
+        manufacturer = str(equipment.get("manufacturer") or "").strip()
+        model = str(equipment.get("model") or "").strip()
+
+        identity = device
+        for value in (manufacturer, model):
+            if not value:
+                continue
+            if value.lower() in identity.lower():
+                continue
+            identity = f"{value} {identity}".strip()
+
+        return " ".join(identity.split())
 
     project = blueprint.get("project") or {}
     features = blueprint.get("project_features") or {}
@@ -2822,12 +2862,7 @@ def build_professional_site_survey_data(blueprint):
         model = equipment.get("model")
         location = equipment.get("location")
 
-        identity_parts = [
-            str(value).strip()
-            for value in (manufacturer, model, device)
-            if str(value or "").strip()
-        ]
-        identity = " ".join(identity_parts)
+        identity = format_equipment_identity(equipment)
         if quantity not in (None, ""):
             parts.append(f"{quantity} x {identity}" if identity else f"Quantity: {quantity}")
         elif identity:
@@ -2858,12 +2893,7 @@ def build_professional_site_survey_data(blueprint):
         model = equipment.get("model")
         location = equipment.get("location")
 
-        identity_parts = [
-            str(value).strip()
-            for value in (manufacturer, model, device)
-            if str(value or "").strip()
-        ]
-        identity = " ".join(identity_parts)
+        identity = format_equipment_identity(equipment)
         if quantity not in (None, ""):
             parts.append(f"{quantity} x {identity}" if identity else f"Quantity: {quantity}")
         elif identity:
@@ -4673,6 +4703,11 @@ AI-powered assistant for AV & Unified Communications, technical documents, trust
 """,
 unsafe_allow_html=True
 )
+# Persistent site-inspection photo registry. Photos remain available for
+# the current inspection package even if the uploader selection changes.
+if "site_inspection_photo_registry" not in st.session_state:
+    st.session_state["site_inspection_photo_registry"] = {}
+
 # Sidebar
 with st.sidebar:
     st.markdown(
@@ -4718,16 +4753,44 @@ with st.sidebar:
             "site_survey_checklist"
         )
 
+    available_inspection_photos = len(
+        st.session_state.get("site_inspection_photo_registry", {})
+    )
+
     create_site_inspection_package = st.button(
         "📷 Build Site Inspection Package",
         use_container_width=True,
-        disabled=not uploaded_images,
+        disabled=(
+            not uploaded_images
+            and available_inspection_photos == 0
+        ),
     )
 
     if create_site_inspection_package:
         st.session_state["requested_document_action"] = (
             "site_inspection_package"
         )
+
+    if available_inspection_photos:
+        st.caption(
+            f"Inspection photos retained in this session: "
+            f"{available_inspection_photos}"
+        )
+
+        if st.button(
+            "🧹 Clear Inspection Photos",
+            use_container_width=True,
+        ):
+            st.session_state["site_inspection_photo_registry"] = {}
+            st.session_state.pop(
+                "current_visual_inspection_items",
+                None,
+            )
+            st.session_state.pop(
+                "site_inspection_package_data",
+                None,
+            )
+            st.rerun()
 
     st.caption(
         "Tip: upload the Scope of Work together with site photos to combine "
@@ -5772,12 +5835,14 @@ if uploaded_images:
                 "uploaded_image",
             )
 
-            current_visual_items.append(
-                {
-                    "file_name": visual_source_name,
-                    "analysis": visual_analysis,
-                }
-            )
+            visual_item = {
+                "file_name": visual_source_name,
+                "analysis": visual_analysis,
+            }
+            current_visual_items.append(visual_item)
+            st.session_state[
+                "site_inspection_photo_registry"
+            ][visual_cache_key] = visual_item
             visual_evidence = build_visual_evidence_text(
                 visual_analysis,
                 file_name=visual_source_name,
@@ -5819,15 +5884,22 @@ if uploaded_images:
         vector_store = create_vector_store(text_chunks)
 
 if current_visual_items:
-    st.session_state["current_visual_inspection_items"] = current_visual_items
+    st.session_state["current_visual_inspection_items"] = list(
+        st.session_state.get(
+            "site_inspection_photo_registry",
+            {},
+        ).values()
+    )
 
 if (
     st.session_state.get("requested_document_action")
     == "site_inspection_package"
 ):
-    visual_items = st.session_state.get(
-        "current_visual_inspection_items",
-        [],
+    visual_items = list(
+        st.session_state.get(
+            "site_inspection_photo_registry",
+            {},
+        ).values()
     )
 
     if not visual_items:
@@ -5894,20 +5966,29 @@ if package_data:
         package_data.get("inspection_meta") or {}
     )
 
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4, col5 = st.columns(5)
     col1.metric(
-        "Overall Status",
-        str(visual_meta.get("overall_status") or "VERIFY"),
+        "Survey Status",
+        str(package_data.get("survey_status") or "VERIFY"),
     )
     col2.metric(
+        "Visual Status",
+        str(
+            package_data.get("visual_status")
+            or visual_meta.get("visual_status")
+            or visual_meta.get("overall_status")
+            or "VERIFY"
+        ),
+    )
+    col3.metric(
         "Photos Reviewed",
         int(visual_meta.get("photos_reviewed") or 0),
     )
-    col3.metric(
-        "Possible Issues",
-        int(visual_meta.get("possible_issues") or 0),
-    )
     col4.metric(
+        "Observations",
+        int(visual_meta.get("observations") or 0),
+    )
+    col5.metric(
         "Verify Items",
         int(visual_meta.get("verify_items") or 0),
     )

@@ -213,3 +213,38 @@ def test_visual_findings_are_not_repeated_inside_scope_table():
         ]
     )
     assert combined.count(finding_text) == 1
+
+
+
+def test_word_outputs_separate_survey_and_visual_status():
+    data = visual_sample_data()
+    data["survey_status"] = "FIELD VERIFICATION REQUIRED"
+    data["visual_status"] = "NO OBVIOUS VISUAL FAULT"
+    data["visual_inspection"]["inspection_meta"]["visual_status"] = "NO OBVIOUS VISUAL FAULT"
+
+    report = Document(BytesIO(build_site_survey_report_docx(data)))
+    checklist = Document(BytesIO(build_professional_site_survey_checklist_docx(data)))
+
+    report_text = "\n".join(
+        [p.text for p in report.paragraphs]
+        + [
+            cell.text
+            for table in report.tables
+            for row in table.rows
+            for cell in row.cells
+        ]
+    )
+    checklist_text = "\n".join(
+        [p.text for p in checklist.paragraphs]
+        + [
+            cell.text
+            for table in checklist.tables
+            for row in table.rows
+            for cell in row.cells
+        ]
+    )
+
+    assert "FIELD VERIFICATION REQUIRED" in report_text
+    assert "NO OBVIOUS VISUAL FAULT" in report_text
+    assert "FIELD VERIFICATION REQUIRED" in checklist_text
+    assert "Visual status: NO OBVIOUS VISUAL FAULT" in checklist_text

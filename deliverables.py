@@ -465,9 +465,16 @@ def build_site_survey_report_docx(checklist_data: dict[str, Any]) -> bytes | Non
         "must be checked on site or through the relevant system interface."
     )
 
+    scope_available = checklist_data.get("scope_available")
+    if scope_available is None:
+        scope_available = bool(
+            checklist_data.get("inspection_sections")
+            or checklist_data.get("survey_priorities")
+        )
+
     _add_section_heading(document, "3. Design / Scope Verification")
     sections = _normalized_checklist_sections(checklist_data)
-    if sections:
+    if scope_available and sections:
         table = document.add_table(rows=1, cols=6)
         _format_table(table)
         headers = ["Section", "Verification Item", "Status", "Notes / Evidence", "Photo Ref.", "Action"]
@@ -500,7 +507,8 @@ def build_site_survey_report_docx(checklist_data: dict[str, Any]) -> bytes | Non
                     _shade_cell(row[2], fill)
     else:
         document.add_paragraph(
-            "No Scope-derived verification checklist was available. This report is based on visual inspection evidence only."
+            "No Scope-derived verification checklist was available. This section is intentionally left as visual-inspection-only; "
+            "no design requirement is inferred from the uploaded photos."
         )
 
     _add_visual_findings_section(document, checklist_data, "4")

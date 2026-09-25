@@ -5319,18 +5319,22 @@ st.markdown(
     }
     .av-home-title {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
-        font-size: 34px;
+        font-size: 32px;
         font-weight: 700;
         letter-spacing: 0;
-        line-height: 1.2;
-        margin: 16px 0 6px 0;
-        text-rendering: geometricPrecision;
-        -webkit-font-smoothing: antialiased;
+        line-height: 1.35;
+        margin: 12px 0 4px 0;
+        padding: 5px 0 2px 0;
+        display: block;
+        overflow: visible;
     }
     .av-home-subtitle {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
         font-size: 14px;
+        line-height: 1.5;
         opacity: .66;
-        margin-bottom: 18px;
+        margin: 0 0 18px 0;
+        padding: 0;
     }
     </style>
     <div class="av-home-title">AV Intelligence Assistant</div>

@@ -237,6 +237,7 @@ def build_inspection_only_survey_data(
         )
 
     return {
+        "scope_available": False,
         "document_meta": {
             "title": "AV/UC Site Inspection Checklist",
             "subtitle": "Multi-Image Visual Inspection",
@@ -290,6 +291,7 @@ def merge_site_inspection_into_survey_data(
     merged = deepcopy(survey_data)
     summary = inspection_summary if isinstance(inspection_summary, dict) else {}
 
+    merged["scope_available"] = True
     merged["visual_inspection"] = summary
     merged["inspection_meta"] = summary.get("inspection_meta") or {}
     merged["executive_summary"] = summary.get("executive_summary") or ""

@@ -7920,6 +7920,20 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
                 token in normalized_context
                 for token in subject_tokens
             )
+
+        visual_evidence_available = bool(
+            'is_visual_reference_question' in locals()
+            and is_visual_reference_question
+            and any(
+                page.get("is_visual_analysis")
+                for page in document_pages
+            )
+        )
+
+        if visual_evidence_available:
+            # Visual questions are grounded by the structured image analysis
+            # rather than keyword occurrence in OCR/document text.
+            subject_found = True
             
         # Detect whether the current question is likely a conversational follow-up
         follow_up_starters = (
@@ -8025,6 +8039,20 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
             question,
             query_route,
         )
+        visual_grounding_instruction = ""
+        if visual_evidence_available:
+            visual_grounding_instruction = """
+        Visual grounding rules:
+        - The Combined context contains structured evidence extracted from the uploaded image.
+        - Treat DIRECT VISUAL OBSERVATIONS and VISIBLE TEXT as the primary evidence for what can be seen.
+        - Treat POSSIBLE VISUAL ISSUES as hypotheses only, preserving their confidence and visible basis.
+        - Treat UNCERTAINTIES / VERIFY as unknowns that require site verification.
+        - Answer what is visibly present first, then what may look wrong, then practical checks the user can perform next.
+        - Do not say the information was not found in the document when visual evidence is present.
+        - Do not invent a manufacturer, model number, hidden cable state, signal path, fault cause, or installation defect that the visual evidence does not support.
+        - A visual symptom may justify a check, but not a confirmed root-cause claim.
+        """.strip()
+
         customer_responsibility_instruction = ""
         if is_customer_responsibilities_question(question):
             customer_responsibility_instruction = """
@@ -8050,6 +8078,7 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
         {context}
         {drawing_fidelity_instruction}
         {document_overview_instruction}
+        {visual_grounding_instruction}
         {customer_responsibility_instruction}
         Technical comparison instructions:
         {technical_comparison_instruction}

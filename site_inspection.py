@@ -405,70 +405,8 @@ def merge_site_inspection_into_survey_data(
 
         merged["photo_register"] = non_blank_existing + visual_photo_register
 
-    visual_section_items = []
-
-    for finding in merged["visual_findings"]:
-        if not isinstance(finding, dict):
-            continue
-        visual_section_items.append(
-            {
-                "item": _clean_text(finding.get("finding")),
-                "status": "ACTION",
-                "notes": (
-                    f"Visual confidence: {_clean_text(finding.get('confidence'))}. "
-                    f"Visible basis: {_clean_text(finding.get('basis'))}"
-                ).strip(),
-                "photo_ref": _clean_text(finding.get("source_photo")),
-            }
-        )
-
-    for verify_item in merged["verification_items"]:
-        if not isinstance(verify_item, dict):
-            continue
-        visual_section_items.append(
-            {
-                "item": _clean_text(verify_item.get("item")),
-                "status": "VERIFY",
-                "notes": "Requires field verification; not confirmed as a fault.",
-                "photo_ref": _clean_text(verify_item.get("source_photo")),
-            }
-        )
-
-    if visual_section_items and merged.get("checklist_sections") is not None:
-        sections = list(merged.get("checklist_sections") or [])
-        sections.append(
-            {
-                "section": "Visual Evidence / Site Findings",
-                "items": visual_section_items,
-            }
-        )
-        merged["checklist_sections"] = sections
-
-    # Preserve the richer pre-survey inspection_sections schema when that is
-    # what the Scope-derived workflow already uses. Do not create a competing
-    # checklist_sections key that would hide the original scope sections.
-    if visual_section_items and "inspection_sections" in merged:
-        inspection_sections = list(merged.get("inspection_sections") or [])
-        inspection_sections.append(
-            {
-                "section_number": len(inspection_sections) + 1,
-                "section_title": "Visual Evidence / Site Findings",
-                "section_purpose": (
-                    "Verify visually observed conditions and close open actions without "
-                    "assigning unsupported root causes."
-                ),
-                "items": [
-                    {
-                        "item_number": index,
-                        "inspection_item": row["item"],
-                        "status": row.get("status") or "VERIFY",
-                        "status_options": ["PASS", "ACTION", "VERIFY", "N/A"],
-                        "notes_photo": row.get("photo_ref") or "",
-                    }
-                    for index, row in enumerate(visual_section_items, start=1)
-                ],
-            }
-        )
-        merged["inspection_sections"] = inspection_sections
+    # Visual findings remain in dedicated visual_findings / verification_items
+    # collections. They are intentionally NOT injected into the Scope-derived
+    # checklist sections, preventing duplicate rows in client-facing documents.
 
     return merged

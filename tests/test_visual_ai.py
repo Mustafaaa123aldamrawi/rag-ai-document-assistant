@@ -88,3 +88,24 @@ def test_visual_grounding_rules_prevent_document_not_found_fallback():
     ).read_text(encoding="utf-8")
     assert "Visual grounding rules:" in app_source
     assert "Do not say the information was not found in the document when visual evidence is present." in app_source
+
+
+
+def test_visual_reference_query_detection_exists_and_covers_image_language():
+    app_source = (
+        Path(__file__).resolve().parents[1] / "app.py"
+    ).read_text(encoding="utf-8")
+    assert "def is_visual_reference_query(question):" in app_source
+    assert '"this image"' in app_source
+    assert '"this screenshot"' in app_source
+    assert '"هذه الصورة"' in app_source
+
+
+def test_visual_reference_with_visual_evidence_overrides_casual_routing():
+    app_source = (
+        Path(__file__).resolve().parents[1] / "app.py"
+    ).read_text(encoding="utf-8")
+    assert "visual_evidence_present = any(" in app_source
+    assert "visual_reference_query = (" in app_source
+    assert 'router_intent = "DOCUMENT"' in app_source
+    assert 'query_route = "DOCUMENT"' in app_source

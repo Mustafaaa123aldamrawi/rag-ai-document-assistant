@@ -2054,3 +2054,50 @@ def test_canonical_overview_drops_numbered_equipment_fragment():
     assert "shall be retained and integrated" in result
     assert "1, existing Ceiling mounted array microphones" not in result
     assert "2, existing ceiling loudspeakers" not in result
+
+
+
+is_customer_responsibilities_question = load_function_from_app(
+    "is_customer_responsibilities_question"
+)
+select_customer_responsibility_pages = load_function_from_app(
+    "select_customer_responsibility_pages"
+)
+
+
+def test_customer_responsibilities_question_detection():
+    assert is_customer_responsibilities_question(
+        "What are the customer responsibilities and site requirements?"
+    ) is True
+    assert is_customer_responsibilities_question(
+        "What are his main responsibilities?"
+    ) is False
+
+
+def test_customer_responsibility_pages_prefer_full_requirements_section():
+    pages = [
+        {
+            "source": "scope.pdf",
+            "page_number": 4,
+            "text": "A new microphone will be installed in Room-2.",
+        },
+        {
+            "source": "scope.pdf",
+            "page_number": 6,
+            "text": (
+                "Project Considerations Customer Responsibilities. "
+                "The Customer shall provide AC power at equipment locations, "
+                "low-voltage conduit, network connectivity, and air conditioning."
+            ),
+        },
+    ]
+
+    selected = select_customer_responsibility_pages(
+        pages,
+        source_name="scope.pdf",
+    )
+
+    assert selected
+    assert selected[0]["page_number"] == 6
+    assert "network connectivity" in selected[0]["text"]
+    assert "air conditioning" in selected[0]["text"]

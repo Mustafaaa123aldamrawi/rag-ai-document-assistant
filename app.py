@@ -807,6 +807,75 @@ def detect_follow_up_question(question):
         or starts_like_follow_up
     )
 
+def is_customer_responsibilities_question(question):
+    question_lower = str(question or "").strip().lower()
+
+    if not question_lower:
+        return False
+
+    explicit_customer_cues = (
+        "customer responsibilities",
+        "customer responsibility",
+        "client responsibilities",
+        "client responsibility",
+        "site requirements",
+        "site readiness",
+        "customer requirements",
+        "client requirements",
+        "مسؤوليات العميل",
+        "متطلبات العميل",
+        "متطلبات الموقع",
+        "جاهزية الموقع",
+    )
+
+    return any(
+        cue in question_lower
+        for cue in explicit_customer_cues
+    )
+
+
+def select_customer_responsibility_pages(
+    document_pages,
+    source_name=None,
+):
+    pages = [
+        page
+        for page in (document_pages or [])
+        if not page.get("is_drawing_analysis")
+    ]
+
+    if source_name:
+        source_pages = [
+            page
+            for page in pages
+            if page.get("source") == source_name
+        ]
+        if source_pages:
+            pages = source_pages
+
+    scored = []
+
+    for page in pages:
+        text_value = str(page.get("text", "") or "")
+        lower = text_value.lower()
+
+        score = 0
+        score += 20 if "customer responsibilities" in lower else 0
+        score += 12 if "project considerations" in lower else 0
+        score += 8 if "customer shall provide" in lower else 0
+        score += 6 if "air conditioning" in lower else 0
+        score += 6 if "electrical" in lower or "ac power" in lower else 0
+        score += 6 if "network" in lower else 0
+        score += 5 if "low-voltage" in lower or "low voltage" in lower else 0
+        score += 5 if "conduit" in lower or "pipe" in lower else 0
+
+        if score:
+            scored.append((score, page.get("page_number") or 0, page))
+
+    scored.sort(key=lambda item: (-item[0], item[1]))
+    return [item[2] for item in scored[:3]]
+
+
 def is_document_overview_question(question):
     question_lower = str(question or "").strip().lower()
 
@@ -6673,6 +6742,43 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
 
         if (
             query_route == "DOCUMENT"
+            and is_customer_responsibilities_question(question)
+        ):
+            responsibility_pages = select_customer_responsibility_pages(
+                document_pages,
+                source_name=matched_source,
+            )
+
+            responsibility_texts = []
+
+            for page in responsibility_pages:
+                page_text = str(page.get("text", "") or "").strip()
+                if not page_text:
+                    continue
+
+                doc_key = (
+                    page.get("source"),
+                    page.get("page_number"),
+                )
+                doc_number = doc_source_numbers.get(doc_key)
+
+                if doc_number is None:
+                    doc_number = len(doc_source_numbers) + 1
+                    doc_source_numbers[doc_key] = doc_number
+
+                responsibility_texts.append(
+                    f"[DOC {doc_number}]\n"
+                    f"Source: {page.get('source')} | "
+                    f"Page: {page.get('page_number')}\n"
+                    f"{page_text[:6000]}"
+                )
+                used_sources.add(doc_key)
+
+            if responsibility_texts:
+                expanded_texts = responsibility_texts
+
+        if (
+            query_route == "DOCUMENT"
             and is_document_overview_question(question)
         ):
             overview_pages = select_document_overview_pages(
@@ -6828,14 +6934,17 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
                 else:
                     context = full_document_text
             elif (
-                "main responsibilities" in question_lower
-                or "responsibilities" in question_lower
-                or "responsibility" in question_lower
-                or "duties" in question_lower
-                or "مسؤولياته الرئيسية" in question_lower
-                or "المسؤوليات الرئيسية" in question_lower
-                or "مسؤولياته" in question_lower
-                or "واجباته" in question_lower
+                not is_customer_responsibilities_question(question)
+                and (
+                    "main responsibilities" in question_lower
+                    or "responsibilities" in question_lower
+                    or "responsibility" in question_lower
+                    or "duties" in question_lower
+                    or "مسؤولياته الرئيسية" in question_lower
+                    or "المسؤوليات الرئيسية" in question_lower
+                    or "مسؤولياته" in question_lower
+                    or "واجباته" in question_lower
+                )
             ):
                 start = full_document_lower.find("professional summary")
                 end = full_document_lower.find("professional experience", start)

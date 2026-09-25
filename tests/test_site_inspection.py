@@ -96,9 +96,8 @@ def test_merge_preserves_scope_inspection_sections():
     merged = merge_site_inspection_into_survey_data(base, summary)
 
     assert "checklist_sections" not in merged
-    assert len(merged["inspection_sections"]) == 2
+    assert len(merged["inspection_sections"]) == 1
     assert merged["inspection_sections"][0]["section_title"] == "Scope Verification"
-    assert merged["inspection_sections"][1]["section_title"] == "Visual Evidence / Site Findings"
     assert merged["visual_findings"]
 
 

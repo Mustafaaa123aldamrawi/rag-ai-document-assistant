@@ -234,3 +234,26 @@ def test_restore_source_terms_for_customer_responsibilities():
     assert "owner furnished equipment" in fixed
     assert "quiet nozzles" not in fixed
     assert "automatically generated room design diagram" not in fixed
+
+
+
+def test_general_technical_question_does_not_use_uploaded_document():
+    plan = build_response_plan(
+        "TECHNICAL",
+        search_mode="Documents + Web",
+        has_document=True,
+        is_follow_up=False,
+    )
+    assert plan.use_documents is False
+    assert plan.use_web is False
+
+
+def test_document_question_still_uses_uploaded_document():
+    plan = build_response_plan(
+        "DOCUMENT",
+        search_mode="Documents + Web",
+        has_document=True,
+        is_follow_up=False,
+    )
+    assert plan.use_documents is True
+    assert plan.use_web is False

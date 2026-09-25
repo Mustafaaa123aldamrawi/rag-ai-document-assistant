@@ -1,3 +1,4 @@
+from pathlib import Path
 from visual_ai import (
     build_visual_analysis_messages,
     build_visual_evidence_text,
@@ -44,3 +45,18 @@ def test_visual_prompt_forbids_model_guessing():
     )
     user_text = messages[1]["content"][0]["text"]
     assert "Do not guess model numbers from appearance alone." in user_text
+
+
+
+def test_app_routes_visual_analysis_to_dedicated_vision_llm():
+    app_source = (
+        Path(__file__).resolve().parents[1] / "app.py"
+    ).read_text(encoding="utf-8")
+    assert "def call_vision_llm(" in app_source
+    assert '"Qwen/Qwen2.5-VL-7B-Instruct"' in app_source
+    assert "raw_visual_analysis = call_vision_llm(" in app_source
+    visual_block = app_source.split(
+        "# Process standalone site photos and screenshots",
+        1,
+    )[1]
+    assert "raw_visual_analysis = call_conversation_llm(" not in visual_block

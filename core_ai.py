@@ -98,8 +98,12 @@ def build_response_plan(
             use_web = True
             use_documents = has_document
         elif intent == "TECHNICAL":
-            use_documents = has_document
-            use_web = not has_document
+            # In mixed mode, general technical questions should not be forced
+            # into an unrelated uploaded document. Explicit file questions are
+            # classified as DOCUMENT; technical questions use external
+            # technical knowledge/search instead.
+            use_documents = False
+            use_web = True
 
     return ResponsePlan(
         intent=intent,

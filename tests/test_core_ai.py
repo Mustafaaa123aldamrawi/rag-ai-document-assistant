@@ -44,15 +44,15 @@ def test_router_prompt_contains_current_question():
     assert "WEB_CURRENT" in prompt
 
 
-def test_technical_plan_uses_documents_when_available():
+def test_technical_plan_uses_web_not_document_in_mixed_mode():
     plan = build_response_plan(
         "TECHNICAL",
         search_mode="Documents + Web",
         has_document=True,
         is_follow_up=False,
     )
-    assert plan.use_documents is True
-    assert plan.use_web is False
+    assert plan.use_documents is False
+    assert plan.use_web is True
 
 
 def test_technical_plan_uses_web_when_no_document_is_available():
@@ -234,3 +234,38 @@ def test_restore_source_terms_for_customer_responsibilities():
     assert "owner furnished equipment" in fixed
     assert "quiet nozzles" not in fixed
     assert "automatically generated room design diagram" not in fixed
+
+
+
+def test_general_technical_question_does_not_use_uploaded_document():
+    plan = build_response_plan(
+        "TECHNICAL",
+        search_mode="Documents + Web",
+        has_document=True,
+        is_follow_up=False,
+    )
+    assert plan.use_documents is False
+    assert plan.use_web is True
+
+
+def test_document_question_still_uses_uploaded_document():
+    plan = build_response_plan(
+        "DOCUMENT",
+        search_mode="Documents + Web",
+        has_document=True,
+        is_follow_up=False,
+    )
+    assert plan.use_documents is True
+    assert plan.use_web is False
+
+
+
+def test_documents_only_technical_question_uses_document():
+    plan = build_response_plan(
+        "TECHNICAL",
+        search_mode="Documents Only",
+        has_document=True,
+        is_follow_up=False,
+    )
+    assert plan.use_documents is True
+    assert plan.use_web is False

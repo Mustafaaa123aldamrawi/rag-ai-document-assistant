@@ -9581,21 +9581,16 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
                 
                     direct_answer = call_conversation_llm(
                         prompt=compact_prompt,
-                        temperature=0.2,
-                        preferred_models_override=(
-                            [
-                                "Qwen/Qwen2.5-72B-Instruct",
-                                "Qwen/Qwen2.5-32B-Instruct",
-                                "Qwen/Qwen2.5-14B-Instruct",
-                            ]
-                            if detected_conversation_style == "ENGLISH"
-                            else [
-                                "CohereLabs/aya-expanse-32b",
-                                "Qwen/Qwen2.5-72B-Instruct",
-                                "Qwen/Qwen2.5-32B-Instruct",
-                            ]
-                        )
+                        temperature=0.15,
+                        preferred_models_override=[
+                            "Qwen/Qwen2.5-72B-Instruct",
+                            "Qwen/Qwen2.5-32B-Instruct",
+                            "Qwen/Qwen2.5-14B-Instruct",
+                        ],
                     ).strip()
+                    direct_answer = _sanitize_conversation_output(
+                        direct_answer
+                    )
             except Exception as e:
                 direct_answer = f"AI model error: {e}"
             

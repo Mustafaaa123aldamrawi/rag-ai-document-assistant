@@ -1,3 +1,4 @@
+from pathlib import Path
 from site_inspection import (
     build_inspection_only_survey_data,
     build_site_inspection_summary,
@@ -221,3 +222,17 @@ def test_scope_merge_does_not_duplicate_visual_findings_into_scope_sections():
     assert len(merged["inspection_sections"]) == 1
     assert merged["inspection_sections"][0]["section_title"] == "System design intent"
     assert merged["visual_findings"]
+
+
+
+def test_app_builds_project_specific_scope_sections():
+    app_source = (
+        Path(__file__).resolve().parents[1] / "app.py"
+    ).read_text(encoding="utf-8")
+
+    assert '"Existing equipment to retain / reuse"' in app_source
+    assert '"New equipment / installation verification"' in app_source
+    assert '"System design intent"' in app_source
+    assert '"Equipment relocations"' in app_source
+    assert '"Equipment removal / decommissioning"' in app_source
+    assert '"Project-specific integration checks"' in app_source

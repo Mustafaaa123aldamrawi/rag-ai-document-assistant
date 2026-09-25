@@ -1,8 +1,6 @@
 from io import BytesIO
 
 from docx import Document
-from PIL import Image
-
 from deliverables import (
     build_final_professional_site_report_docx,
     build_professional_site_survey_checklist_docx,
@@ -346,10 +344,13 @@ def test_report_final_assessment_has_professional_defaults():
 
 
 def _tiny_png_bytes():
-    buffer = BytesIO()
-    image = Image.new("RGB", (640, 360), "white")
-    image.save(buffer, format="PNG")
-    return buffer.getvalue()
+    import base64
+
+    # 1x1 valid PNG; sufficient to verify that python-docx embeds the
+    # retained evidence bytes without adding Pillow to the CI dependency set.
+    return base64.b64decode(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9ZlS8AAAAASUVORK5CYII="
+    )
 
 
 def test_final_professional_report_embeds_photo_evidence():

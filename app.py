@@ -131,6 +131,84 @@ def call_qwen_llm(prompt, preferred_models_override=None):
    
     return data["choices"][0]["message"].get("content", "")
 
+def call_vision_llm(messages, temperature=0.1):
+    """Call an image-capable Hugging Face chat model for visual analysis."""
+    url = "https://router.huggingface.co/v1/chat/completions"
+
+    headers = {
+        "Authorization": f"Bearer {st.secrets['HF_TOKEN']}",
+        "Content-Type": "application/json",
+    }
+
+    vision_models = [
+        "Qwen/Qwen2.5-VL-7B-Instruct",
+        "Qwen/Qwen2.5-VL-32B-Instruct",
+    ]
+
+    available_model_ids = get_available_hf_model_ids()
+    available_candidates = [
+        model_id
+        for model_id in vision_models
+        if model_id in available_model_ids
+    ]
+
+    # Some provider-backed multimodal models may not appear in the generic
+    # /v1/models listing immediately. Keep the known image-capable models as
+    # fallback candidates and let the API report provider availability.
+    models_to_try = available_candidates or vision_models
+    last_error = None
+
+    for model_id in models_to_try:
+        payload = {
+            "model": model_id,
+            "messages": messages,
+            "temperature": temperature,
+            "top_p": 0.9,
+            "max_tokens": 1800,
+        }
+
+        try:
+            response = requests.post(
+                url,
+                headers=headers,
+                json=payload,
+                timeout=120,
+            )
+        except requests.exceptions.Timeout:
+            last_error = f"Vision model {model_id} timed out after 120 seconds."
+            continue
+        except requests.exceptions.ConnectionError as connection_error:
+            last_error = (
+                f"Vision model {model_id} connection error: {connection_error}"
+            )
+            continue
+
+        if response.ok:
+            data = response.json()
+            content = (
+                data.get("choices", [{}])[0]
+                .get("message", {})
+                .get("content")
+            )
+
+            if isinstance(content, str) and content.strip():
+                return content.strip()
+
+            last_error = (
+                f"Vision model {model_id} returned no usable content: {data}"
+            )
+            continue
+
+        last_error = (
+            f"Hugging Face vision API error {response.status_code} "
+            f"for {model_id}: {response.text}"
+        )
+
+    raise Exception(
+        last_error or "No compatible image-capable model is currently available."
+    )
+
+
 @observe(name="conversation-llm", as_type="generation")
 def call_conversation_llm(
     prompt=None,
@@ -5453,8 +5531,8 @@ if uploaded_images:
                     ),
                     image_data_url=visual_data_url,
                 )
-                raw_visual_analysis = call_conversation_llm(
-                    messages=visual_messages,
+                raw_visual_analysis = call_vision_llm(
+                    visual_messages,
                     temperature=0.1,
                 )
                 visual_analysis = parse_visual_analysis(

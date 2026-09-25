@@ -270,6 +270,44 @@ def _speech_text(text):
     return value
 
 
+def _has_degenerate_conversation_output(text):
+    """Detect obvious model degeneration before it is shown or spoken."""
+    value = str(text or "").strip()
+    if not value:
+        return True
+
+    # Character loops such as ههههههههه... are a common generation failure.
+    if re.search(r"(.)\1{9,}", value, flags=re.S):
+        return True
+
+    # Repeated short tokens/phrases can also indicate a stuck generation.
+    words = re.findall(r"[\w\u0600-\u06FF\u0370-\u03FF]+", value.lower())
+    if len(words) >= 24:
+        unique_ratio = len(set(words)) / max(len(words), 1)
+        if unique_ratio < 0.22:
+            return True
+
+    return False
+
+
+def _sanitize_conversation_output(text):
+    """Light cleanup for conversational replies without changing meaning."""
+    value = str(text or "").strip()
+    if not value:
+        return ""
+
+    # Preserve a natural laugh/emphasis while preventing runaway characters.
+    value = re.sub(
+        r"([^\s])\1{5,}",
+        lambda match: match.group(1) * 3,
+        value,
+        flags=re.S,
+    )
+    value = _dedupe_adjacent_voice_tokens(value)
+    value = re.sub(r"\s+", " ", value).strip()
+    return value
+
+
 def render_read_aloud_button(text, key_hint="answer"):
     """Browser-native text-to-speech; no external TTS service required."""
     spoken = _speech_text(text)
@@ -9430,21 +9468,45 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
                 
                 direct_answer = call_conversation_llm(
                     messages=casual_messages,
-                    temperature=0.4,
-                    preferred_models_override=(
-                        [
+                    temperature=0.22 if input_mode == "voice" else 0.35,
+                    preferred_models_override=[
+                        "Qwen/Qwen2.5-72B-Instruct",
+                        "Qwen/Qwen2.5-32B-Instruct",
+                        "Qwen/Qwen2.5-14B-Instruct",
+                    ]
+                ).strip()
+
+                # Never show/speak a visibly degenerate model answer. Voice turns
+                # are especially sensitive because the bad text is also read aloud.
+                if _has_degenerate_conversation_output(direct_answer):
+                    retry_messages = [
+                        {
+                            "role": "system",
+                            "content": (
+                                "You are AV Intelligence Assistant. "
+                                "Reply in exactly the same language and natural dialect as the user. "
+                                "Keep the reply to 1-3 short sentences. "
+                                "Do not repeat characters, words, phrases, or laughter. "
+                                "Do not add unrelated content. "
+                                "Return only the final reply."
+                            ),
+                        },
+                        {
+                            "role": "user",
+                            "content": question,
+                        },
+                    ]
+                    direct_answer = call_conversation_llm(
+                        messages=retry_messages,
+                        temperature=0.1,
+                        preferred_models_override=[
                             "Qwen/Qwen2.5-72B-Instruct",
                             "Qwen/Qwen2.5-32B-Instruct",
                             "Qwen/Qwen2.5-14B-Instruct",
-                        ]
-                        if detected_conversation_style == "ENGLISH"
-                        else [
-                            "CohereLabs/aya-expanse-32b",
-                            "Qwen/Qwen2.5-72B-Instruct",
-                            "Qwen/Qwen2.5-32B-Instruct",
-                        ]
-                    )
-                ).strip()
+                        ],
+                    ).strip()
+
+                direct_answer = _sanitize_conversation_output(direct_answer)
                 casual_answer_lines = [
                     line.strip()
                     for line in direct_answer.splitlines()
@@ -9453,6 +9515,8 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
                 
                 casual_needs_compaction = (
                     len(casual_answer_lines) > 4
+                    or len(direct_answer) > 500
+                    or _has_degenerate_conversation_output(direct_answer)
                     or any(
                         line.startswith(("-", "*", "•"))
                         for line in casual_answer_lines
@@ -9517,21 +9581,16 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
                 
                     direct_answer = call_conversation_llm(
                         prompt=compact_prompt,
-                        temperature=0.2,
-                        preferred_models_override=(
-                            [
-                                "Qwen/Qwen2.5-72B-Instruct",
-                                "Qwen/Qwen2.5-32B-Instruct",
-                                "Qwen/Qwen2.5-14B-Instruct",
-                            ]
-                            if detected_conversation_style == "ENGLISH"
-                            else [
-                                "CohereLabs/aya-expanse-32b",
-                                "Qwen/Qwen2.5-72B-Instruct",
-                                "Qwen/Qwen2.5-32B-Instruct",
-                            ]
-                        )
+                        temperature=0.15,
+                        preferred_models_override=[
+                            "Qwen/Qwen2.5-72B-Instruct",
+                            "Qwen/Qwen2.5-32B-Instruct",
+                            "Qwen/Qwen2.5-14B-Instruct",
+                        ],
                     ).strip()
+                    direct_answer = _sanitize_conversation_output(
+                        direct_answer
+                    )
             except Exception as e:
                 direct_answer = f"AI model error: {e}"
             

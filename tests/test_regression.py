@@ -2109,3 +2109,17 @@ def test_general_technical_web_query_uses_user_question_not_document_context():
     assert "web_search_query = normalize_search_query(question)" in source
     assert "is_technical_request" in source
     assert "not response_plan.use_documents" in source
+
+
+def test_voice_casual_path_rejects_degenerate_repetition():
+    source = APP_FILE.read_text(encoding="utf-8")
+
+    assert "def _has_degenerate_conversation_output" in source
+    assert 're.search(r"(.)\\1{9,}"' in source
+    assert "if _has_degenerate_conversation_output(direct_answer):" in source
+    assert "Do not repeat characters, words, phrases, or laughter." in source
+    assert 'temperature=0.22 if input_mode == "voice" else 0.35' in source
+    assert '"CohereLabs/aya-expanse-32b"' not in source[
+        source.index("# Casual conversation path"):
+        source.index("# AI-first generation for normal grounded questions")
+    ]

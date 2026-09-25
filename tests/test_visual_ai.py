@@ -6,6 +6,7 @@ from visual_ai import (
     build_visual_evidence_text,
     build_visual_field_answer,
     build_visual_json_repair_prompt,
+    build_visual_reasoning_recovery_prompt,
     parse_visual_analysis,
     visual_answer_is_complete,
 )
@@ -270,3 +271,32 @@ def test_app_retries_malformed_visual_json_without_reanalyzing_image():
     ).read_text(encoding="utf-8")
     assert "build_visual_json_repair_prompt(" in app_source
     assert "repaired_visual_json = call_conversation_llm(" in app_source
+
+
+
+def test_visual_reasoning_recovery_prompt_is_grounded_and_json_only():
+    prompt = build_visual_reasoning_recovery_prompt(
+        "The image shows an Extron switcher. The exact model is uncertain."
+    )
+    assert "Use ONLY facts explicitly present in the notes." in prompt
+    assert "Return JSON only." in prompt
+    assert "use null for that model" in prompt.lower()
+    assert "Do not infer device state from LED color alone." in prompt
+
+
+def test_app_uses_low_reasoning_and_larger_budget_for_vision():
+    app_source = (
+        Path(__file__).resolve().parents[1] / "app.py"
+    ).read_text(encoding="utf-8")
+    assert '"max_tokens": 3600' in app_source
+    assert '"reasoning_effort": "low"' in app_source
+
+
+def test_app_recovers_reasoning_only_vision_output():
+    app_source = (
+        Path(__file__).resolve().parents[1] / "app.py"
+    ).read_text(encoding="utf-8")
+    assert 'reasoning = message.get("reasoning")' in app_source
+    assert "build_visual_reasoning_recovery_prompt(" in app_source
+    assert "parse_visual_analysis(recovered_content)" in app_source
+    assert "reasoning-only output" in app_source

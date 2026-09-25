@@ -349,7 +349,7 @@ def merge_site_inspection_into_survey_data(
             }
         )
 
-    if visual_section_items:
+    if visual_section_items and merged.get("checklist_sections") is not None:
         sections = list(merged.get("checklist_sections") or [])
         sections.append(
             {
@@ -359,8 +359,10 @@ def merge_site_inspection_into_survey_data(
         )
         merged["checklist_sections"] = sections
 
-    # Preserve richer pre-survey inspection_sections for the existing generator.
-    if "inspection_sections" in merged and visual_section_items:
+    # Preserve the richer pre-survey inspection_sections schema when that is
+    # what the Scope-derived workflow already uses. Do not create a competing
+    # checklist_sections key that would hide the original scope sections.
+    if visual_section_items and "inspection_sections" in merged:
         inspection_sections = list(merged.get("inspection_sections") or [])
         inspection_sections.append(
             {
@@ -374,6 +376,7 @@ def merge_site_inspection_into_survey_data(
                     {
                         "item_number": index,
                         "inspection_item": row["item"],
+                        "status": row.get("status") or "VERIFY",
                         "status_options": ["PASS", "ACTION", "VERIFY", "N/A"],
                         "notes_photo": row.get("photo_ref") or "",
                     }

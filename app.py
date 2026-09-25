@@ -23,6 +23,7 @@ from visual_ai import (
     build_visual_evidence_text,
     build_visual_field_answer,
     build_visual_json_repair_prompt,
+    build_visual_reasoning_recovery_prompt,
     parse_visual_analysis,
     visual_answer_is_complete,
 )
@@ -182,7 +183,11 @@ def call_vision_llm(messages, temperature=0.1):
             "messages": messages,
             "temperature": temperature,
             "top_p": 0.9,
-            "max_tokens": 1800,
+            # Keep enough room for structured JSON after any provider-side
+            # reasoning. The first supported VLM may otherwise exhaust the
+            # completion budget before emitting message.content.
+            "max_tokens": 3600,
+            "reasoning_effort": "low",
         }
 
         try:
@@ -205,17 +210,49 @@ def call_vision_llm(messages, temperature=0.1):
 
         if response.ok:
             data = response.json()
-            content = (
-                data.get("choices", [{}])[0]
-                .get("message", {})
-                .get("content")
-            )
+            choice = data.get("choices", [{}])[0]
+            message = choice.get("message", {})
+            content = message.get("content")
+            reasoning = message.get("reasoning")
+            finish_reason = choice.get("finish_reason")
 
             if isinstance(content, str) and content.strip():
                 return content.strip()
 
+            # Some provider-backed reasoning VLMs can correctly analyze the
+            # image but spend the whole completion budget in message.reasoning
+            # and return an empty content field. Recover a strict JSON result
+            # from those notes instead of discarding the photo.
+            if isinstance(reasoning, str) and reasoning.strip():
+                try:
+                    recovery_prompt = build_visual_reasoning_recovery_prompt(
+                        reasoning
+                    )
+                    recovered_content = call_conversation_llm(
+                        prompt=recovery_prompt,
+                        temperature=0.0,
+                        preferred_models_override=[
+                            "openai/gpt-oss-20b",
+                            "Qwen/Qwen2.5-Coder-32B-Instruct",
+                        ],
+                        reasoning_effort="low",
+                    )
+
+                    # Validate here so callers only receive usable visual JSON.
+                    parse_visual_analysis(recovered_content)
+                    return recovered_content.strip()
+                except Exception as recovery_error:
+                    last_error = (
+                        f"Vision model {model_id} returned reasoning-only output "
+                        f"(finish_reason={finish_reason}) and structured recovery "
+                        f"failed: {recovery_error}"
+                    )
+                    attempt_errors.append(last_error)
+                    continue
+
             last_error = (
-                f"Vision model {model_id} returned no usable content: {data}"
+                f"Vision model {model_id} returned no usable content "
+                f"(finish_reason={finish_reason})."
             )
             attempt_errors.append(last_error)
             continue

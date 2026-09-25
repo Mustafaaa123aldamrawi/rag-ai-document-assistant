@@ -21,7 +21,9 @@ from visual_ai import (
     build_visual_analysis_messages,
     build_visual_diagnostic_context,
     build_visual_evidence_text,
+    build_visual_field_answer,
     parse_visual_analysis,
+    visual_answer_is_complete,
 )
 from deliverables import build_professional_site_survey_checklist_docx, build_site_survey_report_docx
 from langfuse import get_client, observe
@@ -8794,6 +8796,54 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
                 context,
             )
             answer = re.sub(r"[ \t]+\n", "\n", answer).strip()
+
+        # Visual completion guard: never display a partial answer when
+        # the user explicitly asks for observation + issue + next checks.
+        if (
+            'visual_evidence_available' in locals()
+            and visual_evidence_available
+            and 'is_visual_reference_question' in locals()
+            and is_visual_reference_question
+            and answer
+            and not answer.startswith("AI model error:")
+            and not visual_answer_is_complete(answer, question)
+        ):
+            visual_page = next(
+                (
+                    page
+                    for page in document_pages
+                    if page.get("is_visual_analysis")
+                ),
+                None,
+            )
+            if visual_page:
+                visual_doc_key = (
+                    visual_page.get("source"),
+                    visual_page.get("page_number"),
+                )
+                visual_doc_number = doc_source_numbers.get(visual_doc_key)
+                visual_citation = (
+                    f"[DOC {visual_doc_number}]"
+                    if visual_doc_number is not None
+                    else ""
+                )
+
+                cached_analysis = None
+                for cached_item in st.session_state.get(
+                    "visual_analysis_cache",
+                    {}
+                ).values():
+                    if isinstance(cached_item, dict):
+                        candidate = cached_item.get("analysis")
+                        if isinstance(candidate, dict):
+                            cached_analysis = candidate
+                            break
+
+                if cached_analysis:
+                    answer = build_visual_field_answer(
+                        cached_analysis,
+                        citation_label=visual_citation,
+                    )
 
         # Deterministic guard for high-risk factual claims
         def get_cited_source_text(source_type, source_number, full_context):

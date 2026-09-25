@@ -7916,6 +7916,19 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
             question,
             query_route,
         )
+        customer_responsibility_instruction = ""
+        if is_customer_responsibilities_question(question):
+            customer_responsibility_instruction = """
+        Customer responsibilities / site readiness fidelity rules:
+        - Preserve source terminology exactly for technical and contractual nouns.
+        - Keep terms such as AC power, conduit, millwork, HVAC, owner furnished equipment, vendor product portals, VoIP, AutoCAD layout, shop drawings, site readiness, and IT support in their original English form when that is clearer and more precise.
+        - If the source says "powered venting system with thermostatically controlled quiet fans", preserve that wording rather than translating it into nozzles, thermometers, or other different equipment.
+        - If the source says "vendor product portals", do not rewrite it as gateways.
+        - If the source says "AutoCAD layout", do not rewrite it as an automatically generated diagram.
+        - Distinguish Customer Responsibilities from Site Readiness. Do not merge the two sections.
+        - Do not convert owner/third-party responsibilities into AVI-SPL responsibilities.
+        """.strip()
+
         prompt = f"""
         Recent conversation:
         {conversation_history}    
@@ -7928,6 +7941,7 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
         {context}
         {drawing_fidelity_instruction}
         {document_overview_instruction}
+        {customer_responsibility_instruction}
         Technical comparison instructions:
         {technical_comparison_instruction}
         

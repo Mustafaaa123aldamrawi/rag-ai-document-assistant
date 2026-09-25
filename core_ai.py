@@ -275,6 +275,27 @@ def restore_source_technical_terms(answer: str, context: str) -> str:
             "splitting and merging operation",
             "split and merge room operation",
         ),
+        "powered venting system with thermostatically controlled quiet fans": (
+            "air exchange system equipped with quiet nozzles supported by thermometers",
+            "air exchange system with quiet nozzles supported by thermometers",
+            "powered ventilation system with quiet nozzles and thermometers",
+        ),
+        "vendor product portals": (
+            "product gateways",
+            "vendor gateways",
+            "gateways for supplied products",
+            "product portals and gateways",
+        ),
+        "AutoCAD layout": (
+            "automatically generated room design diagram",
+            "automatically generated room layout",
+            "auto-generated room design diagram",
+            "room design diagram",
+        ),
+        "owner furnished equipment": (
+            "equipment provided by the owner",
+            "owner-provided equipment",
+        ),
     }
 
     for canonical, aliases in canonical_aliases.items():

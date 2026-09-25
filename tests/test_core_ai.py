@@ -210,3 +210,27 @@ def test_verifier_output_accepts_clean_corrected_answer():
         candidate,
         "Room-2 has a microphone [DOC 4].",
     ) is True
+
+
+
+def test_restore_source_terms_for_customer_responsibilities():
+    context = (
+        "Proper heat dissipation venting is required. Where convection cooling is not possible, "
+        "a powered venting system with thermostatically controlled quiet fans. "
+        "Creation, configuration and management of required accounts and vendor product portals. "
+        "Share the AutoCAD layout of the specified room with AVI-SPL to prepare the shop drawings. "
+        "All software or hardware configuration for owner furnished equipment."
+    )
+    answer = (
+        "Use an air exchange system equipped with quiet nozzles supported by thermometers. "
+        "Create and manage gateways for supplied products. "
+        "Share the automatically generated room design diagram. "
+        "Configure equipment provided by the owner."
+    )
+    fixed = restore_source_technical_terms(answer, context)
+    assert "powered venting system with thermostatically controlled quiet fans" in fixed
+    assert "vendor product portals" in fixed
+    assert "AutoCAD layout" in fixed
+    assert "owner furnished equipment" in fixed
+    assert "quiet nozzles" not in fixed
+    assert "automatically generated room design diagram" not in fixed

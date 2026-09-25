@@ -6859,7 +6859,7 @@ else:
             if retained_photo_count:
                 st.caption(f"{retained_photo_count} site photo(s) retained in this session.")
                 if st.button(
-                    "Clear retained site photos",
+                    "🧹 Clear Inspection Photos",
                     use_container_width=True,
                     key="plus_clear_site_photos",
                 ):

@@ -2,6 +2,7 @@ from pathlib import Path
 from site_inspection import (
     build_inspection_only_survey_data,
     build_site_inspection_summary,
+    derive_survey_status,
     merge_site_inspection_into_survey_data,
 )
 
@@ -235,3 +236,82 @@ def test_app_builds_project_specific_scope_sections():
     assert '"Equipment relocations"' in app_source
     assert '"Equipment removal / decommissioning"' in app_source
     assert '"Project-specific integration checks"' in app_source
+
+
+
+def test_scope_verify_status_is_separate_from_no_visual_fault():
+    base = {
+        "inspection_sections": [
+            {
+                "section_title": "Scope",
+                "items": [
+                    {
+                        "inspection_item": "Verify partition sensor",
+                        "status": "VERIFY",
+                    }
+                ],
+            }
+        ]
+    }
+    summary = {
+        "inspection_meta": {
+            "overall_status": "NO OBVIOUS VISUAL FAULT",
+            "visual_status": "NO OBVIOUS VISUAL FAULT",
+            "actions": 0,
+            "observations": 0,
+            "verify_items": 0,
+        }
+    }
+    assert derive_survey_status(base, summary) == "FIELD VERIFICATION REQUIRED"
+
+
+def test_merge_keeps_visual_and_survey_status_separate():
+    base = {
+        "project_info": {"project_name": "Mastercard Riyadh"},
+        "inspection_sections": [
+            {
+                "section_title": "Project-specific integration checks",
+                "items": [
+                    {
+                        "inspection_item": "Verify Dante path",
+                        "status": "VERIFY",
+                    }
+                ],
+            }
+        ],
+    }
+    summary = {
+        "inspection_meta": {
+            "overall_status": "NO OBVIOUS VISUAL FAULT",
+            "visual_status": "NO OBVIOUS VISUAL FAULT",
+            "photos_reviewed": 1,
+            "possible_issues": 0,
+            "observations": 0,
+            "actions": 0,
+            "verify_items": 0,
+        },
+        "executive_summary": "One photo reviewed.",
+        "photo_register": [],
+        "visual_findings": [],
+        "verification_items": [],
+    }
+    merged = merge_site_inspection_into_survey_data(base, summary)
+    assert merged["visual_status"] == "NO OBVIOUS VISUAL FAULT"
+    assert merged["survey_status"] == "FIELD VERIFICATION REQUIRED"
+
+
+def test_app_persists_inspection_photos_and_has_clear_control():
+    app_source = (
+        Path(__file__).resolve().parents[1] / "app.py"
+    ).read_text(encoding="utf-8")
+    assert '"site_inspection_photo_registry"' in app_source
+    assert '"🧹 Clear Inspection Photos"' in app_source
+    assert 'st.session_state["site_inspection_photo_registry"][visual_cache_key]' in app_source
+
+
+def test_app_deduplicates_equipment_identity_components():
+    app_source = (
+        Path(__file__).resolve().parents[1] / "app.py"
+    ).read_text(encoding="utf-8")
+    assert "def format_equipment_identity(equipment):" in app_source
+    assert "if value.lower() in identity.lower():" in app_source

@@ -832,6 +832,31 @@ Web search query:
         document_context
     )
 
+def is_visual_reference_query(question):
+    question_lower = str(question or "").strip().lower()
+
+    visual_reference_phrases = (
+        "this image",
+        "the image",
+        "this photo",
+        "the photo",
+        "this screenshot",
+        "the screenshot",
+        "uploaded image",
+        "uploaded photo",
+        "هاي الصورة",
+        "هذه الصورة",
+        "الصورة",
+        "سكرين شوت",
+        "لقطة الشاشة",
+    )
+
+    return any(
+        phrase in question_lower
+        for phrase in visual_reference_phrases
+    )
+
+
 def detect_follow_up_question(question):
     question_lower = str(question or "").strip().lower()
 
@@ -5802,6 +5827,21 @@ if submitted:
                 is_follow_up=is_follow_up_question,
                 has_document=bool(document_pages),
             )
+            visual_evidence_present = any(
+                page.get("is_visual_analysis")
+                for page in document_pages
+            )
+            visual_reference_query = (
+                is_visual_reference_query(question)
+                and visual_evidence_present
+            )
+
+            if visual_reference_query:
+                # A question explicitly referring to an uploaded image must
+                # remain grounded in the successful visual analysis. Do not
+                # let the generic conversation classifier send it to CASUAL.
+                router_intent = "DOCUMENT"
+
             st.session_state.last_router_intent = router_intent
             
             is_casual_chat = router_intent == "CASUAL"
@@ -5831,6 +5871,10 @@ if submitted:
                 ),
                 is_follow_up=is_follow_up_question,
             )
+
+            if visual_reference_query:
+                query_route = "DOCUMENT"
+
             has_arabic_chars = bool(
                 re.search(r"[\u0600-\u06FF]", question)
             )
@@ -6789,24 +6833,8 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
         
                         if subject_page_text not in expanded_texts:
                             expanded_texts.append(subject_page_text)
-        visual_reference_phrases = (
-            "this image",
-            "the image",
-            "this photo",
-            "the photo",
-            "this screenshot",
-            "the screenshot",
-            "uploaded image",
-            "uploaded photo",
-            "هاي الصورة",
-            "هذه الصورة",
-            "الصورة",
-            "سكرين شوت",
-            "لقطة الشاشة",
-        )
-        is_visual_reference_question = any(
-            phrase in question_lower
-            for phrase in visual_reference_phrases
+        is_visual_reference_question = is_visual_reference_query(
+            question
         )
 
         if is_visual_reference_question:

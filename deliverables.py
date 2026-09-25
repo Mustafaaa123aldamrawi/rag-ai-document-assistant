@@ -299,7 +299,7 @@ def _add_visual_findings_section(document: Document, checklist_data: dict[str, A
     if not findings and not verify_items:
         return
 
-    _add_section_heading(document, f"{number}. Visual Observations & Field Verification")
+    _add_section_heading(document, f"{number}. Visual Findings & Field Verification")
 
     if findings:
         table = document.add_table(rows=1, cols=6)
@@ -417,7 +417,7 @@ def build_site_survey_report_docx(checklist_data: dict[str, Any]) -> bytes | Non
     _add_header_footer(document, project_name, "AV SITE SURVEY & INSPECTION REPORT")
     _add_title_block(
         document,
-        "AV SITE SURVEY & INSPECTION REPORT",
+        "AV SITE SURVEY REPORT & INSPECTION",
         project_name,
         "Scope verification + visual site evidence | Draft until field sign-off",
     )

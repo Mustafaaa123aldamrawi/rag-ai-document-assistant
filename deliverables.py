@@ -5,6 +5,7 @@ from typing import Any
 
 from docx import Document
 from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
+from docx.enum.section import WD_SECTION_START
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
@@ -46,6 +47,176 @@ def _add_section_heading(document: Document, title: str) -> None:
     run.bold = True
     run.font.size = Pt(13)
     run.font.color.rgb = __import__("docx").shared.RGBColor.from_string(NAVY)
+
+
+def _set_repeat_table_header(row) -> None:
+    tr_pr = row._tr.get_or_add_trPr()
+    tbl_header = tr_pr.find(qn("w:tblHeader"))
+    if tbl_header is None:
+        tbl_header = OxmlElement("w:tblHeader")
+        tr_pr.append(tbl_header)
+    tbl_header.set(qn("w:val"), "true")
+
+
+def _set_cell_margins(cell, top=70, start=90, bottom=70, end=90) -> None:
+    tc = cell._tc
+    tc_pr = tc.get_or_add_tcPr()
+    tc_mar = tc_pr.first_child_found_in("w:tcMar")
+    if tc_mar is None:
+        tc_mar = OxmlElement("w:tcMar")
+        tc_pr.append(tc_mar)
+    for margin_name, value in (
+        ("top", top),
+        ("start", start),
+        ("bottom", bottom),
+        ("end", end),
+    ):
+        node = tc_mar.find(qn(f"w:{margin_name}"))
+        if node is None:
+            node = OxmlElement(f"w:{margin_name}")
+            tc_mar.append(node)
+        node.set(qn("w:w"), str(value))
+        node.set(qn("w:type"), "dxa")
+
+
+def _format_table(table) -> None:
+    table.style = "Table Grid"
+    table.autofit = True
+    for row in table.rows:
+        for cell in row.cells:
+            _set_cell_margins(cell)
+
+
+def _add_header_footer(document: Document, project_name: str, document_type: str) -> None:
+    for section in document.sections:
+        header = section.header
+        hp = header.paragraphs[0]
+        hp.text = ""
+        hp.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+        run = hp.add_run(f"{project_name}  |  {document_type}")
+        run.font.name = "Aptos"
+        run.font.size = Pt(8)
+        run.font.color.rgb = __import__("docx").shared.RGBColor.from_string("6B7280")
+
+        footer = section.footer
+        fp = footer.paragraphs[0]
+        fp.text = ""
+        fp.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        run = fp.add_run(
+            "AV Intelligence Assistant  |  Field verification required for unconfirmed items"
+        )
+        run.font.name = "Aptos"
+        run.font.size = Pt(7.5)
+        run.font.color.rgb = __import__("docx").shared.RGBColor.from_string("7F7F7F")
+
+
+def _add_document_control_table(
+    document: Document,
+    *,
+    project_name: str,
+    client: str,
+    location: str,
+    rooms: list[str],
+    status: str,
+    document_type: str,
+) -> None:
+    table = document.add_table(rows=0, cols=2)
+    _format_table(table)
+    rows = [
+        ("Document", document_type),
+        ("Project", project_name),
+        ("Client", client),
+        ("Location", location),
+        ("Rooms / Areas", ", ".join(rooms)),
+        ("Status", status),
+    ]
+    for label, value in rows:
+        if not value:
+            continue
+        cells = table.add_row().cells
+        _set_cell_text(cells[0], label, bold=True, color=WHITE)
+        _shade_cell(cells[0], NAVY)
+        _set_cell_text(cells[1], value)
+
+
+def _normalize_required_photos(checklist_data: dict[str, Any]) -> list[str]:
+    normalized = []
+    for item in checklist_data.get("required_photos", []) or []:
+        if isinstance(item, dict):
+            subject = (
+                item.get("photo_subject")
+                or item.get("subject")
+                or item.get("item")
+                or ""
+            )
+            location = item.get("location_direction") or ""
+            related = item.get("related_item") or ""
+            text = " | ".join(
+                str(value).strip()
+                for value in (subject, location, related)
+                if str(value or "").strip()
+            )
+        else:
+            text = str(item or "").strip()
+        if text:
+            normalized.append(text)
+    return normalized
+
+
+def _normalized_checklist_sections(checklist_data: dict[str, Any]) -> list[dict[str, Any]]:
+    sections = []
+
+    for section in _normalized_checklist_sections(checklist_data):
+        if not isinstance(section, dict):
+            continue
+        name = str(section.get("section") or "").strip()
+        items = []
+        for item in section.get("items", []) or []:
+            if not isinstance(item, dict):
+                continue
+            items.append(
+                {
+                    "item": item.get("item") or item.get("inspection_item") or "",
+                    "status": item.get("status") or "VERIFY",
+                    "notes": item.get("notes") or item.get("notes_photo") or "",
+                    "photo_ref": item.get("photo_ref") or "",
+                }
+            )
+        if name and items:
+            sections.append({"section": name, "items": items})
+
+    if sections:
+        return sections
+
+    for section in checklist_data.get("inspection_sections", []) or []:
+        if not isinstance(section, dict):
+            continue
+        name = str(
+            section.get("section_title")
+            or section.get("section")
+            or "Inspection"
+        ).strip()
+        items = []
+        for item in section.get("items", []) or []:
+            if not isinstance(item, dict):
+                continue
+            items.append(
+                {
+                    "item": item.get("inspection_item") or item.get("item") or "",
+                    "status": item.get("status") or "VERIFY",
+                    "notes": item.get("notes_photo") or item.get("notes") or "",
+                    "photo_ref": item.get("photo_ref") or "",
+                }
+            )
+        if name and items:
+            sections.append({"section": name, "items": items})
+
+    return sections
+
+
+def _visual_inspection_summary(checklist_data: dict[str, Any]) -> dict[str, Any]:
+    visual = checklist_data.get("visual_inspection")
+    return visual if isinstance(visual, dict) else {}
 
 
 def _status_summary(checklist_data: dict[str, Any]) -> dict[str, int]:

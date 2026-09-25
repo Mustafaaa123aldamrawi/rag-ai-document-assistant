@@ -15,6 +15,7 @@ import hashlib
 import streamlit.components.v1 as components
 
 from PIL import Image
+from huggingface_hub import InferenceClient
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
@@ -49,23 +50,149 @@ os.environ["LANGFUSE_BASE_URL"] = st.secrets["LANGFUSE_BASE_URL"]
 langfuse = get_client()
 
 
-def transcribe_audio_hf(audio_bytes, content_type="audio/wav"):
-    """Transcribe a recorded voice message using HF-hosted Whisper."""
+VOICE_LANGUAGE_CODES = {
+    "Auto": None,
+    "Arabic": "ar",
+    "English": "en",
+    "Greek": "el",
+}
+
+
+def _dedupe_adjacent_voice_tokens(text):
+    """Remove adjacent ASR word/phrase repetition without rewriting content."""
+    words = str(text or "").split()
+    if not words:
+        return ""
+
+    changed = True
+    while changed:
+        changed = False
+        output = []
+        index = 0
+
+        while index < len(words):
+            removed = False
+
+            # Longest repeated phrase first, e.g.:
+            # "بدي افحص الرّاك بدي افحص الرّاك"
+            max_window = min(8, (len(words) - index) // 2)
+            for window in range(max_window, 0, -1):
+                left = words[index:index + window]
+                right = words[index + window:index + (2 * window)]
+
+                normalized_left = [
+                    re.sub(r"[^\w\u0600-\u06FF\u0370-\u03FF]+", "", token).lower()
+                    for token in left
+                ]
+                normalized_right = [
+                    re.sub(r"[^\w\u0600-\u06FF\u0370-\u03FF]+", "", token).lower()
+                    for token in right
+                ]
+
+                if (
+                    normalized_left
+                    and normalized_left == normalized_right
+                    and any(normalized_left)
+                ):
+                    output.extend(left)
+                    index += 2 * window
+                    changed = True
+                    removed = True
+                    break
+
+            if not removed:
+                output.append(words[index])
+                index += 1
+
+        words = output
+
+    return " ".join(words).strip()
+
+
+def _normalize_voice_transcript(text):
+    value = str(text or "").strip()
+    if not value:
+        return ""
+
+    # Remove exact duplicated sentence blocks first.
+    parts = [
+        part.strip()
+        for part in re.split(r"(?<=[.!?؟])\s+", value)
+        if part.strip()
+    ]
+    deduped_parts = []
+    for part in parts:
+        normalized = re.sub(r"\s+", " ", part).strip().lower()
+        if (
+            deduped_parts
+            and normalized
+            == re.sub(r"\s+", " ", deduped_parts[-1]).strip().lower()
+        ):
+            continue
+        deduped_parts.append(part)
+
+    value = " ".join(deduped_parts) if deduped_parts else value
+    value = _dedupe_adjacent_voice_tokens(value)
+    value = re.sub(r"\s+", " ", value).strip()
+    return value
+
+
+def transcribe_audio_hf(
+    audio_bytes,
+    content_type="audio/wav",
+    language="Arabic",
+):
+    """High-accuracy multilingual transcription with explicit language control."""
     if not audio_bytes:
         return ""
 
     token = st.secrets["HF_TOKEN"]
+    language_code = VOICE_LANGUAGE_CODES.get(language)
+
+    # Prefer the supported Inference Providers client. Whisper can keep the
+    # spoken language when task=transcribe, and explicit language hints reduce
+    # incorrect auto-detection for short Arabic/English AV phrases.
+    client = InferenceClient(
+        provider="auto",
+        api_key=token,
+    )
+
+    attempts = []
+    if language_code:
+        attempts.append(
+            {
+                "language": language_code,
+                "task": "transcribe",
+            }
+        )
+    attempts.append({})
+
+    errors = []
+    for extra_body in attempts:
+        try:
+            result = client.automatic_speech_recognition(
+                audio=audio_bytes,
+                model="openai/whisper-large-v3",
+                extra_body=extra_body or None,
+            )
+            transcript = _normalize_voice_transcript(
+                getattr(result, "text", "") or ""
+            )
+            if transcript:
+                return transcript
+        except Exception as error:
+            errors.append(str(error))
+
+    # Backward-compatible raw HF inference fallback.
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": content_type or "audio/wav",
     }
-
     endpoints = [
-        "https://router.huggingface.co/hf-inference/models/openai/whisper-large-v3-turbo",
-        "https://api-inference.huggingface.co/models/openai/whisper-large-v3-turbo",
+        "https://router.huggingface.co/hf-inference/models/openai/whisper-large-v3",
+        "https://api-inference.huggingface.co/models/openai/whisper-large-v3",
     ]
 
-    errors = []
     for endpoint in endpoints:
         try:
             response = requests.post(
@@ -96,15 +223,27 @@ def transcribe_audio_hf(audio_bytes, content_type="audio/wav"):
         elif isinstance(data, list) and data and isinstance(data[0], dict):
             transcript = str(data[0].get("text") or "").strip()
 
+        transcript = _normalize_voice_transcript(transcript)
         if transcript:
             return transcript
 
-        errors.append(f"No transcript returned: {str(data)[:300]}")
-
     raise Exception(
         "Voice transcription could not be completed. "
-        + " | ".join(errors[-2:])
+        + " | ".join(errors[-3:])
     )
+
+
+def _detect_speech_language(text):
+    value = str(text or "")
+    arabic_chars = len(re.findall(r"[\u0600-\u06FF]", value))
+    greek_chars = len(re.findall(r"[\u0370-\u03FF]", value))
+    latin_chars = len(re.findall(r"[A-Za-z]", value))
+
+    if arabic_chars >= max(greek_chars, latin_chars):
+        return "ar-SA"
+    if greek_chars > max(arabic_chars, latin_chars):
+        return "el-GR"
+    return "en-US"
 
 
 def _speech_text(text):
@@ -121,11 +260,7 @@ def render_read_aloud_button(text, key_hint="answer"):
     if not spoken:
         return
 
-    language = (
-        "ar-SA"
-        if re.search(r"[\u0600-\u06FF]", spoken)
-        else "en-US"
-    )
+    language = _detect_speech_language(spoken)
     button_id = "speak_" + hashlib.sha1(
         f"{key_hint}:{spoken}".encode("utf-8")
     ).hexdigest()[:10]
@@ -159,7 +294,15 @@ def render_read_aloud_button(text, key_hint="answer"):
             window.speechSynthesis.cancel();
             const utterance = new SpeechSynthesisUtterance(speechText);
             utterance.lang = speechLang;
-            utterance.rate = 1.0;
+            const voices = window.speechSynthesis.getVoices();
+            const prefix = speechLang.split("-")[0].toLowerCase();
+            const matching = voices.filter(v =>
+              (v.lang || "").toLowerCase().startsWith(prefix)
+            );
+            if (matching.length) {
+              utterance.voice = matching.find(v => v.localService) || matching[0];
+            }
+            utterance.rate = 0.98;
             utterance.pitch = 1.0;
             window.speechSynthesis.speak(utterance);
           }};
@@ -6335,6 +6478,17 @@ def submit_question():
     if current_question:
         st.session_state.pending_question = current_question
         st.session_state.question_input = ""
+voice_language = st.selectbox(
+    "🎙️ Voice language",
+    options=["Arabic", "English", "Greek", "Auto"],
+    index=0,
+    key="voice_language",
+    help=(
+        "Choose the language you are speaking. Arabic is the default. "
+        "Use Auto only when you intentionally switch languages."
+    ),
+)
+
 voice_clip = None
 if hasattr(st, "audio_input"):
     voice_clip = st.audio_input(
@@ -6356,6 +6510,7 @@ if voice_clip is not None:
                 voice_transcript = transcribe_audio_hf(
                     voice_bytes,
                     getattr(voice_clip, "type", "audio/wav"),
+                    language=voice_language,
                 )
 
             if voice_transcript:

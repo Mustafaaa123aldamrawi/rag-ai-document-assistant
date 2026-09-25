@@ -409,6 +409,14 @@ def build_site_survey_report_docx(checklist_data: dict[str, Any]) -> bytes | Non
         project_name,
         "Scope verification + visual site evidence | Draft until field sign-off",
     )
+    p = document.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = p.add_run(
+        "Draft / Pre-Survey Report – final acceptance requires field verification and sign-off."
+    )
+    run.italic = True
+    run.font.size = Pt(8.5)
+    run.font.color.rgb = _rgb(DARK_GRAY)
     document.add_paragraph()
     _add_document_control_table(
         document,
@@ -505,7 +513,7 @@ def build_site_survey_report_docx(checklist_data: dict[str, Any]) -> bytes | Non
 
     _add_photo_register(document, checklist_data, "6")
 
-    _add_section_heading(document, "7. Open Actions / Close-out")
+    _add_section_heading(document, "7. Recommendations / Next Actions / Close-out")
     open_items = checklist_data.get("open_items", []) or []
     findings = checklist_data.get("visual_findings") or visual.get("visual_findings", [])
     if open_items:

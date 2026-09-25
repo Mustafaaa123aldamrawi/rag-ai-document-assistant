@@ -156,3 +156,60 @@ def test_checklist_includes_visual_evidence_section():
     assert "Visual Findings & Field Verification" in combined
     assert "Photo Evidence Register" in combined
     assert "No." in combined
+
+
+
+def test_client_facing_documents_use_compact_photo_refs_and_no_app_branding():
+    data = visual_sample_data()
+    data["photo_register"][0]["photo_ref"] = "P01"
+    data["photo_register"][1]["photo_ref"] = "P02"
+    data["visual_findings"][0]["source_photo_ref"] = "P02"
+    data["visual_findings"][0]["status"] = "OBSERVATION"
+    data["visual_inspection"]["visual_findings"] = data["visual_findings"]
+
+    report = Document(BytesIO(build_site_survey_report_docx(data)))
+    checklist = Document(BytesIO(build_professional_site_survey_checklist_docx(data)))
+
+    report_text = "\n".join(
+        [p.text for p in report.paragraphs]
+        + [p.text for section in report.sections for p in section.footer.paragraphs]
+        + [
+            cell.text
+            for table in report.tables
+            for row in table.rows
+            for cell in row.cells
+        ]
+    )
+    checklist_text = "\n".join(
+        [p.text for p in checklist.paragraphs]
+        + [p.text for section in checklist.sections for p in section.footer.paragraphs]
+        + [
+            cell.text
+            for table in checklist.tables
+            for row in table.rows
+            for cell in row.cells
+        ]
+    )
+
+    assert "AV Intelligence Assistant" not in report_text
+    assert "AV Intelligence Assistant" not in checklist_text
+    assert "P02" in report_text
+    assert "OBSERVATION" in report_text
+    assert "AV SITE SURVEY REPORT & INSPECTION" in report_text
+
+
+def test_visual_findings_are_not_repeated_inside_scope_table():
+    data = visual_sample_data()
+    finding_text = data["visual_findings"][0]["finding"]
+    output = build_site_survey_report_docx(data)
+    document = Document(BytesIO(output))
+    combined = "\n".join(
+        [p.text for p in document.paragraphs]
+        + [
+            cell.text
+            for table in document.tables
+            for row in table.rows
+            for cell in row.cells
+        ]
+    )
+    assert combined.count(finding_text) == 1

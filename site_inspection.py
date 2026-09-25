@@ -77,6 +77,19 @@ def _is_critical_high_confidence_finding(finding: dict[str, Any]) -> bool:
     return any(cue in text for cue in critical_cues)
 
 
+def _finding_status(issue_text: str, confidence: str, basis: str) -> str:
+    probe = {
+        "confidence": str(confidence or "").upper(),
+        "finding": issue_text,
+        "basis": basis,
+    }
+    if _is_critical_high_confidence_finding(probe):
+        return "ACTION"
+    if str(confidence or "").lower() in {"high", "medium"}:
+        return "OBSERVATION"
+    return "VERIFY"
+
+
 def build_site_inspection_summary(
     visual_items: list[dict[str, Any]],
 ) -> dict[str, Any]:
@@ -127,9 +140,12 @@ def build_site_inspection_summary(
             if _clean_text(value)
         ]
 
+        photo_ref = f"P{photo_index:02d}"
+
         photo_register.append(
             {
                 "photo_number": f"Photo {photo_index:02d}",
+                "photo_ref": photo_ref,
                 "file_name": file_name,
                 "category": category,
                 "subject_equipment": summary or (observations[0] if observations else ""),
@@ -154,8 +170,13 @@ def build_site_inspection_summary(
             priority = {
                 "high": "HIGH",
                 "medium": "MEDIUM",
-                "low": "VERIFY",
+                "low": "LOW",
             }[confidence]
+            finding_status = _finding_status(
+                issue_text,
+                confidence,
+                basis,
+            )
 
             finding_key = _normalized_key(issue_text)
             if finding_key in seen_finding_keys:
@@ -166,16 +187,21 @@ def build_site_inspection_summary(
                 {
                     "id": f"F-{issue_counter:02d}",
                     "source_photo": file_name,
+                    "source_photo_ref": photo_ref,
                     "category": category,
                     "finding": issue_text,
                     "basis": basis,
                     "confidence": confidence.upper(),
                     "priority": priority,
-                    "status": "OPEN",
+                    "status": finding_status,
                     "required_action": (
-                        "Verify the visible condition on site and trace the directly related "
-                        "signal, power, network, control, or physical installation path before "
-                        "assigning a root cause."
+                        "Take immediate corrective / safety action and document closure."
+                        if finding_status == "ACTION"
+                        else (
+                            "Verify the visible condition against the Scope and actual site state before treating it as a defect."
+                            if finding_status == "OBSERVATION"
+                            else "Verify on site before assigning a fault, root cause, or responsibility."
+                        )
                     ),
                     "owner": "",
                     "closure_evidence": "",
@@ -199,6 +225,7 @@ def build_site_inspection_summary(
                 {
                     "id": f"V-{verify_counter:02d}",
                     "source_photo": file_name,
+                    "source_photo_ref": photo_ref,
                     "item": uncertainty,
                     "status": "VERIFY",
                     "required_action": "Verify on site or through the relevant device/system interface.",
@@ -226,18 +253,20 @@ def build_site_inspection_summary(
         if _clean_text(row.get("priority")).upper() == "MEDIUM"
     )
 
-    critical_high_count = sum(
+    action_count = sum(
         1 for row in findings
-        if _is_critical_high_confidence_finding(row)
+        if _clean_text(row.get("status")).upper() == "ACTION"
+    )
+    observation_count = sum(
+        1 for row in findings
+        if _clean_text(row.get("status")).upper() == "OBSERVATION"
     )
 
-    if critical_high_count:
-        overall_status = "HOLD / INVESTIGATE"
-    elif high_count or medium_count:
+    if action_count:
         overall_status = "ACTION REQUIRED"
-    elif findings:
-        overall_status = "VERIFY"
-    elif verify_items:
+    elif observation_count:
+        overall_status = "REVIEW REQUIRED"
+    elif findings or verify_items:
         overall_status = "VERIFY"
     else:
         overall_status = "NO OBVIOUS VISUAL FAULT"
@@ -264,6 +293,8 @@ def build_site_inspection_summary(
             "overall_status": overall_status,
             "photos_reviewed": len(items),
             "possible_issues": len(findings),
+            "observations": observation_count,
+            "actions": action_count,
             "verify_items": len(verify_items),
         },
         "executive_summary": summary_text,
@@ -405,70 +436,8 @@ def merge_site_inspection_into_survey_data(
 
         merged["photo_register"] = non_blank_existing + visual_photo_register
 
-    visual_section_items = []
-
-    for finding in merged["visual_findings"]:
-        if not isinstance(finding, dict):
-            continue
-        visual_section_items.append(
-            {
-                "item": _clean_text(finding.get("finding")),
-                "status": "ACTION",
-                "notes": (
-                    f"Visual confidence: {_clean_text(finding.get('confidence'))}. "
-                    f"Visible basis: {_clean_text(finding.get('basis'))}"
-                ).strip(),
-                "photo_ref": _clean_text(finding.get("source_photo")),
-            }
-        )
-
-    for verify_item in merged["verification_items"]:
-        if not isinstance(verify_item, dict):
-            continue
-        visual_section_items.append(
-            {
-                "item": _clean_text(verify_item.get("item")),
-                "status": "VERIFY",
-                "notes": "Requires field verification; not confirmed as a fault.",
-                "photo_ref": _clean_text(verify_item.get("source_photo")),
-            }
-        )
-
-    if visual_section_items and merged.get("checklist_sections") is not None:
-        sections = list(merged.get("checklist_sections") or [])
-        sections.append(
-            {
-                "section": "Visual Evidence / Site Findings",
-                "items": visual_section_items,
-            }
-        )
-        merged["checklist_sections"] = sections
-
-    # Preserve the richer pre-survey inspection_sections schema when that is
-    # what the Scope-derived workflow already uses. Do not create a competing
-    # checklist_sections key that would hide the original scope sections.
-    if visual_section_items and "inspection_sections" in merged:
-        inspection_sections = list(merged.get("inspection_sections") or [])
-        inspection_sections.append(
-            {
-                "section_number": len(inspection_sections) + 1,
-                "section_title": "Visual Evidence / Site Findings",
-                "section_purpose": (
-                    "Verify visually observed conditions and close open actions without "
-                    "assigning unsupported root causes."
-                ),
-                "items": [
-                    {
-                        "item_number": index,
-                        "inspection_item": row["item"],
-                        "status": row.get("status") or "VERIFY",
-                        "status_options": ["PASS", "ACTION", "VERIFY", "N/A"],
-                        "notes_photo": row.get("photo_ref") or "",
-                    }
-                    for index, row in enumerate(visual_section_items, start=1)
-                ],
-            }
-        )
-        merged["inspection_sections"] = inspection_sections
+    # Visual findings remain in dedicated visual_findings / verification_items
+    # collections. They are intentionally NOT injected into the Scope-derived
+    # checklist sections, preventing duplicate rows in client-facing documents.
 
     return merged

@@ -2781,25 +2781,163 @@ def build_professional_site_survey_data(blueprint):
             }
         )
 
-    for index, requirement in enumerate(
-        blueprint.get("critical_requirements") or [],
-        start=1,
-    ):
+    def add_inspection_section(title, items, purpose=""):
+        clean_items = [
+            str(item).strip()
+            for item in (items or [])
+            if str(item or "").strip()
+        ]
+        if not clean_items:
+            return
+
         checklist["inspection_sections"].append(
             {
-                "section_number": index,
-                "section_title": "Critical project verification",
-                "section_purpose": "",
+                "section_number": len(checklist["inspection_sections"]) + 1,
+                "section_title": title,
+                "section_purpose": purpose,
                 "items": [
                     {
-                        "item_number": 1,
-                        "inspection_item": str(requirement),
-                        "status_options": ["YES", "NO", "N/A"],
+                        "item_number": item_index,
+                        "inspection_item": item_text,
+                        "status": "VERIFY",
+                        "status_options": ["PASS", "VERIFY", "ACTION", "N/A"],
                         "notes_photo": "",
                     }
+                    for item_index, item_text in enumerate(
+                        clean_items,
+                        start=1,
+                    )
                 ],
             }
         )
+
+    existing_checks = []
+    for equipment in existing_equipment:
+        if not isinstance(equipment, dict):
+            continue
+        parts = []
+        quantity = equipment.get("quantity")
+        device = equipment.get("device")
+        manufacturer = equipment.get("manufacturer")
+        model = equipment.get("model")
+        location = equipment.get("location")
+
+        identity_parts = [
+            str(value).strip()
+            for value in (manufacturer, model, device)
+            if str(value or "").strip()
+        ]
+        identity = " ".join(identity_parts)
+        if quantity not in (None, ""):
+            parts.append(f"{quantity} x {identity}" if identity else f"Quantity: {quantity}")
+        elif identity:
+            parts.append(identity)
+        if location:
+            parts.append(f"Location: {location}")
+
+        if parts:
+            existing_checks.append(
+                "Verify retained / reusable existing equipment: "
+                + " | ".join(parts)
+            )
+
+    add_inspection_section(
+        "Existing equipment to retain / reuse",
+        existing_checks,
+        "Confirm the existing equipment identified by the Scope is present, reusable, and located as intended.",
+    )
+
+    new_checks = []
+    for equipment in new_equipment:
+        if not isinstance(equipment, dict):
+            continue
+        parts = []
+        quantity = equipment.get("quantity")
+        device = equipment.get("device")
+        manufacturer = equipment.get("manufacturer")
+        model = equipment.get("model")
+        location = equipment.get("location")
+
+        identity_parts = [
+            str(value).strip()
+            for value in (manufacturer, model, device)
+            if str(value or "").strip()
+        ]
+        identity = " ".join(identity_parts)
+        if quantity not in (None, ""):
+            parts.append(f"{quantity} x {identity}" if identity else f"Quantity: {quantity}")
+        elif identity:
+            parts.append(identity)
+        if location:
+            parts.append(f"Target location: {location}")
+
+        if parts:
+            new_checks.append(
+                "Verify installation feasibility / final position for new equipment: "
+                + " | ".join(parts)
+            )
+
+    add_inspection_section(
+        "New equipment / installation verification",
+        new_checks,
+        "Verify mounting, placement, pathway, power, and integration feasibility for new equipment.",
+    )
+
+    add_inspection_section(
+        "System design intent",
+        blueprint.get("design_intent") or [],
+        "Confirm the room/system behavior described by the Scope can be implemented at the observed site.",
+    )
+
+    add_inspection_section(
+        "Equipment relocations",
+        blueprint.get("relocations") or [],
+        "Verify the existing path, destination, access, and physical feasibility for each relocation.",
+    )
+
+    add_inspection_section(
+        "Equipment removal / decommissioning",
+        blueprint.get("removals") or [],
+        "Confirm equipment identified for removal and coordinate handover / disposal requirements.",
+    )
+
+    feature_checks = []
+    if features.get("divisible_room"):
+        feature_checks.append(
+            "Verify the divisible-room arrangement and confirm the site supports independent and combined room operation."
+        )
+    if features.get("partition_sensor"):
+        feature_checks.append(
+            "Verify the partition sensor location and automatic room-combining function can be implemented and tested."
+        )
+    if features.get("rack_work"):
+        feature_checks.append(
+            "Verify existing rack capacity, equipment access, power distribution, ventilation, and space for retained/new headend equipment."
+        )
+    if features.get("ceiling_work"):
+        feature_checks.append(
+            "Verify ceiling construction, mounting positions, access, and coordination for ceiling-mounted AV equipment."
+        )
+    if features.get("dante"):
+        feature_checks.append(
+            "Verify the Dante audio path and infrastructure required for the new Dante-capable equipment."
+        )
+    if features.get("cable_route_work"):
+        feature_checks.append(
+            "Verify cable pathways, containment, access, and route feasibility for new/relocated AV cabling."
+        )
+
+    add_inspection_section(
+        "Project-specific integration checks",
+        feature_checks,
+        "High-value checks derived from the Scope's stated project features.",
+    )
+
+    add_inspection_section(
+        "Site readiness / customer dependencies",
+        blueprint.get("critical_requirements") or [],
+        "Verify only the site-readiness and customer-provided conditions that materially affect installation or commissioning.",
+    )
 
     for connection in blueprint.get(
         "connections_to_verify"

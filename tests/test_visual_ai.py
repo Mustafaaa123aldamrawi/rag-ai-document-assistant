@@ -5,6 +5,7 @@ from visual_ai import (
     build_visual_diagnostic_plan,
     build_visual_evidence_text,
     build_visual_field_answer,
+    build_visual_json_repair_prompt,
     parse_visual_analysis,
     visual_answer_is_complete,
 )
@@ -246,3 +247,26 @@ def test_app_has_visual_completion_guard_after_grounded_verification():
     ).read_text(encoding="utf-8")
     assert "visual_answer_is_complete(answer, question)" in app_source
     assert "answer = build_visual_field_answer(" in app_source
+
+
+
+def test_parse_visual_analysis_repairs_trailing_comma():
+    result = parse_visual_analysis(
+        '{"category":"SITE_PHOTO","summary":"Room visible","visible_text":[],"devices":[],"observations":["Display visible"],"possible_issues":[],"uncertainties":[],}'
+    )
+    assert result["category"] == "SITE_PHOTO"
+    assert result["observations"] == ["Display visible"]
+
+
+def test_visual_json_repair_prompt_is_syntax_only():
+    prompt = build_visual_json_repair_prompt('{"category":"SITE_PHOTO" "summary":"x"}')
+    assert "Fix syntax only" in prompt
+    assert "Do not add new observations" in prompt
+
+
+def test_app_retries_malformed_visual_json_without_reanalyzing_image():
+    app_source = (
+        Path(__file__).resolve().parents[1] / "app.py"
+    ).read_text(encoding="utf-8")
+    assert "build_visual_json_repair_prompt(" in app_source
+    assert "repaired_visual_json = call_conversation_llm(" in app_source

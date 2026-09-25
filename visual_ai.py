@@ -80,17 +80,64 @@ Rules:
     ]
 
 
+def build_visual_json_repair_prompt(raw: str) -> str:
+    return f"""
+Repair the malformed JSON below.
+
+Rules:
+- Return ONLY valid JSON.
+- Preserve the original meaning and values.
+- Do not add new observations, devices, issues, text, or conclusions.
+- Keep null values as null.
+- Fix syntax only: missing commas, stray trailing commas, broken quotes,
+  accidental code fences, or other JSON formatting errors.
+
+MALFORMED JSON:
+{str(raw or "").strip()}
+""".strip()
+
+
 def parse_visual_analysis(raw: str) -> dict[str, Any]:
     text = str(raw or "").strip()
 
-    try:
-        data = json.loads(text)
-    except Exception:
-        start = text.find("{")
-        end = text.rfind("}")
-        if start < 0 or end <= start:
-            raise ValueError("Visual analysis did not return valid JSON.")
-        data = json.loads(text[start : end + 1])
+    # Remove common fenced-output wrappers without changing content.
+    if text.startswith("```"):
+        text = text.strip("`").strip()
+        if text.lower().startswith("json"):
+            text = text[4:].lstrip()
+
+    candidates = [text]
+    start = text.find("{")
+    end = text.rfind("}")
+    if start >= 0 and end > start:
+        candidates.append(text[start : end + 1])
+
+    data = None
+    last_error = None
+
+    for candidate in candidates:
+        try:
+            data = json.loads(candidate)
+            break
+        except Exception as error:
+            last_error = error
+
+        # Safe deterministic cleanup for common model formatting mistakes.
+        cleaned = candidate
+        cleaned = cleaned.replace("\u201c", '"').replace("\u201d", '"')
+        cleaned = cleaned.replace("\u2018", "'").replace("\u2019", "'")
+        cleaned = __import__("re").sub(r",\s*([}\]])", r"\1", cleaned)
+
+        try:
+            data = json.loads(cleaned)
+            break
+        except Exception as error:
+            last_error = error
+
+    if data is None:
+        raise ValueError(
+            f"Visual analysis did not return valid JSON: {last_error}"
+        )
 
     if not isinstance(data, dict):
         raise ValueError("Visual analysis JSON must be an object.")
@@ -106,7 +153,6 @@ def parse_visual_analysis(raw: str) -> dict[str, Any]:
 
     data["summary"] = str(data.get("summary") or "").strip()
     return data
-
 
 def build_visual_evidence_text(
     analysis: dict[str, Any],

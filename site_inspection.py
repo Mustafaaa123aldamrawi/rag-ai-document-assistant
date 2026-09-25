@@ -18,6 +18,65 @@ def _normalize_confidence(value: Any) -> str:
     return confidence
 
 
+def _normalized_key(value: Any) -> str:
+    text = _clean_text(value).lower()
+    return " ".join(
+        token.strip(".,:;()[]{}")
+        for token in text.split()
+        if token.strip(".,:;()[]{}")
+    )
+
+
+def _uncertainty_is_actionable(value: Any) -> bool:
+    text = _normalized_key(value)
+    if not text:
+        return False
+
+    low_value_phrases = (
+        "manufacturer is not readable",
+        "manufacturer and model are not readable",
+        "manufacturer/model",
+        "model number is unreadable",
+        "exact model",
+        "exact manufacturer",
+        "text is unreadable",
+        "text is too blurry",
+        "exact labels",
+        "cannot be determined from the image",
+        "cannot be confirmed from the image",
+    )
+    return not any(phrase in text for phrase in low_value_phrases)
+
+
+def _is_critical_high_confidence_finding(finding: dict[str, Any]) -> bool:
+    if _clean_text(finding.get("confidence")).upper() != "HIGH":
+        return False
+
+    text = " ".join(
+        (
+            _clean_text(finding.get("finding")),
+            _clean_text(finding.get("basis")),
+        )
+    ).lower()
+
+    critical_cues = (
+        "safety",
+        "unsafe",
+        "exposed live",
+        "electrical hazard",
+        "fire",
+        "water ingress",
+        "smoke",
+        "burn",
+        "overheating",
+        "blocked egress",
+        "structural",
+        "falling",
+        "hanging loose overhead",
+    )
+    return any(cue in text for cue in critical_cues)
+
+
 def build_site_inspection_summary(
     visual_items: list[dict[str, Any]],
 ) -> dict[str, Any]:
@@ -43,6 +102,8 @@ def build_site_inspection_summary(
 
     issue_counter = 1
     verify_counter = 1
+    seen_finding_keys: set[str] = set()
+    seen_verify_keys: set[str] = set()
 
     for photo_index, item in enumerate(items, start=1):
         file_name = _clean_text(item.get("file_name")) or f"Photo {photo_index:02d}"
@@ -96,6 +157,11 @@ def build_site_inspection_summary(
                 "low": "VERIFY",
             }[confidence]
 
+            finding_key = _normalized_key(issue_text)
+            if finding_key in seen_finding_keys:
+                continue
+            seen_finding_keys.add(finding_key)
+
             findings.append(
                 {
                     "id": f"F-{issue_counter:02d}",
@@ -117,7 +183,18 @@ def build_site_inspection_summary(
             )
             issue_counter += 1
 
+        photo_verify_count = 0
         for uncertainty in uncertainties:
+            if photo_verify_count >= 2:
+                break
+            if not _uncertainty_is_actionable(uncertainty):
+                continue
+
+            verify_key = _normalized_key(uncertainty)
+            if verify_key in seen_verify_keys:
+                continue
+            seen_verify_keys.add(verify_key)
+
             verify_items.append(
                 {
                     "id": f"V-{verify_counter:02d}",
@@ -130,6 +207,7 @@ def build_site_inspection_summary(
                 }
             )
             verify_counter += 1
+            photo_verify_count += 1
 
     findings.sort(
         key=lambda row: (
@@ -148,9 +226,14 @@ def build_site_inspection_summary(
         if _clean_text(row.get("priority")).upper() == "MEDIUM"
     )
 
-    if high_count:
+    critical_high_count = sum(
+        1 for row in findings
+        if _is_critical_high_confidence_finding(row)
+    )
+
+    if critical_high_count:
         overall_status = "HOLD / INVESTIGATE"
-    elif medium_count:
+    elif high_count or medium_count:
         overall_status = "ACTION REQUIRED"
     elif findings:
         overall_status = "VERIFY"

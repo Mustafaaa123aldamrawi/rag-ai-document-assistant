@@ -22,6 +22,7 @@ from visual_ai import (
     build_visual_diagnostic_context,
     build_visual_evidence_text,
     build_visual_field_answer,
+    build_visual_json_repair_prompt,
     parse_visual_analysis,
     visual_answer_is_complete,
 )
@@ -5447,14 +5448,6 @@ if uploaded_files:
             document_pages.extend(file_pages)
         if document_pages:
             text_chunks = split_text_into_chunks(document_pages)
-
-            vector_store = create_vector_store(text_chunks)
-            st.success(
-                f"✅ {len(uploaded_files)} document(s) ready for AI analysis."
-            )
-
-        if document_pages:
-            text_chunks = split_text_into_chunks(document_pages)
         
             vector_store = create_vector_store(text_chunks)
         
@@ -5605,9 +5598,30 @@ if uploaded_images:
                     visual_messages,
                     temperature=0.1,
                 )
-                visual_analysis = parse_visual_analysis(
-                    raw_visual_analysis
-                )
+                try:
+                    visual_analysis = parse_visual_analysis(
+                        raw_visual_analysis
+                    )
+                except ValueError:
+                    # Vision models occasionally return semantically useful
+                    # content with malformed JSON. Repair syntax only rather
+                    # than discarding the entire photo from a multi-image
+                    # inspection package.
+                    repair_prompt = build_visual_json_repair_prompt(
+                        raw_visual_analysis
+                    )
+                    repaired_visual_json = call_conversation_llm(
+                        prompt=repair_prompt,
+                        temperature=0.0,
+                        preferred_models_override=[
+                            "openai/gpt-oss-20b",
+                            "Qwen/Qwen2.5-Coder-32B-Instruct",
+                        ],
+                    )
+                    visual_analysis = parse_visual_analysis(
+                        repaired_visual_json
+                    )
+
                 st.session_state["visual_analysis_cache"][
                     visual_cache_key
                 ] = {

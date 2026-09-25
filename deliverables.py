@@ -626,16 +626,40 @@ def build_site_survey_report_docx(checklist_data: dict[str, Any]) -> bytes | Non
 
     _add_section_heading(document, "8. Final Assessment")
     conclusion = checklist_data.get("conclusion") or {}
+
+    visual_actions = int(visual_meta.get("actions") or 0)
+    critical_blockers = conclusion.get("critical_blockers")
+    if not critical_blockers:
+        critical_blockers = (
+            "Visual action item(s) require immediate review."
+            if visual_actions
+            else "No critical blocker is confirmed from the uploaded visual evidence."
+        )
+
+    additional_work = conclusion.get("additional_work_required")
+    if not additional_work and survey_status == "FIELD VERIFICATION REQUIRED":
+        additional_work = (
+            "Complete the outstanding Scope verification checklist items and "
+            "record evidence before final acceptance."
+        )
+
+    next_step = conclusion.get("next_step_target_date")
+    if not next_step:
+        next_step = (
+            "Complete field verification, update PASS / OBSERVATION / ACTION statuses, "
+            "and issue the final signed report."
+        )
+
     table = document.add_table(rows=0, cols=2)
     _format_table(table)
     assessment_rows = [
         ("Survey Status", survey_status),
         ("Visual Status", visual_status),
-        ("Critical Blockers", conclusion.get("critical_blockers") or ""),
-        ("Additional Work Required", conclusion.get("additional_work_required") or ""),
-        ("Customer Actions", conclusion.get("customer_actions") or ""),
-        ("Designer / Programmer Actions", conclusion.get("designer_programmer_actions") or ""),
-        ("Next Step / Target Date", conclusion.get("next_step_target_date") or ""),
+        ("Critical Blockers", critical_blockers),
+        ("Additional Work Required", additional_work or "To be confirmed during field verification."),
+        ("Customer Actions", conclusion.get("customer_actions") or "To be confirmed during field verification."),
+        ("Designer / Programmer Actions", conclusion.get("designer_programmer_actions") or "To be confirmed during field verification."),
+        ("Next Step", next_step),
     ]
     for label, value in assessment_rows:
         cells = table.add_row().cells
@@ -797,9 +821,18 @@ def build_professional_site_survey_checklist_docx(
 
     _add_section_heading(document, "Deviations / Risks / Actions")
     risk_rows = checklist_data.get("deviations_risks_actions", []) or []
-    table = document.add_table(rows=1, cols=6)
+    table = document.add_table(rows=1, cols=7)
     _format_table(table)
-    for idx, header in enumerate(["ID", "Deviation / Risk / Missing Item", "Impact", "Required Action", "Owner", "Priority"]):
+    headers = [
+        "ID",
+        "Photo Ref.",
+        "Deviation / Risk / Observation",
+        "Impact",
+        "Required Action",
+        "Owner",
+        "Priority",
+    ]
+    for idx, header in enumerate(headers):
         _set_cell_text(table.rows[0].cells[idx], header, bold=True, color=WHITE)
         _shade_cell(table.rows[0].cells[idx], NAVY)
     _set_repeat_table_header(table.rows[0])
@@ -809,14 +842,14 @@ def build_professional_site_survey_checklist_docx(
     else:
         rows_to_add = [
             {
-                "id": f"{index:02d}",
-                "deviation_risk_missing_item": "",
+                "id": "",
+                "photo_ref": "",
+                "deviation_risk_missing_item": "No deviation/action has been confirmed from the current visual evidence.",
                 "impact": "",
-                "required_action": "",
+                "required_action": "Continue Scope verification and record any confirmed deviation.",
                 "owner": "",
                 "priority": "",
             }
-            for index in range(1, 7)
         ]
 
     for entry in rows_to_add:
@@ -825,6 +858,7 @@ def build_professional_site_survey_checklist_docx(
         row = table.add_row().cells
         values = [
             entry.get("id") or "",
+            entry.get("photo_ref") or "",
             entry.get("deviation_risk_missing_item") or entry.get("finding") or "",
             entry.get("impact") or "",
             entry.get("required_action") or "",
@@ -832,7 +866,10 @@ def build_professional_site_survey_checklist_docx(
             entry.get("priority") or "",
         ]
         for idx, value in enumerate(values):
-            _set_cell_text(row[idx], value, size=8.5)
+            _set_cell_text(row[idx], value, size=8.2)
+        fill = _status_fill(str(entry.get("priority") or ""))
+        if fill:
+            _shade_cell(row[6], fill)
 
     _add_section_heading(document, "Survey Sign-off / Outcome")
     outcome = document.add_table(rows=5, cols=2)

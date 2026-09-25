@@ -6026,7 +6026,7 @@ if package_data:
         int(visual_meta.get("observations") or 0),
     )
     col5.metric(
-        "Verify Items",
+        "Visual Verify",
         int(visual_meta.get("verify_items") or 0),
     )
 

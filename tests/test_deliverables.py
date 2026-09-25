@@ -285,3 +285,55 @@ def test_checklist_signoff_uses_same_survey_status_as_header():
         ]
     )
     assert combined.count("FIELD VERIFICATION REQUIRED") >= 2
+
+
+
+def test_checklist_populates_deviations_risks_actions_from_data():
+    data = visual_sample_data()
+    data["deviations_risks_actions"] = [
+        {
+            "id": "F-01",
+            "photo_ref": "P02",
+            "deviation_risk_missing_item": "Loose cable is visible.",
+            "impact": "Potential installation impact.",
+            "required_action": "Verify and secure if confirmed.",
+            "owner": "",
+            "priority": "MEDIUM",
+        }
+    ]
+    output = build_professional_site_survey_checklist_docx(data)
+    document = Document(BytesIO(output))
+    combined = "\n".join(
+        [p.text for p in document.paragraphs]
+        + [
+            cell.text
+            for table in document.tables
+            for row in table.rows
+            for cell in row.cells
+        ]
+    )
+    assert "Deviation / Risk / Observation" in combined
+    assert "Loose cable is visible." in combined
+    assert "P02" in combined
+    assert "MEDIUM" in combined
+
+
+def test_report_final_assessment_has_professional_defaults():
+    data = visual_sample_data()
+    data["survey_status"] = "FIELD VERIFICATION REQUIRED"
+    data["visual_status"] = "REVIEW REQUIRED"
+    data["visual_inspection"]["inspection_meta"]["actions"] = 0
+    output = build_site_survey_report_docx(data)
+    document = Document(BytesIO(output))
+    combined = "\n".join(
+        [p.text for p in document.paragraphs]
+        + [
+            cell.text
+            for table in document.tables
+            for row in table.rows
+            for cell in row.cells
+        ]
+    )
+    assert "No critical blocker is confirmed from the uploaded visual evidence." in combined
+    assert "Complete the outstanding Scope verification checklist items" in combined
+    assert "Complete field verification, update PASS / OBSERVATION / ACTION statuses" in combined

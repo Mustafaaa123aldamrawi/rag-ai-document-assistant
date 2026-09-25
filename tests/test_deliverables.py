@@ -195,7 +195,7 @@ def test_client_facing_documents_use_compact_photo_refs_and_no_app_branding():
     assert "AV Intelligence Assistant" not in checklist_text
     assert "P02" in report_text
     assert "OBSERVATION" in report_text
-    assert "AV SITE SURVEY & INSPECTION REPORT" in report_text
+    assert "AV SITE SURVEY REPORT & INSPECTION" in report_text
 
 
 def test_visual_findings_are_not_repeated_inside_scope_table():

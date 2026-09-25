@@ -45,12 +45,24 @@ def _uncertainty_duplicates_finding(
     uncertainty: Any,
     photo_findings: list[dict[str, Any]],
 ) -> bool:
+    uncertainty_text = _normalized_key(uncertainty)
     uncertainty_terms = _content_terms(uncertainty)
     if not uncertainty_terms:
         return False
 
+    cable_terms = ("cable", "wire", "conductor")
+    support_terms = (
+        "hang",
+        "hanging",
+        "loose",
+        "unsecured",
+        "unsupported",
+        "support",
+        "suspension",
+    )
+
     for finding in photo_findings:
-        finding_terms = _content_terms(
+        finding_text = _normalized_key(
             " ".join(
                 (
                     _clean_text(finding.get("finding")),
@@ -58,7 +70,23 @@ def _uncertainty_duplicates_finding(
                 )
             )
         )
+        finding_terms = _content_terms(finding_text)
+
         if len(uncertainty_terms & finding_terms) >= 2:
+            return True
+
+        # Concept-level duplicate: a cable/wire support uncertainty is the same
+        # client-facing item as an existing loose/hanging cable observation,
+        # even when one phrase says "hang" and the other says "unsupported".
+        uncertainty_is_cable_support = (
+            _contains_any(uncertainty_text, cable_terms)
+            and _contains_any(uncertainty_text, support_terms)
+        )
+        finding_is_cable_support = (
+            _contains_any(finding_text, cable_terms)
+            and _contains_any(finding_text, support_terms)
+        )
+        if uncertainty_is_cable_support and finding_is_cable_support:
             return True
 
     return False

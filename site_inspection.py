@@ -332,6 +332,9 @@ def build_site_inspection_summary(
                 "status": "REVIEWED",
                 "notes": "; ".join(observations[:2]),
                 "visible_text": visible_text[:5],
+                # Retained in session only so the one-click final report can
+                # embed the actual evidence image beside its Pxx reference.
+                "image_bytes": item.get("image_bytes"),
             }
         )
 

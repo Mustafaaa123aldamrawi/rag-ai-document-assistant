@@ -534,3 +534,94 @@ def test_merge_builds_deviation_action_rows_from_visual_observations():
     assert rows[0]["id"] == "F-01"
     assert rows[0]["photo_ref"] == "P01"
     assert rows[0]["priority"] == "MEDIUM"
+
+
+
+def test_mastercard_style_generic_uncertainties_do_not_reach_client_verify_table():
+    items = [
+        {
+            "file_name": "p01.jpg",
+            "analysis": {
+                "category": "SITE_PHOTO",
+                "summary": "Boardroom visible.",
+                "visible_text": [],
+                "devices": [],
+                "observations": ["A hanging cable is visible."],
+                "possible_issues": [
+                    {
+                        "issue": "A loose or unsecured wire/cable appears to hang from the ceiling.",
+                        "confidence": "medium",
+                        "basis": "The cable is visibly unsupported near the ceiling fixture.",
+                    }
+                ],
+                "uncertainties": [
+                    "Whether the hanging wire is an intended suspension cable or a loose/unsecured conductor requires site verification.",
+                    "Ceiling speaker brand, count, and wiring are not visible.",
+                ],
+            },
+        },
+        {
+            "file_name": "p02.jpg",
+            "analysis": {
+                "category": "SITE_PHOTO",
+                "summary": "Adjacent room visible.",
+                "visible_text": [],
+                "devices": [],
+                "observations": ["Room area is visible."],
+                "possible_issues": [],
+                "uncertainties": [
+                    "No AV/UC equipment is visible; devices may be out of frame or not yet installed.",
+                    "Cable routing, power/data connections, and in-ceiling equipment cannot be assessed from this view.",
+                ],
+            },
+        },
+        {
+            "file_name": "p03.jpg",
+            "analysis": {
+                "category": "SITE_PHOTO",
+                "summary": "Crestron scheduling panel visible.",
+                "visible_text": [],
+                "devices": [],
+                "observations": ["Scheduling panel is visible."],
+                "possible_issues": [],
+                "uncertainties": [
+                    "Cable routing and connections behind the panel and wall are not visible and cannot be verified.",
+                    "The brand/model of the background large display is not legible.",
+                ],
+            },
+        },
+        {
+            "file_name": "p04.jpg",
+            "analysis": {
+                "category": "SITE_PHOTO",
+                "summary": "Ceiling plenum visible.",
+                "visible_text": [],
+                "devices": [],
+                "observations": ["Ceiling plenum is visible."],
+                "possible_issues": [],
+                "uncertainties": [
+                    "The white label text on the small box is not legible; device identity is unknown.",
+                    "Whether any hanging cables are terminated/connected to equipment is not visible.",
+                ],
+            },
+        },
+        {
+            "file_name": "p05.jpg",
+            "analysis": {
+                "category": "AV_EQUIPMENT",
+                "summary": "AV rack visible.",
+                "visible_text": [],
+                "devices": [],
+                "observations": ["Rack equipment is visible."],
+                "possible_issues": [],
+                "uncertainties": [
+                    "Rear cabling and connections behind the devices are not visible; connectivity cannot be confirmed.",
+                    "The function of the top-right black box is not labeled and cannot be identified.",
+                ],
+            },
+        },
+    ]
+
+    summary = build_site_inspection_summary(items)
+    assert summary["inspection_meta"]["verify_items"] == 0
+    assert summary["verification_items"] == []

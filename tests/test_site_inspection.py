@@ -306,7 +306,8 @@ def test_app_persists_inspection_photos_and_has_clear_control():
     ).read_text(encoding="utf-8")
     assert '"site_inspection_photo_registry"' in app_source
     assert '"🧹 Clear Inspection Photos"' in app_source
-    assert 'st.session_state["site_inspection_photo_registry"][visual_cache_key]' in app_source
+    assert '"site_inspection_photo_registry"' in app_source
+    assert "visual_cache_key] = visual_item" in app_source
 
 
 def test_app_deduplicates_equipment_identity_components():

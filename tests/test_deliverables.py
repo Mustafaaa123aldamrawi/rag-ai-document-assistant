@@ -1,8 +1,13 @@
 from io import BytesIO
 
 from docx import Document
+from PIL import Image
 
-from deliverables import build_professional_site_survey_checklist_docx, build_site_survey_report_docx
+from deliverables import (
+    build_final_professional_site_report_docx,
+    build_professional_site_survey_checklist_docx,
+    build_site_survey_report_docx,
+)
 
 
 def sample_data():
@@ -337,3 +342,66 @@ def test_report_final_assessment_has_professional_defaults():
     assert "No critical blocker is confirmed from the uploaded visual evidence." in combined
     assert "Complete the outstanding Scope verification checklist items" in combined
     assert "Complete field verification, update PASS / OBSERVATION / ACTION statuses" in combined
+
+
+
+def _tiny_png_bytes():
+    buffer = BytesIO()
+    image = Image.new("RGB", (640, 360), "white")
+    image.save(buffer, format="PNG")
+    return buffer.getvalue()
+
+
+def test_final_professional_report_embeds_photo_evidence():
+    data = visual_sample_data()
+    data["survey_status"] = "FIELD VERIFICATION REQUIRED"
+    data["visual_status"] = "REVIEW REQUIRED"
+    data["photo_register"][0]["photo_ref"] = "P01"
+    data["photo_register"][0]["image_bytes"] = _tiny_png_bytes()
+    data["photo_register"][1]["photo_ref"] = "P02"
+    data["photo_register"][1]["image_bytes"] = _tiny_png_bytes()
+    data["scope_available"] = True
+
+    output = build_final_professional_site_report_docx(data)
+    assert output
+    document = Document(BytesIO(output))
+
+    combined = "\n".join(
+        [p.text for p in document.paragraphs]
+        + [
+            cell.text
+            for table in document.tables
+            for row in table.rows
+            for cell in row.cells
+        ]
+    )
+
+    assert "FINAL AV SITE SURVEY & INSPECTION REPORT" in combined
+    assert "Scope Verification Register" in combined
+    assert "Photo Evidence" in combined
+    assert "Final Assessment" in combined
+    assert len(document.inline_shapes) == 2
+    assert "P01" in combined
+    assert "P02" in combined
+
+
+def test_final_report_preserves_verify_as_unconfirmed():
+    data = sample_data()
+    data["scope_available"] = True
+    data["survey_status"] = "FIELD VERIFICATION REQUIRED"
+    data["visual_status"] = "NO OBVIOUS VISUAL FAULT"
+
+    output = build_final_professional_site_report_docx(data)
+    document = Document(BytesIO(output))
+    combined = "\n".join(
+        [p.text for p in document.paragraphs]
+        + [
+            cell.text
+            for table in document.tables
+            for row in table.rows
+            for cell in row.cells
+        ]
+    )
+
+    assert "VERIFY has not yet been confirmed" in combined
+    assert "Not ready for final acceptance" in combined

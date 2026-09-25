@@ -368,24 +368,107 @@ def render_voice_reply(text, key_hint="voice_answer"):
           const speechText = {spoken_json};
           const speechLang = {language_json};
 
-          function speakVoiceReply() {{
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(speechText);
-            utterance.lang = speechLang;
-
+          function chooseBestVoice(language) {{
             const voices = window.speechSynthesis.getVoices();
-            const prefix = speechLang.split("-")[0].toLowerCase();
+            const prefix = language.split("-")[0].toLowerCase();
             const matching = voices.filter(v =>
               (v.lang || "").toLowerCase().startsWith(prefix)
             );
 
-            if (matching.length) {{
-              utterance.voice = matching.find(v => v.localService) || matching[0];
-            }}
+            if (!matching.length) return null;
 
-            utterance.rate = 0.98;
-            utterance.pitch = 1.0;
-            window.speechSynthesis.speak(utterance);
+            const preferredTokens = [
+              "natural", "neural", "online", "google", "microsoft",
+              "hamed", "naayf", "zeina", "salma"
+            ];
+
+            const ranked = [...matching].sort((a, b) => {{
+              const score = (voice) => {{
+                const name = (voice.name || "").toLowerCase();
+                let total = 0;
+                preferredTokens.forEach((token, index) => {{
+                  if (name.includes(token)) total += 100 - index;
+                }});
+                if ((voice.lang || "").toLowerCase() === language.toLowerCase()) total += 30;
+                if (!voice.localService) total += 10;
+                return total;
+              }};
+              return score(b) - score(a);
+            }});
+
+            return ranked[0] || matching.find(v => v.localService) || matching[0];
+          }}
+
+          function splitForSpeech(text, maxLength = 220) {{
+            const normalized = (text || "").replace(/\s+/g, " ").trim();
+            if (!normalized) return [];
+
+            const sentenceParts = normalized
+              .split(/(?<=[.!?؟؛:])\s+/)
+              .filter(Boolean);
+
+            const chunks = [];
+            let current = "";
+
+            sentenceParts.forEach(part => {{
+              if ((current + " " + part).trim().length <= maxLength) {{
+                current = (current + " " + part).trim();
+              }} else {{
+                if (current) chunks.push(current);
+                current = part;
+              }}
+            }});
+
+            if (current) chunks.push(current);
+
+            return chunks.flatMap(chunk => {{
+              if (chunk.length <= maxLength) return [chunk];
+              const words = chunk.split(/\s+/);
+              const smaller = [];
+              let piece = "";
+              words.forEach(word => {{
+                if ((piece + " " + word).trim().length <= maxLength) {{
+                  piece = (piece + " " + word).trim();
+                }} else {{
+                  if (piece) smaller.push(piece);
+                  piece = word;
+                }}
+              }});
+              if (piece) smaller.push(piece);
+              return smaller;
+            }});
+          }}
+
+          let voiceReplyQueue = [];
+
+          function speakVoiceReply() {{
+            window.speechSynthesis.cancel();
+
+            const selectedVoice = chooseBestVoice(speechLang);
+            const chunks = splitForSpeech(speechText);
+            const prefix = speechLang.split("-")[0].toLowerCase();
+            voiceReplyQueue = [];
+
+            const speakChunk = (index) => {{
+              if (index >= chunks.length) return;
+
+              const utterance = new SpeechSynthesisUtterance(chunks[index]);
+              utterance.lang = speechLang;
+              if (selectedVoice) utterance.voice = selectedVoice;
+
+              // Arabic is easier to understand at a slightly slower rate,
+              // especially for mixed Arabic/English AV terminology.
+              utterance.rate = prefix === "ar" ? 0.90 : 0.96;
+              utterance.pitch = 1.0;
+              utterance.volume = 1.0;
+              utterance.onend = () => speakChunk(index + 1);
+              utterance.onerror = () => speakChunk(index + 1);
+
+              voiceReplyQueue.push(utterance);
+              window.speechSynthesis.speak(utterance);
+            }};
+
+            speakChunk(0);
           }}
 
           document.getElementById("{component_id}_replay").onclick = speakVoiceReply;

@@ -10,6 +10,8 @@ from io import BytesIO
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Inches, Pt
+from pptx import Presentation
+from openpyxl import load_workbook
 import base64
 import hashlib
 import streamlit.components.v1 as components
@@ -4907,6 +4909,85 @@ def extract_text_from_pdf(pdf_file):
 
     return pages
 
+
+def extract_text_from_uploaded_file(uploaded_file):
+    """Extract searchable text from PDF, Word, PowerPoint, or Excel uploads."""
+    source_name = getattr(uploaded_file, "name", "Uploaded file")
+    extension = os.path.splitext(source_name)[1].lower()
+
+    uploaded_file.seek(0)
+
+    if extension == ".pdf":
+        return extract_text_from_pdf(uploaded_file)
+
+    file_bytes = uploaded_file.read()
+    uploaded_file.seek(0)
+
+    if extension == ".docx":
+        document = Document(BytesIO(file_bytes))
+        text_parts = [
+            paragraph.text.strip()
+            for paragraph in document.paragraphs
+            if paragraph.text and paragraph.text.strip()
+        ]
+
+        for table in document.tables:
+            for row in table.rows:
+                values = [
+                    cell.text.strip()
+                    for cell in row.cells
+                    if cell.text and cell.text.strip()
+                ]
+                if values:
+                    text_parts.append(" | ".join(values))
+
+        return [{
+            "page_number": 1,
+            "source": source_name,
+            "text": "\n".join(text_parts),
+            "has_extractable_text": bool(text_parts),
+        }]
+
+    if extension == ".pptx":
+        presentation = Presentation(BytesIO(file_bytes))
+        pages = []
+        for slide_number, slide in enumerate(presentation.slides, start=1):
+            slide_text = []
+            for shape in slide.shapes:
+                if hasattr(shape, "text") and str(shape.text or "").strip():
+                    slide_text.append(str(shape.text).strip())
+            pages.append({
+                "page_number": slide_number,
+                "source": source_name,
+                "text": "\n".join(slide_text),
+                "has_extractable_text": bool(slide_text),
+            })
+        return pages
+
+    if extension == ".xlsx":
+        workbook = load_workbook(BytesIO(file_bytes), data_only=True, read_only=True)
+        pages = []
+        for sheet_number, worksheet in enumerate(workbook.worksheets, start=1):
+            rows = []
+            for row in worksheet.iter_rows(values_only=True):
+                values = [
+                    str(value).strip()
+                    for value in row
+                    if value is not None and str(value).strip()
+                ]
+                if values:
+                    rows.append(" | ".join(values))
+            pages.append({
+                "page_number": sheet_number,
+                "source": f"{source_name} — {worksheet.title}",
+                "text": "\n".join(rows),
+                "has_extractable_text": bool(rows),
+            })
+        return pages
+
+    return []
+
+
 def detect_pdf_content_type(pages, source_name=""):
     """
     Detect whether an uploaded PDF is primarily a normal document
@@ -5202,151 +5283,128 @@ if "last_resolved_query" not in st.session_state:
     st.session_state.last_resolved_query = None
 
 st.markdown(
-"""
-<div style="padding:28px 30px; border-radius:20px; border:1px solid rgba(120,120,120,0.18); background:linear-gradient(135deg, rgba(255,255,255,0.96), rgba(245,247,250,0.96)); box-shadow:0 8px 30px rgba(0,0,0,0.05); margin-bottom:24px;">
-
-<div style="font-size:14px; font-weight:600; letter-spacing:0.08em; opacity:0.65; margin-bottom:8px;">
-AV • UC • DOCUMENT INTELLIGENCE
-</div>
-
-<div style="font-size:38px; font-weight:800; line-height:1.15; margin-bottom:10px;">
-🤖 AV Intelligence Assistant
-</div>
-
-<div style="font-size:17px; line-height:1.6; opacity:0.78; max-width:850px;">
-AI-powered assistant for AV & Unified Communications, technical documents, trusted web research, troubleshooting, and source-grounded answers.
-</div>
-
-<div style="margin-top:18px; font-size:14px; opacity:0.65;">
-📄 Documents &nbsp;&nbsp; • &nbsp;&nbsp; 🌐 Trusted Web &nbsp;&nbsp; • &nbsp;&nbsp; 🛠 Technical Guidance
-</div>
-
-</div>
-""",
-unsafe_allow_html=True
+    """
+    <style>
+    .block-container {
+        max-width: 1080px;
+        padding-top: 1.5rem;
+        padding-bottom: 7rem;
+    }
+    [data-testid="stSidebar"] {
+        border-right: 1px solid rgba(120,120,120,.12);
+    }
+    [data-testid="stSidebar"] .stButton > button {
+        justify-content: flex-start;
+        border-radius: 10px;
+        border: 0;
+        background: transparent;
+        font-weight: 500;
+    }
+    [data-testid="stSidebar"] .stButton > button:hover {
+        background: rgba(120,120,120,.10);
+    }
+    div[data-testid="stTextInput"] input {
+        border-radius: 22px;
+        min-height: 46px;
+    }
+    div[data-testid="stPopover"] > button {
+        border-radius: 22px;
+        min-height: 46px;
+        font-size: 22px;
+    }
+    .av-brand {
+        font-size: 19px;
+        font-weight: 760;
+        margin: 2px 0 18px 0;
+    }
+    .av-home-title {
+        font-size: 34px;
+        font-weight: 760;
+        letter-spacing: -0.02em;
+        margin: 16px 0 6px 0;
+    }
+    .av-home-subtitle {
+        font-size: 14px;
+        opacity: .66;
+        margin-bottom: 18px;
+    }
+    </style>
+    <div class="av-home-title">AV Intelligence Assistant</div>
+    <div class="av-home-subtitle">Professional AV & UC intelligence, documents, web research, site surveys, and project workflows.</div>
+    """,
+    unsafe_allow_html=True,
 )
 # Persistent site-inspection photo registry. Photos remain available for
 # the current inspection package even if the uploader selection changes.
 if "site_inspection_photo_registry" not in st.session_state:
     st.session_state["site_inspection_photo_registry"] = {}
 
-# Sidebar
+# ChatGPT-style workspace navigation
 with st.sidebar:
-    st.markdown(
-    """
-    <div style="font-size:20px; font-weight:750; margin-bottom:6px;">
-    📄 Document Upload
-    </div>
-    <div style="font-size:13px; opacity:0.65; margin-bottom:10px;">
-    Upload one or more PDF documents for AI analysis.
-    </div>
-    """,
-    unsafe_allow_html=True
-    )
+    st.markdown('<div class="av-brand">AV Intelligence</div>', unsafe_allow_html=True)
 
-    uploaded_files = st.file_uploader(
-    "Upload PDF files",
-    type=["pdf"],
-    accept_multiple_files=True
-)
-    uploaded_images = st.file_uploader(
-        "Upload site photos / screenshots",
-        type=["png", "jpg", "jpeg", "webp"],
-        accept_multiple_files=True,
-        key="visual_uploads",
-    )
-    st.markdown(
-        """
-        <div style="font-size:13px; opacity:0.70; margin:8px 0 6px 0;">
-            Turn an uploaded Scope of Work into a practical AV site survey checklist.
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    create_site_survey_checklist = st.button(
-        "📋 Create Site Survey Checklist",
-        use_container_width=True,
-        disabled=not uploaded_files,
-    )
-
-    if create_site_survey_checklist:
-        st.session_state["requested_document_action"] = (
-            "site_survey_checklist"
-        )
-
-    available_inspection_photos = len(
-        st.session_state.get("site_inspection_photo_registry", {})
-    )
-
-    create_site_inspection_package = st.button(
-        "📷 Build Site Inspection Package",
-        use_container_width=True,
-        disabled=(
-            not uploaded_images
-            and available_inspection_photos == 0
-        ),
-    )
-
-    if create_site_inspection_package:
-        st.session_state["requested_document_action"] = (
-            "site_inspection_package"
-        )
-
-    if available_inspection_photos:
-        st.caption(
-            f"Inspection photos retained in this session: "
-            f"{available_inspection_photos}"
-        )
-
-        if st.button(
-            "🧹 Clear Inspection Photos",
-            use_container_width=True,
-        ):
-            st.session_state["site_inspection_photo_registry"] = {}
-            st.session_state.pop(
-                "current_visual_inspection_items",
-                None,
-            )
-            st.session_state.pop(
-                "site_inspection_package_data",
-                None,
-            )
-            st.rerun()
-
-    st.caption(
-        "Tip: upload the Scope of Work together with site photos to combine "
-        "design requirements and observed visual evidence in one package."
-    )
-    st.divider()
-    
-    st.markdown(
-    """
-    <div style="font-size:20px; font-weight:750; margin-bottom:6px;">
-    🔎 Search Mode
-    </div>
-    <div style="font-size:13px; opacity:0.65; margin-bottom:10px;">
-    Choose where the assistant should look for information.
-    </div>
-    """,
-    unsafe_allow_html=True
-    )
-
-    search_mode = st.radio(
-        "Choose your search mode:",
-        [
-            "Documents Only",
-            "Documents + Web",
-            "Web Only"
-        ],
-        index=0,
-        captions=[
-            "Answer only from your uploaded PDF documents.",
-            "Combine uploaded documents with trusted web sources. Works without a PDF too.",
-            "Search the web only; no document upload required."
+    if st.button("＋  New chat", use_container_width=True, key="new_chat_sidebar"):
+        st.session_state.messages = [
+            message
+            for message in st.session_state.get("messages", [])
+            if message.get("mode", "text") == "voice"
         ]
-    )
-st.divider()
+        st.session_state.last_resolved_query = None
+        st.session_state.pop("pending_question", None)
+        st.session_state.pop("pending_input_mode", None)
+        st.session_state.question_input = ""
+        st.rerun()
+
+    st.markdown("##### Workspace")
+    for workspace_label in (
+        "💬 Chats",
+        "📁 Projects",
+        "📋 Site Surveys",
+        "📄 Reports",
+        "📚 Knowledge Base",
+    ):
+        if st.button(
+            workspace_label,
+            use_container_width=True,
+            key=f"workspace_{workspace_label}",
+        ):
+            st.session_state["active_workspace"] = workspace_label
+
+    st.divider()
+    st.caption("Recents")
+
+    recent_prompts = []
+    for message in reversed(st.session_state.get("messages", [])):
+        if message.get("role") != "user" or message.get("mode", "text") == "voice":
+            continue
+        prompt_text = str(message.get("content") or "").strip()
+        if prompt_text and prompt_text not in recent_prompts:
+            recent_prompts.append(prompt_text)
+        if len(recent_prompts) >= 8:
+            break
+
+    if not recent_prompts:
+        st.caption("Your recent chats will appear here.")
+    else:
+        for recent_index, prompt_text in enumerate(recent_prompts):
+            label = prompt_text if len(prompt_text) <= 34 else prompt_text[:31] + "…"
+            if st.button(
+                label,
+                use_container_width=True,
+                key=f"recent_prompt_{recent_index}",
+            ):
+                st.session_state["pending_question"] = prompt_text
+                st.session_state["pending_input_mode"] = "text"
+
+# Upload widgets live in the + menu near the prompt. Their persisted widget
+# values are available here at the start of each rerun for document processing.
+uploaded_files = st.session_state.get("assistant_files", []) or []
+uploaded_images = st.session_state.get("assistant_site_photos", []) or []
+
+# Smart Auto Routing is always enabled. The existing router decides whether a
+# request should use uploaded documents, drawings/images, trusted web search,
+# both sources, or the general model. Users no longer need a manual search mode.
+search_mode = "Documents + Web"
 
 # Process uploaded PDF
 document_pages = []
@@ -5369,10 +5427,13 @@ if uploaded_files:
             cached_drawing_analysis = st.session_state[
                 "drawing_analysis_cache"
             ].get(drawing_cache_key)
-            file_pages = extract_text_from_pdf(uploaded_file)
-            content_type = detect_pdf_content_type(
-                file_pages,
-                getattr(uploaded_file, "name", "")
+            file_pages = extract_text_from_uploaded_file(uploaded_file)
+            source_name = getattr(uploaded_file, "name", "")
+            source_extension = os.path.splitext(source_name)[1].lower()
+            content_type = (
+                detect_pdf_content_type(file_pages, source_name)
+                if source_extension == ".pdf"
+                else "DOCUMENT"
             )
             st.info(
                 f"{getattr(uploaded_file, 'name', 'Uploaded PDF')} "
@@ -6175,7 +6236,7 @@ if uploaded_files:
             vector_store = create_vector_store(text_chunks)
         
             st.success(
-                f"✅ {len(uploaded_files)} document(s) ready for AI analysis."
+                f"✅ {len(uploaded_files)} file(s) ready for AI analysis."
             )
         
             if (
@@ -6654,59 +6715,23 @@ if assistant_interaction_mode == "💬 Chat" and st.session_state.messages:
 if assistant_interaction_mode == "💬 Chat":
     st.markdown(
         """
-        <div style="padding:20px 22px; border-radius:16px; border:1px solid rgba(120,120,120,0.16); background:rgba(255,255,255,0.72); margin-bottom:12px;">
-        <div style="font-size:26px; font-weight:750; margin-bottom:6px;">
-        💬 Ask Your AV Assistant
-        </div>
-        <div style="font-size:14px; opacity:0.68;">
-        Ask about AV systems, products, troubleshooting, uploaded documents, or current technical information.
-        </div>
+        <div style="margin:8px 0 16px 0;">
+            <div style="font-size:25px; font-weight:720;">Ask AV Assistant</div>
+            <div style="font-size:14px; opacity:.62; margin-top:4px;">
+                Ask naturally. The assistant automatically decides when to use your files, drawings, site photos, trusted web sources, or both.
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
-
-    if st.button("🗑️ Clear Chat"):
-        st.session_state.messages = [
-            message
-            for message in st.session_state.messages
-            if message.get("mode", "text") == "voice"
-        ]
-        st.session_state.last_resolved_query = None
-        st.session_state.question_input = ""
-        st.rerun()
-
-    st.caption("⚡ Quick prompts")
-
-    quick_col1, quick_col2 = st.columns(2)
-
-    with quick_col1:
-        if st.button("🔧 Troubleshoot an AV issue", use_container_width=True):
-            st.session_state.question_input = "Help me troubleshoot an AV system issue."
-            st.rerun()
-
-        if st.button("📄 Search my documents", use_container_width=True):
-            st.session_state.question_input = "Search my uploaded documents and summarize the most relevant information."
-            st.rerun()
-
-    with quick_col2:
-        if st.button("🎛️ Explain a product", use_container_width=True):
-            st.session_state.question_input = "Explain an AV product and its main capabilities."
-            st.rerun()
-
-        if st.button("⚖️ Compare technologies", use_container_width=True):
-            st.session_state.question_input = "Compare two AV technologies and explain their main differences."
-            st.rerun()
 else:
     st.markdown(
         """
-        <div style="padding:20px 22px; border-radius:16px; border:1px solid rgba(120,120,120,0.16); background:rgba(255,255,255,0.72); margin-bottom:12px;">
-        <div style="font-size:26px; font-weight:750; margin-bottom:6px;">
-        🎙️ Voice Assistant
-        </div>
-        <div style="font-size:14px; opacity:0.68;">
-        Speak naturally in any language. The assistant detects your language automatically and replies by voice in the same language.
-        </div>
+        <div style="margin:8px 0 16px 0;">
+            <div style="font-size:25px; font-weight:720;">Voice Assistant</div>
+            <div style="font-size:14px; opacity:.62; margin-top:4px;">
+                Voice improvements are being handled separately; the current voice workflow remains available.
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -6754,9 +6779,7 @@ if assistant_interaction_mode == "🎙️ Voice":
                     st.session_state["pending_question"] = voice_transcript
                     st.session_state["pending_input_mode"] = "voice"
                     st.session_state["last_voice_transcript"] = voice_transcript
-                    st.session_state[
-                        "last_voice_transcription_digest"
-                    ] = voice_digest
+                    st.session_state["last_voice_transcription_digest"] = voice_digest
                     st.rerun()
             except Exception as voice_error:
                 st.warning(f"Voice transcription failed: {voice_error}")
@@ -6766,21 +6789,100 @@ if assistant_interaction_mode == "🎙️ Voice":
         st.caption(f"🎧 Heard: {last_voice_transcript}")
 
 else:
-    question = st.text_area(
-        "Message AV Intelligence Assistant",
-        placeholder="Ask about AV systems, uploaded documents, products, troubleshooting, or current technical information...",
-        key="question_input",
-        height=90,
-    )
+    plus_col, prompt_col, send_col = st.columns([1.0, 11.0, 1.0], vertical_alignment="bottom")
 
-    send_col1, send_col2 = st.columns([12, 1])
+    with plus_col:
+        with st.popover("＋", use_container_width=True):
+            st.markdown("#### Add to AV Assistant")
 
-    with send_col2:
+            st.file_uploader(
+                "Upload files",
+                type=["pdf", "docx", "pptx", "xlsx"],
+                accept_multiple_files=True,
+                key="assistant_files",
+                help="PDF, Word, PowerPoint, and Excel files are searchable automatically.",
+            )
+
+            st.file_uploader(
+                "Upload site photos",
+                type=["png", "jpg", "jpeg", "webp"],
+                accept_multiple_files=True,
+                key="assistant_site_photos",
+                help="Add site photos, screenshots, rack photos, or field evidence.",
+            )
+
+            st.divider()
+            st.markdown("**Quick prompts**")
+
+            quick_prompts = (
+                ("🔧 Troubleshoot an AV issue", "Help me troubleshoot an AV system issue."),
+                ("📄 Analyze my files", "Analyze my uploaded files and summarize the most relevant AV/UC information."),
+                ("🎛️ Explain a product", "Explain an AV product and its main capabilities."),
+                ("⚖️ Compare technologies", "Compare two AV technologies and explain their main differences."),
+            )
+
+            for prompt_label, prompt_value in quick_prompts:
+                if st.button(prompt_label, use_container_width=True, key=f"quick_{prompt_label}"):
+                    st.session_state["pending_question"] = prompt_value
+                    st.session_state["pending_input_mode"] = "text"
+                    st.rerun()
+
+            st.divider()
+            st.markdown("**Site survey tools**")
+
+            files_available = bool(st.session_state.get("assistant_files"))
+            photos_available = bool(st.session_state.get("assistant_site_photos")) or bool(
+                st.session_state.get("site_inspection_photo_registry", {})
+            )
+
+            if st.button(
+                "📋 Create Site Survey Checklist",
+                use_container_width=True,
+                disabled=not files_available,
+                key="plus_site_survey_checklist",
+            ):
+                st.session_state["requested_document_action"] = "site_survey_checklist"
+                st.rerun()
+
+            if st.button(
+                "📦 Build Site Survey Package",
+                use_container_width=True,
+                disabled=not photos_available,
+                key="plus_site_survey_package",
+            ):
+                st.session_state["requested_document_action"] = "site_inspection_package"
+                st.rerun()
+
+            retained_photo_count = len(
+                st.session_state.get("site_inspection_photo_registry", {})
+            )
+            if retained_photo_count:
+                st.caption(f"{retained_photo_count} site photo(s) retained in this session.")
+                if st.button(
+                    "🧹 Clear Inspection Photos",
+                    use_container_width=True,
+                    key="plus_clear_site_photos",
+                ):
+                    st.session_state["site_inspection_photo_registry"] = {}
+                    st.session_state.pop("current_visual_inspection_items", None)
+                    st.session_state.pop("site_inspection_package_data", None)
+                    st.rerun()
+
+    with prompt_col:
+        question = st.text_input(
+            "Ask AV Assistant",
+            placeholder="Ask AV Assistant",
+            key="question_input",
+            label_visibility="collapsed",
+        )
+
+    with send_col:
         submitted = st.button(
             "↑",
             type="primary",
             use_container_width=True,
             on_click=submit_question,
+            key="send_chat_message",
         )
 
 should_process_question = bool(
@@ -7364,14 +7466,14 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
         and not uploaded_files
         and not is_casual_chat
     ):
-        st.warning("Please upload at least one PDF document first.")
+        st.warning("Please upload at least one supported document first.")
     
     elif (
         search_mode == "Documents Only"
         and not document_pages
         and not is_casual_chat
     ):
-        st.warning("The uploaded PDF files do not contain readable text.")
+        st.warning("The uploaded files do not contain readable text.")
     
     elif (
         search_mode == "Documents Only"

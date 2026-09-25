@@ -88,7 +88,7 @@ def build_response_plan(
 
     elif search_mode == "Documents Only":
         use_web = False
-        use_documents = has_document and intent == "DOCUMENT"
+        use_documents = has_document and intent in {"DOCUMENT", "TECHNICAL"}
 
     elif search_mode == "Documents + Web":
         if intent == "DOCUMENT":
@@ -98,11 +98,12 @@ def build_response_plan(
             use_web = True
             use_documents = has_document
         elif intent == "TECHNICAL":
-            # A general technical question must not be forced into an uploaded
-            # document merely because one is present. Explicit file questions
-            # are classified as DOCUMENT by the router.
+            # In mixed mode, general technical questions should not be forced
+            # into an unrelated uploaded document. Explicit file questions are
+            # classified as DOCUMENT; technical questions use external
+            # technical knowledge/search instead.
             use_documents = False
-            use_web = False
+            use_web = True
 
     return ResponsePlan(
         intent=intent,

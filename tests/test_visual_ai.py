@@ -4,7 +4,9 @@ from visual_ai import (
     build_visual_diagnostic_context,
     build_visual_diagnostic_plan,
     build_visual_evidence_text,
+    build_visual_field_answer,
     parse_visual_analysis,
+    visual_answer_is_complete,
 )
 
 
@@ -191,3 +193,56 @@ def test_app_visual_rules_prioritize_field_diagnostics_over_low_value_details():
     assert "What I can see → What looks wrong → What to check next." in app_source
     assert "If there is no visible issue, do not manufacture one." in app_source
     assert "icon labels, wallpaper details, or operating-system version" in app_source
+
+
+
+def test_visual_completion_guard_rejects_partial_single_section_answer():
+    answer = (
+        "**What I can see:**\n\n"
+        "- A large curved video display is visible. [DOC 1]"
+    )
+    question = (
+        "What can you see in this image, what looks wrong, "
+        "and what should I check next?"
+    )
+
+    assert visual_answer_is_complete(answer, question) is False
+
+
+def test_visual_field_answer_contains_all_three_required_sections():
+    analysis = {
+        "category": "SITE_PHOTO",
+        "summary": "A curved display is active.",
+        "visible_text": [],
+        "devices": [],
+        "observations": [
+            "A large curved display is active and showing a desktop.",
+        ],
+        "possible_issues": [],
+        "uncertainties": [
+            "Manufacturer and model are not readable.",
+        ],
+    }
+
+    answer = build_visual_field_answer(
+        analysis,
+        citation_label="[DOC 1]",
+    )
+
+    assert "**What I can see:**" in answer
+    assert "**What looks wrong:**" in answer
+    assert "**What to check next:**" in answer
+    assert "No obvious visual fault" in answer
+    assert "[DOC 1]" in answer
+    assert visual_answer_is_complete(
+        answer,
+        "What can you see in this image, what looks wrong, and what should I check next?",
+    ) is True
+
+
+def test_app_has_visual_completion_guard_after_grounded_verification():
+    app_source = (
+        Path(__file__).resolve().parents[1] / "app.py"
+    ).read_text(encoding="utf-8")
+    assert "visual_answer_is_complete(answer, question)" in app_source
+    assert "answer = build_visual_field_answer(" in app_source

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from cloud_store import SqlAlchemyProjectStore
+from cloud_store import SqlAlchemyProjectStore, _normalize_database_url
 
 
 def test_managed_store_supports_full_project_lifecycle(tmp_path: Path):
@@ -76,3 +76,16 @@ def test_managed_store_owner_scoping_and_delete(tmp_path: Path):
     assert store.delete_project(first["id"], owner_id="user-1") is True
     assert store.get_project(first["id"]) is None
     assert store.get_project(second["id"]) is not None
+
+
+
+def test_postgres_urls_are_normalized_to_psycopg3_driver():
+    assert _normalize_database_url(
+        "postgres://user:pass@example.com/db"
+    ) == "postgresql+psycopg://user:pass@example.com/db"
+    assert _normalize_database_url(
+        "postgresql://user:pass@example.com/db"
+    ) == "postgresql+psycopg://user:pass@example.com/db"
+    assert _normalize_database_url(
+        "postgresql+psycopg://user:pass@example.com/db"
+    ) == "postgresql+psycopg://user:pass@example.com/db"

@@ -20,6 +20,8 @@ RUN python -m py_compile \
     api/main.py \
     api/auth_context.py \
     api/runtime_config.py \
+    account_deletion.py \
+    compliance_pages.py \
     artifact_store.py \
     cloud_store.py \
     drawing_qa.py \

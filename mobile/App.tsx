@@ -4,6 +4,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import {
   ActivityIndicator,
+  Alert,
+  Linking,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -13,7 +15,7 @@ import {
   View,
 } from "react-native";
 
-import { api } from "./api";
+import { API_URL, api } from "./api";
 import { AuthScreen } from "./AuthScreen";
 import { supabase } from "./supabase";
 
@@ -291,6 +293,40 @@ export default function App() {
     }
   };
 
+  const deleteAccount = () => {
+    Alert.alert(
+      "Delete account?",
+      "This permanently deletes your account, projects, drawing analyses, reports, and private project files. This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete account",
+          style: "destructive",
+          onPress: async () => {
+            setLoading(true);
+            setBusyLabel("Deleting account and project data");
+            setError("");
+            try {
+              await api<{ status: string }>("/v1/account", {
+                method: "DELETE",
+              });
+              await supabase?.auth.signOut();
+            } catch (err) {
+              setError(
+                err instanceof Error
+                  ? err.message
+                  : "Unable to delete account.",
+              );
+            } finally {
+              setLoading(false);
+              setBusyLabel("");
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const generateReport = async (period: "daily" | "weekly" | "monthly" | "final") => {
     if (!selectedId) return;
     setLoading(true);
@@ -365,6 +401,29 @@ export default function App() {
               disabled={loading || !newProjectName.trim()}
             >
               <Text style={styles.primaryButtonText}>Create Project</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Account & Privacy</Text>
+            <TouchableOpacity
+              style={styles.accountAction}
+              onPress={() => Linking.openURL(`${API_URL}/privacy`)}
+            >
+              <Text style={styles.accountActionText}>Privacy Policy</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.accountAction}
+              onPress={() => Linking.openURL(`${API_URL}/account-deletion`)}
+            >
+              <Text style={styles.accountActionText}>Account deletion information</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.deleteAction}
+              onPress={deleteAccount}
+              disabled={loading}
+            >
+              <Text style={styles.deleteActionText}>Delete account</Text>
             </TouchableOpacity>
           </View>
 
@@ -630,6 +689,23 @@ const styles = StyleSheet.create({
     color: "#80B5FF",
     fontWeight: "700",
     fontSize: 12,
+  },
+  accountAction: {
+    paddingVertical: 11,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "#2B3B52",
+  },
+  accountActionText: {
+    color: "#80B5FF",
+    fontWeight: "700",
+  },
+  deleteAction: {
+    paddingVertical: 12,
+    marginTop: 4,
+  },
+  deleteActionText: {
+    color: "#FF8A8A",
+    fontWeight: "800",
   },
   container: {
     flexGrow: 1,

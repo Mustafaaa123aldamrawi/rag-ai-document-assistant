@@ -567,6 +567,20 @@ class ProjectStore:
             for row in rows
         ]
 
+
+    def delete_projects_for_owner(self, owner_id: str) -> int:
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT COUNT(*) AS count FROM projects WHERE owner_id=?",
+                (owner_id,),
+            ).fetchone()
+            count = int(row["count"] if row else 0)
+            conn.execute(
+                "DELETE FROM projects WHERE owner_id=?",
+                (owner_id,),
+            )
+        return count
+
     def project_snapshot(
         self,
         project_id: str,

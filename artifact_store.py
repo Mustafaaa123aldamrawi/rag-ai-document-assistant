@@ -31,6 +31,29 @@ class LocalArtifactStore:
             "content_type": content_type,
         }
 
+    def delete_prefix(self, prefix: str) -> int:
+        base = self.root / prefix
+        if not base.exists():
+            return 0
+        deleted = 0
+        if base.is_file():
+            base.unlink()
+            return 1
+        for path in sorted(base.rglob("*"), reverse=True):
+            if path.is_file():
+                path.unlink()
+                deleted += 1
+            elif path.is_dir():
+                try:
+                    path.rmdir()
+                except OSError:
+                    pass
+        try:
+            base.rmdir()
+        except OSError:
+            pass
+        return deleted
+
 
 class S3ArtifactStore:
     mode = "s3"
@@ -58,6 +81,33 @@ class S3ArtifactStore:
             "content_type": content_type,
         }
 
+    def delete_prefix(self, prefix: str) -> int:
+        deleted = 0
+        continuation = None
+        while True:
+            kwargs = {
+                "Bucket": self.bucket,
+                "Prefix": prefix,
+                "MaxKeys": 1000,
+            }
+            if continuation:
+                kwargs["ContinuationToken"] = continuation
+            response = self.client.list_objects_v2(**kwargs)
+            objects = [
+                {"Key": item["Key"]}
+                for item in response.get("Contents") or []
+            ]
+            if objects:
+                self.client.delete_objects(
+                    Bucket=self.bucket,
+                    Delete={"Objects": objects, "Quiet": True},
+                )
+                deleted += len(objects)
+            if not response.get("IsTruncated"):
+                break
+            continuation = response.get("NextContinuationToken")
+        return deleted
+
 
 def create_artifact_store():
     mode = os.getenv("AVIA_STORAGE_MODE", "local").strip().lower()
@@ -79,3 +129,7 @@ def drawing_artifact_key(owner_id: str, project_id: str, filename: str, digest: 
 
 def report_artifact_key(owner_id: str, project_id: str, period: str, filename: str) -> str:
     return f"users/{_safe(owner_id)}/projects/{_safe(project_id)}/reports/{_safe(period)}/{_safe(filename)}"
+
+
+def user_artifact_prefix(owner_id: str) -> str:
+    return f"users/{_safe(owner_id)}/"

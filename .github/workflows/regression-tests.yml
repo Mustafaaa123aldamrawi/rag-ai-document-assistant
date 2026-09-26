@@ -55,3 +55,14 @@ jobs:
       - name: Typecheck mobile app
         working-directory: mobile
         run: npm run typecheck
+
+
+  api-container-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build production API container
+        run: docker build -t av-intelligence-api:ci .

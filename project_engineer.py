@@ -622,6 +622,17 @@ def select_relevant_drawing_page_numbers(document_pages, question, max_pages=3):
         if any(cue in question_text for cue in ("signal", "flow", "سيجنال", "signal flow")):
             if "signal flow" in text:
                 score += 12
+            if (
+                "signal flow diagram" in text
+                and "cover sheet" not in text
+                and "drawing index" not in text
+            ):
+                score += 18
+
+        # Cover/index sheets repeat many downstream sheet titles and should not
+        # outrank the actual technical sheet for targeted visual analysis.
+        if "cover sheet" in text or "drawing index" in text:
+            score -= 20
         if any(cue in question_text for cue in ("containment", "conduit", "first fix", "فيرست")):
             if "containment" in text or "conduit" in text:
                 score += 12

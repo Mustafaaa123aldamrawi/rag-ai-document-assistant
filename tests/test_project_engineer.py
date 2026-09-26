@@ -20,6 +20,7 @@ def sample_pages():
             "source": "Pinsent.pdf",
             "text": """
             PINSENT MASONS - RIYADH
+            RIYADH KSA
             390I-25-88927
             AV-100 COVER SHEET
             AV-101 AUDIOVISUAL RESPONSIBILITY SCHEDULE & ABBREVIATIONS

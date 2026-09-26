@@ -30,12 +30,7 @@ from project_engineer import (
 from cloud_store import create_project_store
 from project_plan import build_phase_engineering_plan
 from project_dashboard import build_project_dashboard
-from project_reports import (
-    REPORT_PERIODS,
-    build_professional_project_report,
-    build_professional_project_report_docx,
-)
-from professional_reports import build_professional_project_report
+from professional_reports import REPORT_TYPES, build_professional_project_report
 from report_export import build_report_docx, safe_report_filename
 
 
@@ -561,7 +556,7 @@ def build_and_save_professional_project_report(
     anchor_date: date | None = None,
     user: AuthUser = Depends(get_current_user),
 ) -> dict:
-    if period not in REPORT_PERIODS:
+    if period not in REPORT_TYPES:
         raise HTTPException(
             status_code=422,
             detail="period must be daily, weekly, monthly, or final",
@@ -575,13 +570,8 @@ def build_and_save_professional_project_report(
         period=period,
         anchor_date=anchor_date,
     )
-    document = build_professional_project_report_docx(report)
-    project_name = str((snapshot.get("project") or {}).get("name") or "project")
-    safe_name = "".join(
-        char if char.isalnum() or char in {"-", "_"} else "_"
-        for char in project_name
-    ).strip("_") or "project"
-    filename = f"{safe_name}_{period}_report.docx"
+    document = build_report_docx(report)
+    filename = safe_report_filename(report, "docx")
     report["artifact"] = artifact_store.put_bytes(
         key=report_artifact_key(user.id, project_id, period, filename),
         payload=document,
@@ -610,7 +600,7 @@ def download_professional_project_report_docx(
     anchor_date: date | None = None,
     user: AuthUser = Depends(get_current_user),
 ) -> Response:
-    if period not in REPORT_PERIODS:
+    if period not in REPORT_TYPES:
         raise HTTPException(
             status_code=422,
             detail="period must be daily, weekly, monthly, or final",
@@ -624,15 +614,8 @@ def download_professional_project_report_docx(
         period=period,
         anchor_date=anchor_date,
     )
-    document = build_professional_project_report_docx(report)
-    project_name = str(
-        (snapshot.get("project") or {}).get("name") or "project"
-    )
-    safe_name = "".join(
-        char if char.isalnum() or char in {"-", "_"} else "_"
-        for char in project_name
-    ).strip("_") or "project"
-    filename = f"{safe_name}_{period}_report.docx"
+    document = build_report_docx(report)
+    filename = safe_report_filename(report, "docx")
     return Response(
         content=document,
         media_type=(

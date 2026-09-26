@@ -193,7 +193,6 @@ def create_project(
         opportunity_number=request.opportunity_number,
         phase=request.phase,
         metadata=request.metadata,
-        owner_id=user.id,
     )
 
 
@@ -221,7 +220,7 @@ def get_project(
 @app.get("/v1/projects/{project_id}/plan")
 def get_project_engineering_plan(project_id: str,
     user: AuthUser = Depends(get_current_user),) -> dict:
-    snapshot = store.project_snapshot(project_id)
+    snapshot = store.project_snapshot(project_id, owner_id=user.id)
     if not snapshot:
         raise HTTPException(status_code=404, detail="Project not found.")
     return build_phase_engineering_plan(snapshot)
@@ -244,6 +243,7 @@ def update_project(
         phase=request.phase,
         status=request.status,
         metadata=request.metadata,
+        owner_id=user.id,
     )
     return project
 
@@ -295,7 +295,10 @@ def project_progress(
 
 
 @app.post("/v1/drawings/register")
-async def analyze_drawing_register(file: UploadFile = File(...)) -> dict:
+async def analyze_drawing_register(
+    file: UploadFile = File(...),
+    user: AuthUser = Depends(get_current_user),
+) -> dict:
     _, pages = await _read_pdf(file)
     register = build_project_drawing_register(pages)
     return {
@@ -306,7 +309,10 @@ async def analyze_drawing_register(file: UploadFile = File(...)) -> dict:
 
 
 @app.post("/v1/drawings/qa")
-async def analyze_drawing_qa(file: UploadFile = File(...)) -> dict:
+async def analyze_drawing_qa(
+    file: UploadFile = File(...),
+    user: AuthUser = Depends(get_current_user),
+) -> dict:
     _, pages = await _read_pdf(file)
     return {
         "file_name": file.filename,

@@ -82,6 +82,22 @@ type Snapshot = {
   reports: ReportItem[];
 };
 
+type EngineeringPlan = {
+  phase: string;
+  next_phase?: string | null;
+  readiness: string;
+  objective: string;
+  current_blockers: string[];
+  open_issues: string[];
+  recommended_next_actions: string[];
+  exit_criteria: string[];
+  priority_findings: Array<{
+    severity?: string;
+    title?: string;
+    recommended_action?: string;
+  }>;
+};
+
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_URL}${path}`, init);
   const payload = response.status === 204 ? null : await response.json();
@@ -103,6 +119,7 @@ export default function App() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
+  const [engineeringPlan, setEngineeringPlan] = useState<EngineeringPlan | null>(null);
   const [newProjectName, setNewProjectName] = useState("");
   const [newLocation, setNewLocation] = useState("");
   const [progressNote, setProgressNote] = useState("");
@@ -130,8 +147,12 @@ export default function App() {
   const loadSnapshot = async (projectId: string) => {
     setError("");
     try {
-      const data = await api<Snapshot>(`/v1/projects/${projectId}`);
+      const [data, plan] = await Promise.all([
+        api<Snapshot>(`/v1/projects/${projectId}`),
+        api<EngineeringPlan>(`/v1/projects/${projectId}/plan`),
+      ]);
       setSnapshot(data);
+      setEngineeringPlan(plan);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load project.");
     }
@@ -143,7 +164,10 @@ export default function App() {
 
   useEffect(() => {
     if (selectedId) loadSnapshot(selectedId);
-    else setSnapshot(null);
+    else {
+      setSnapshot(null);
+      setEngineeringPlan(null);
+    }
   }, [selectedId]);
 
   const createProject = async () => {
@@ -364,6 +388,37 @@ export default function App() {
         >
           <Text style={styles.primaryButtonText}>Upload & Review AV Drawing Set</Text>
         </TouchableOpacity>
+        {engineeringPlan && (
+          <View style={styles.card}>
+            <View style={styles.planHeader}>
+              <Text style={styles.cardTitle}>Engineering Plan</Text>
+              <Text style={styles.readiness}>
+                {engineeringPlan.readiness.replaceAll("_", " ").toUpperCase()}
+              </Text>
+            </View>
+            <Text style={styles.metric}>{engineeringPlan.objective}</Text>
+
+            <Text style={styles.sectionTitle}>Next Actions</Text>
+            {engineeringPlan.recommended_next_actions.slice(0, 8).map((item, index) => (
+              <Text style={styles.next} key={`plan-next-${index}`}>→ {item}</Text>
+            ))}
+
+            {engineeringPlan.current_blockers.length > 0 && (
+              <>
+                <Text style={styles.sectionTitle}>Current Blockers</Text>
+                {engineeringPlan.current_blockers.slice(0, 6).map((item, index) => (
+                  <Text style={styles.issue} key={`blocker-${index}`}>! {item}</Text>
+                ))}
+              </>
+            )}
+
+            <Text style={styles.sectionTitle}>Ready for Next Phase When</Text>
+            {engineeringPlan.exit_criteria.slice(0, 6).map((item, index) => (
+              <Text style={styles.row} key={`exit-${index}`}>✓ {item}</Text>
+            ))}
+          </View>
+        )}
+
 
         {loading && (
           <View style={styles.loadingRow}>
@@ -625,6 +680,8 @@ const styles = StyleSheet.create({
     borderBottomColor: "#2B3B52",
   },
   progressDate: { color: "#8FA4C2", fontSize: 12, marginBottom: 5 },
+  planHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 10 },
+  readiness: { color: "#65D6A8", fontSize: 10, fontWeight: "800", maxWidth: 140, textAlign: "right" },
   row: { color: "#CDD6E4", marginBottom: 4, lineHeight: 19 },
   issue: { color: "#FFB86B", marginBottom: 4, lineHeight: 19 },
   next: { color: "#80B5FF", marginBottom: 4, lineHeight: 19 },

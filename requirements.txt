@@ -22,3 +22,6 @@ python-multipart
 pydantic
 
 PyJWT[crypto]
+
+SQLAlchemy>=2.0
+psycopg[binary]>=3.2

@@ -14,6 +14,7 @@ from pptx import Presentation
 from openpyxl import load_workbook
 import base64
 import hashlib
+from datetime import datetime
 import streamlit.components.v1 as components
 
 from PIL import Image
@@ -7114,6 +7115,43 @@ if should_process_question:
         })
     question_lower = question.lower() if question else ""
 
+    active_project_register = st.session_state.get(
+        "active_project_engineer_register"
+    )
+    project_report_period = detect_report_period(question)
+
+    if active_project_register and project_report_period:
+        report_answer = build_project_report_answer(
+            project_report_period,
+            active_project_register,
+            st.session_state.get("project_progress_log", []),
+        )
+        st.session_state.messages.append({
+            "role": "assistant",
+            "content": report_answer,
+            "mode": input_mode,
+        })
+        st.markdown(report_answer)
+        st.stop()
+
+    if (
+        active_project_register
+        and is_project_update_message(question)
+        and not project_report_period
+    ):
+        progress_entry = extract_project_progress_entry_with_llm(
+            question,
+            active_project_register,
+        )
+        if progress_entry:
+            existing_messages = {
+                item.get("source_message")
+                for item in st.session_state.get("project_progress_log", [])
+                if isinstance(item, dict)
+            }
+            if progress_entry.get("source_message") not in existing_messages:
+                st.session_state["project_progress_log"].append(progress_entry)
+
     # Intelligent conversation router
     router_history = build_recent_history(
         st.session_state.messages[:-1],
@@ -7251,6 +7289,13 @@ if should_process_question:
 
             if visual_reference_query:
                 query_route = "DOCUMENT"
+
+            if (
+                st.session_state.get("active_project_engineer_register")
+                and is_project_engineer_question(question)
+            ):
+                query_route = "DRAWING"
+                st.session_state["document_scope_active"] = True
 
             has_arabic_chars = bool(
                 re.search(r"[\u0600-\u06FF]", question)

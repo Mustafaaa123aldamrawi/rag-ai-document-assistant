@@ -12,6 +12,7 @@ from project_engineer import (
     build_progress_report,
     build_project_drawing_register,
 )
+from drawing_qa import audit_drawing_set
 
 
 APP_VERSION = "0.1.0"
@@ -91,8 +92,8 @@ def capabilities() -> dict:
             "room_detection": True,
             "coordination_requirements": True,
             "risk_flags": True,
-            "connection_graph": "planned",
-            "design_error_detection": "planned",
+            "connection_graph": "beta",
+            "design_error_detection": "beta",
         },
         "project_lifecycle": {
             "phases": [
@@ -141,6 +142,28 @@ async def analyze_drawing_register(file: UploadFile = File(...)) -> dict:
         "file_name": file.filename,
         "page_count": len(pages),
         "register": register,
+    }
+
+
+@app.post("/v1/drawings/qa")
+async def analyze_drawing_qa(file: UploadFile = File(...)) -> dict:
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="A PDF file is required.")
+
+    content_type = (file.content_type or "").lower()
+    if "pdf" not in content_type and not file.filename.lower().endswith(".pdf"):
+        raise HTTPException(status_code=415, detail="Only PDF drawing sets are supported.")
+
+    payload = await file.read()
+    if not payload:
+        raise HTTPException(status_code=400, detail="The uploaded PDF is empty.")
+
+    pages = _pdf_to_pages(file.filename, payload)
+    return {
+        "file_name": file.filename,
+        "page_count": len(pages),
+        "register": build_project_drawing_register(pages),
+        "qa": audit_drawing_set(pages),
     }
 
 

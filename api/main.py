@@ -20,6 +20,7 @@ from project_engineer import (
 from project_store import ProjectStore
 from project_plan import build_phase_engineering_plan
 from project_dashboard import build_project_dashboard
+from professional_reports import build_professional_project_report
 
 
 APP_VERSION = "0.2.0"
@@ -165,6 +166,8 @@ def capabilities() -> dict:
             "daily_reports": True,
             "weekly_reports": True,
             "monthly_reports": True,
+            "final_handover_report": True,
+            "professional_reports_v2": True,
             "persistent_project_memory": True,
             "phase_engineering_plan": True,
         },
@@ -436,19 +439,23 @@ def build_and_save_project_report(
     project_id: str,
     period: str,
     anchor_date: date | None = None,
+    user: AuthUser = Depends(get_current_user),
+) -> dict:
+    if period not in {"daily", "weekly", "monthly", "final"}:
+        raise HTTPException(
+            status_code=422,
+            detail="period must be daily, weekly, monthly, or final",
+        )
 
-    user: AuthUser = Depends(get_current_user),) -> dict:
-    if period not in {"daily", "weekly", "monthly"}:
-        raise HTTPException(status_code=422, detail="period must be daily, weekly, or monthly")
+    snapshot = store.project_snapshot(project_id, owner_id=user.id)
+    if not snapshot:
+        raise HTTPException(status_code=404, detail="Project not found.")
 
-    project = _require_project(project_id, user.id)
     report_date = anchor_date or date.today()
-    entries = store.list_progress_entries(project_id)
-    report = build_progress_report(
-        entries,
+    report = build_professional_project_report(
+        snapshot,
         period=period,
         anchor_date=report_date,
-        project=project,
     )
     return store.save_report(
         project_id,

@@ -6,6 +6,7 @@ from io import BytesIO
 
 from fastapi import Depends, FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import PlainTextResponse, StreamingResponse
 from pydantic import BaseModel, Field
 from pypdf import PdfReader
 
@@ -21,6 +22,7 @@ from project_store import ProjectStore
 from project_plan import build_phase_engineering_plan
 from project_dashboard import build_project_dashboard
 from professional_reports import build_professional_project_report
+from report_export import build_report_docx, safe_report_filename
 
 
 APP_VERSION = "0.2.0"
@@ -466,7 +468,52 @@ def build_and_save_project_report(
 
 
 @app.get("/v1/projects/{project_id}/reports")
-def list_project_reports(project_id: str,
-    user: AuthUser = Depends(get_current_user),) -> dict:
+def list_project_reports(
+    project_id: str,
+    user: AuthUser = Depends(get_current_user),
+) -> dict:
     _require_project(project_id, user.id)
     return {"reports": store.list_reports(project_id)}
+
+
+@app.get("/v1/projects/{project_id}/reports/{report_id}/export")
+def export_project_report(
+    project_id: str,
+    report_id: str,
+    format: str = Query(default="docx", pattern="^(docx|markdown)$"),
+    user: AuthUser = Depends(get_current_user),
+):
+    _require_project(project_id, user.id)
+    report = store.get_report(project_id, report_id)
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found.")
+
+    payload = report.get("payload") or {}
+    if format == "markdown":
+        markdown = str(payload.get("markdown") or "").strip()
+        if not markdown:
+            raise HTTPException(
+                status_code=409,
+                detail="This saved report does not contain exportable markdown.",
+            )
+        filename = safe_report_filename(payload, "md")
+        return PlainTextResponse(
+            markdown,
+            media_type="text/markdown; charset=utf-8",
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"'
+            },
+        )
+
+    document = build_report_docx(payload)
+    filename = safe_report_filename(payload, "docx")
+    return StreamingResponse(
+        BytesIO(document),
+        media_type=(
+            "application/vnd.openxmlformats-officedocument."
+            "wordprocessingml.document"
+        ),
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"'
+        },
+    )

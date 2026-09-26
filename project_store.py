@@ -525,6 +525,26 @@ class ProjectStore:
             "created_at": now,
         }
 
+    def get_report(self, project_id: str, report_id: str) -> dict | None:
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                SELECT * FROM generated_reports
+                WHERE project_id=? AND id=?
+                """,
+                (project_id, report_id),
+            ).fetchone()
+        if not row:
+            return None
+        return {
+            "id": row["id"],
+            "project_id": row["project_id"],
+            "period": row["period"],
+            "anchor_date": row["anchor_date"],
+            "payload": _json_loads(row["payload_json"], {}),
+            "created_at": row["created_at"],
+        }
+
     def list_reports(self, project_id: str) -> list[dict]:
         with self._connect() as conn:
             rows = conn.execute(

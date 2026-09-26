@@ -29,7 +29,10 @@ RUN python -m py_compile \
     project_engineer.py \
     project_plan.py \
     project_dashboard.py \
-    project_reports.py
+    project_reports.py \
+    professional_reports.py \
+    report_export.py \
+    release_readiness.py
 
 EXPOSE 8000
 

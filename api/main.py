@@ -162,6 +162,14 @@ def health() -> dict:
             "managed_database" if runtime.database_url else "sqlite"
         ),
         "auth": auth_capabilities(),
+        "storage": {
+            "mode": runtime.storage_mode,
+            "private": runtime.storage_mode == "s3",
+        },
+        "compliance": {
+            "privacy_page": "/privacy",
+            "account_deletion_page": "/account-deletion",
+        },
     }
 
 

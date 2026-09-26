@@ -1,0 +1,52 @@
+services:
+  - type: web
+    name: av-intelligence-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    autoDeploy: true
+    healthCheckPath: /ready
+    envVars:
+      - key: AVIA_ENV
+        value: production
+      - key: AVIA_AUTH_MODE
+        value: jwt
+      - key: AVIA_STORAGE_MODE
+        value: s3
+      - key: AVIA_ACCOUNT_DELETE_PROVIDER
+        value: supabase
+      - key: AVIA_DATABASE_URL
+        sync: false
+      - key: AVIA_CORS_ORIGINS
+        sync: false
+      - key: AVIA_JWT_JWKS_URL
+        sync: false
+      - key: AVIA_JWT_ALGORITHMS
+        sync: false
+      - key: AVIA_JWT_AUDIENCE
+        sync: false
+      - key: AVIA_JWT_ISSUER
+        sync: false
+      - key: AVIA_STORAGE_BUCKET
+        sync: false
+      - key: AVIA_STORAGE_REGION
+        sync: false
+      - key: AVIA_STORAGE_ENDPOINT
+        sync: false
+      - key: AVIA_SUPABASE_URL
+        sync: false
+      - key: AVIA_SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: AVIA_SUPPORT_EMAIL
+        sync: false
+      - key: AVIA_PUBLIC_BASE_URL
+        sync: false
+      - key: HF_TOKEN
+        sync: false
+      - key: TAVILY_API_KEY
+        sync: false
+      - key: LANGFUSE_SECRET_KEY
+        sync: false
+      - key: LANGFUSE_PUBLIC_KEY
+        sync: false
+      - key: LANGFUSE_HOST
+        sync: false

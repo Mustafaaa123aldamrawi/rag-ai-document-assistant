@@ -5347,12 +5347,17 @@ st.markdown(
         background: #ffffff;
         border: 1px solid rgba(0,0,0,.10);
         border-radius: 28px;
-        padding: 5px 7px;
+        padding: 4px 6px;
         box-shadow: 0 2px 10px rgba(0,0,0,.10);
+        overflow: visible;
     }
     .st-key-chat_composer [data-testid="stHorizontalBlock"] {
-        gap: 4px !important;
+        gap: 0 !important;
         align-items: center;
+        width: 100%;
+    }
+    .st-key-chat_composer [data-testid="column"] {
+        padding: 0 !important;
     }
     .st-key-chat_composer div[data-testid="stTextInput"] {
         margin: 0 !important;
@@ -5366,21 +5371,24 @@ st.markdown(
         padding-right: 8px;
     }
     .st-key-chat_composer div[data-testid="stPopover"] > button,
+    .st-key-chat_composer [data-testid="stPopoverButton"] > button,
     .st-key-chat_composer .stButton > button {
-        width: 42px;
-        min-width: 42px;
-        height: 42px;
-        min-height: 42px;
-        border-radius: 999px;
-        border: 0;
-        background: transparent;
-        box-shadow: none;
-        padding: 0;
+        width: 40px !important;
+        min-width: 40px !important;
+        height: 40px !important;
+        min-height: 40px !important;
+        border-radius: 999px !important;
+        border: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
         font-size: 18px;
     }
     .st-key-chat_composer div[data-testid="stPopover"] > button:hover,
+    .st-key-chat_composer [data-testid="stPopoverButton"] > button:hover,
     .st-key-chat_composer .stButton > button:hover {
-        background: rgba(0,0,0,.055);
+        background: rgba(0,0,0,.055) !important;
     }
     .st-key-chat_composer .stButton > button[kind="primary"] {
         background: #111111;
@@ -6797,8 +6805,8 @@ submitted = False
 
 with st.container(key="chat_composer"):
     plus_col, prompt_col, mic_col, send_col = st.columns(
-        [0.62, 9.4, 0.62, 0.62],
-        gap="small",
+        [0.52, 10.2, 0.52, 0.52],
+        gap=None,
         vertical_alignment="center",
     )
 

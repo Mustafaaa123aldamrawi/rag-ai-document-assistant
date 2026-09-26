@@ -503,6 +503,36 @@ class SqlAlchemyProjectStore:
             )
         return output
 
+
+    def delete_projects_for_owner(self, owner_id: str) -> int:
+        with self.engine.begin() as conn:
+            rows = conn.execute(
+                select(projects.c.id).where(projects.c.owner_id == owner_id)
+            ).all()
+            project_ids = [row[0] for row in rows]
+            if not project_ids:
+                return 0
+
+            conn.execute(
+                delete(progress_entries).where(
+                    progress_entries.c.project_id.in_(project_ids)
+                )
+            )
+            conn.execute(
+                delete(drawing_analyses).where(
+                    drawing_analyses.c.project_id.in_(project_ids)
+                )
+            )
+            conn.execute(
+                delete(generated_reports).where(
+                    generated_reports.c.project_id.in_(project_ids)
+                )
+            )
+            conn.execute(
+                delete(projects).where(projects.c.owner_id == owner_id)
+            )
+        return len(project_ids)
+
     def project_snapshot(
         self,
         project_id: str,

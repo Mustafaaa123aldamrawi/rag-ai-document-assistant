@@ -5347,7 +5347,7 @@ st.markdown(
         background: #ffffff;
         border: 1px solid rgba(0,0,0,.10);
         border-radius: 28px;
-        padding: 4px 6px;
+        padding: 5px 7px;
         box-shadow: 0 2px 10px rgba(0,0,0,.10);
         overflow: visible;
     }
@@ -5362,6 +5362,12 @@ st.markdown(
     .st-key-chat_composer div[data-testid="stTextInput"] {
         margin: 0 !important;
     }
+    .st-key-chat_composer div[data-testid="stTextInput"] [data-baseweb="input"],
+    .st-key-chat_composer div[data-testid="stTextInput"] [data-baseweb="base-input"] {
+        border: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
     .st-key-chat_composer div[data-testid="stTextInput"] input {
         min-height: 42px;
         border: 0 !important;
@@ -5369,7 +5375,12 @@ st.markdown(
         box-shadow: none !important;
         padding-left: 8px;
         padding-right: 8px;
+        font-size: 15px;
     }
+
+    /* Make Streamlit popovers look like ChatGPT composer controls.
+       Streamlit adds its own dropdown chevron; hide only that trigger chevron
+       so the visible controls remain + and microphone. */
     .st-key-chat_composer div[data-testid="stPopover"] > button,
     .st-key-chat_composer [data-testid="stPopoverButton"] > button,
     .st-key-chat_composer .stButton > button {
@@ -5383,7 +5394,25 @@ st.markdown(
         box-shadow: none !important;
         padding: 0 !important;
         margin: 0 !important;
-        font-size: 18px;
+        font-size: 18px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    .st-key-chat_composer div[data-testid="stPopover"] > button svg,
+    .st-key-chat_composer [data-testid="stPopoverButton"] > button svg {
+        display: none !important;
+    }
+    .st-key-chat_composer div[data-testid="stPopover"] > button p,
+    .st-key-chat_composer [data-testid="stPopoverButton"] > button p {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        white-space: nowrap !important;
+        overflow: visible !important;
+        line-height: 1 !important;
     }
     .st-key-chat_composer div[data-testid="stPopover"] > button:hover,
     .st-key-chat_composer [data-testid="stPopoverButton"] > button:hover,
@@ -5391,11 +5420,11 @@ st.markdown(
         background: rgba(0,0,0,.055) !important;
     }
     .st-key-chat_composer .stButton > button[kind="primary"] {
-        background: #111111;
-        color: #ffffff;
+        background: #111111 !important;
+        color: #ffffff !important;
     }
     .st-key-chat_composer .stButton > button[kind="primary"]:hover {
-        background: #2a2a2a;
+        background: #2a2a2a !important;
     }
 
     @media (max-width: 768px) {
@@ -6805,13 +6834,13 @@ submitted = False
 
 with st.container(key="chat_composer"):
     plus_col, prompt_col, mic_col, send_col = st.columns(
-        [0.52, 10.2, 0.52, 0.52],
+        [0.62, 10.4, 0.62, 0.62],
         gap=None,
         vertical_alignment="center",
     )
 
 with plus_col:
-    with st.popover("＋", use_container_width=True):
+    with st.popover("+", use_container_width=True):
         st.markdown("#### Add to AV Assistant")
 
         st.file_uploader(

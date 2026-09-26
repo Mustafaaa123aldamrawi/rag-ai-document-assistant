@@ -1,6 +1,7 @@
 from drawing_qa import (
     audit_drawing_set,
     build_connection_graph,
+    build_signal_paths,
     extract_connection_index,
 )
 
@@ -280,3 +281,122 @@ def test_resolved_media_mismatch_is_high_severity_review():
         and item["severity"] == "high"
         for item in audit["findings"]
     )
+
+
+
+def test_signal_paths_trace_source_to_terminal():
+    pages = [
+        {
+            "page_number": 1,
+            "source": "signal-flow.pdf",
+            "text": """
+            SOURCE
+            TX-01
+            HDMI OUT
+            V1001
+            SWITCH INPUT
+            SW-01
+            HDMI IN
+            V1001
+
+            SWITCH OUTPUT
+            SW-01
+            HDMI OUT
+            V1002
+            DISPLAY
+            MON-01
+            HDMI IN 1
+            V1002
+            """,
+        }
+    ]
+
+    graph = build_connection_graph(pages)
+    paths = build_signal_paths(graph)
+
+    assert paths["segment_count"] == 2
+    assert paths["root_devices"] == ["TX-01"]
+    assert paths["terminal_devices"] == ["MON-01"]
+    assert any(
+        path["devices"] == ["TX-01", "SW-01", "MON-01"]
+        for path in paths["paths"]
+    )
+
+
+def test_duplicate_input_port_termination_is_high_review():
+    pages = [
+        {
+            "page_number": 1,
+            "source": "signal-flow.pdf",
+            "text": """
+            SOURCE ONE
+            TX-01
+            HDMI OUT
+            V1101
+            DISPLAY
+            MON-01
+            HDMI IN 1
+            V1101
+
+            SOURCE TWO
+            VTC-01
+            HDMI OUT
+            V1102
+            DISPLAY
+            MON-01
+            HDMI IN 1
+            V1102
+            """,
+        }
+    ]
+
+    audit = audit_drawing_set(pages)
+    findings = [
+        item for item in audit["findings"]
+        if item["category"] == "duplicate_port_termination"
+    ]
+
+    assert findings
+    assert findings[0]["severity"] == "high"
+    assert "MON-01" in findings[0]["title"]
+    assert "V1101" in findings[0]["title"]
+    assert "V1102" in findings[0]["title"]
+
+
+def test_directed_cycle_is_verify_not_automatic_error():
+    pages = [
+        {
+            "page_number": 1,
+            "source": "signal-flow.pdf",
+            "text": """
+            DEVICE A
+            TX-01
+            HDMI OUT
+            V1201
+            DEVICE B
+            RX-01
+            HDMI IN
+            V1201
+
+            DEVICE B
+            RX-01
+            HDMI OUT
+            V1202
+            DEVICE A
+            TX-01
+            HDMI IN
+            V1202
+            """,
+        }
+    ]
+
+    audit = audit_drawing_set(pages)
+    cycle_findings = [
+        item for item in audit["findings"]
+        if item["category"] == "directed_signal_cycle"
+    ]
+
+    assert cycle_findings
+    assert cycle_findings[0]["status"] == "VERIFY"
+    assert cycle_findings[0]["severity"] == "medium"
+    assert audit["signal_paths"]["cycle_count"] >= 1

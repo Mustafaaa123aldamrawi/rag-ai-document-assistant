@@ -136,6 +136,36 @@ def _infer_direction(text: str) -> str | None:
     return None
 
 
+def _drawing_number(text: str) -> str | None:
+    matches = DRAWING_RE.findall(str(text or ""))
+    if not matches:
+        return None
+    counts: dict[str, int] = {}
+    for item in matches:
+        key = item.upper()
+        counts[key] = counts.get(key, 0) + 1
+    return max(counts, key=counts.get)
+
+
+def _endpoint_confidence(
+    *,
+    device_id: str | None,
+    port: str | None,
+    direction: str | None,
+    connector_tags: list[str],
+) -> float:
+    score = 0.15
+    if device_id:
+        score += 0.30
+    if port:
+        score += 0.20
+    if direction:
+        score += 0.20
+    if connector_tags:
+        score += 0.15
+    return round(min(score, 1.0), 2)
+
+
 def _nearest_device(lines: list[str], index: int, radius: int = 7) -> str | None:
     candidates: list[tuple[int, str]] = []
     start = max(0, index - radius)
@@ -236,6 +266,7 @@ def extract_connection_endpoints(document_pages: list[dict]) -> list[dict]:
 
             local_context = _context(lines, i, radius=4)
             device_id = _nearest_device(lines, i)
+            drawing_number = _drawing_number(str(page.get("text") or ""))
             port = _port_label(lines, i)
             connector_tags = _nearby_connector_tags(
                 " | ".join(lines[max(0, i - 2): min(len(lines), i + 3)])
@@ -248,11 +279,18 @@ def extract_connection_endpoints(document_pages: list[dict]) -> list[dict]:
                     "wire_id": wire.upper(),
                     "page_number": page.get("page_number"),
                     "source": page.get("source"),
+                    "drawing_number": drawing_number,
                     "device_id": device_id,
                     "port": port,
                     "direction": direction,
                     "connector_tags": connector_tags,
                     "media_family": media,
+                    "confidence": _endpoint_confidence(
+                        device_id=device_id,
+                        port=port,
+                        direction=direction,
+                        connector_tags=connector_tags,
+                    ),
                     "evidence": local_context[:900],
                 }
                 key = (
@@ -297,12 +335,50 @@ def build_connection_graph(document_pages: list[dict]) -> dict:
         else:
             ambiguous += 1
 
+        confidences = [
+            float(ep.get("confidence") or 0.0)
+            for ep in observations
+        ]
+        edge_confidence = round(
+            sum(confidences) / len(confidences), 2
+        ) if confidences else 0.0
+
+        if source and destination:
+            edge_confidence = round(
+                min(
+                    1.0,
+                    (
+                        float(source.get("confidence") or 0.0)
+                        + float(destination.get("confidence") or 0.0)
+                    ) / 2,
+                ),
+                2,
+            )
+
+        drawings = sorted(
+            {
+                ep.get("drawing_number")
+                for ep in observations
+                if ep.get("drawing_number")
+            }
+        )
+        pages = sorted(
+            {
+                ep.get("page_number")
+                for ep in observations
+                if ep.get("page_number") is not None
+            }
+        )
+
         edges.append(
             {
                 "wire_id": wire_id,
                 "status": status,
+                "confidence": edge_confidence,
                 "source": source,
                 "destination": destination,
+                "drawings": drawings,
+                "pages": pages,
                 "observations": observations,
                 "observation_count": len(observations),
             }
@@ -313,6 +389,7 @@ def build_connection_graph(document_pages: list[dict]) -> dict:
         "edge_count": len(edges),
         "resolved_edge_count": resolved,
         "ambiguous_edge_count": ambiguous,
+        "resolution_rate": round(resolved / len(edges), 3) if edges else 0.0,
         "nodes": sorted(nodes),
         "edges": edges,
     }
@@ -461,6 +538,77 @@ def _graph_findings(connection_graph: dict) -> list[dict]:
     return findings
 
 
+def _cross_sheet_findings(
+    equipment_mentions: list[dict],
+    connection_graph: dict,
+) -> list[dict]:
+    findings = []
+
+    equipment_ids = {
+        device_id
+        for mention in equipment_mentions
+        for device_id in (mention.get("device_ids") or [])
+    }
+    graph_ids = set(connection_graph.get("nodes") or [])
+
+    for device_id in sorted(equipment_ids - graph_ids):
+        findings.append(
+            {
+                "severity": "medium",
+                "status": "VERIFY",
+                "category": "device_missing_from_connection_graph",
+                "title": f"{device_id} is detected as equipment but not resolved in the connection graph",
+                "why_it_matters": "A scheduled or labelled device without a traceable signal/control/power path may be omitted from the signal flow, or the PDF extraction may have missed its connections.",
+                "recommended_action": "Cross-check the device layout, signal-flow sheet, and equipment schedule. Add or correct the missing connection path if the device is in scope.",
+                "evidence": [],
+            }
+        )
+
+    resolved_edges = [
+        edge
+        for edge in (connection_graph.get("edges") or [])
+        if edge.get("status") == "resolved"
+    ]
+    for edge in resolved_edges:
+        source = edge.get("source") or {}
+        destination = edge.get("destination") or {}
+        source_media = source.get("media_family")
+        dest_media = destination.get("media_family")
+        if source_media and dest_media and source_media != dest_media:
+            findings.append(
+                {
+                    "severity": "high",
+                    "status": "REVIEW",
+                    "category": "resolved_media_mismatch",
+                    "title": (
+                        f"{edge['wire_id']} resolves from {source_media} to {dest_media}"
+                    ),
+                    "why_it_matters": "A resolved point-to-point path should use compatible media unless an active converter/extender is explicitly part of the path.",
+                    "recommended_action": "Verify the endpoint ports and any intermediate converter/extender. Correct the signal flow or device selection if no conversion is intended.",
+                    "evidence": [source, destination],
+                }
+            )
+
+        if (
+            source.get("device_id")
+            and destination.get("device_id")
+            and source.get("device_id") == destination.get("device_id")
+        ):
+            findings.append(
+                {
+                    "severity": "medium",
+                    "status": "VERIFY",
+                    "category": "resolved_same_device_loop",
+                    "title": f"{edge['wire_id']} resolves back to {source.get('device_id')}",
+                    "why_it_matters": "A self-loop can be valid in rare cases, but more often indicates that text extraction associated both wire ends with the same device block.",
+                    "recommended_action": "Visually verify both endpoints before treating the connection as buildable.",
+                    "evidence": [source, destination],
+                }
+            )
+
+    return findings
+
+
 def _drawing_completeness_findings(document_pages: list[dict]) -> list[dict]:
     combined = "\n".join(str(p.get("text") or "") for p in document_pages or [])
     upper = combined.upper()
@@ -545,6 +693,7 @@ def audit_drawing_set(document_pages: list[dict]) -> dict:
     findings = []
     findings.extend(_device_model_conflicts(equipment))
     findings.extend(_graph_findings(connection_graph))
+    findings.extend(_cross_sheet_findings(equipment, connection_graph))
     findings.extend(_drawing_completeness_findings(document_pages))
 
     severity_order = {"high": 0, "medium": 1, "low": 2}

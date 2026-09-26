@@ -42,6 +42,18 @@ from site_inspection import (
     build_site_inspection_summary,
     merge_site_inspection_into_survey_data,
 )
+from project_engineer import (
+    build_project_drawing_register,
+    build_project_engineer_analysis_page,
+    build_progress_report,
+    detect_report_period,
+    format_progress_report_markdown,
+    is_project_engineer_question,
+    is_project_update_message,
+    normalize_progress_entry,
+    project_engineer_context,
+    select_relevant_drawing_page_numbers,
+)
 from langfuse import get_client, observe
 
 import os
@@ -5531,6 +5543,13 @@ if "drawing_analysis_cache" not in st.session_state:
 if "visual_analysis_cache" not in st.session_state:
     st.session_state["visual_analysis_cache"] = {}
 
+if "project_engineer_register_cache" not in st.session_state:
+    st.session_state["project_engineer_register_cache"] = {}
+if "project_progress_log" not in st.session_state:
+    st.session_state["project_progress_log"] = []
+if "active_project_engineer_register" not in st.session_state:
+    st.session_state["active_project_engineer_register"] = None
+
 if uploaded_files:
     try:
         for uploaded_file in uploaded_files:
@@ -5546,6 +5565,24 @@ if uploaded_files:
                 if source_extension == ".pdf"
                 else "DOCUMENT"
             )
+
+            project_engineer_register = None
+            if content_type == "DRAWING":
+                project_engineer_register = st.session_state[
+                    "project_engineer_register_cache"
+                ].get(drawing_cache_key)
+                if project_engineer_register is None:
+                    project_engineer_register = build_project_drawing_register(
+                        file_pages
+                    )
+                    st.session_state[
+                        "project_engineer_register_cache"
+                    ][drawing_cache_key] = project_engineer_register
+
+                st.session_state[
+                    "active_project_engineer_register"
+                ] = project_engineer_register
+
             st.info(
                 f"{getattr(uploaded_file, 'name', 'Uploaded PDF')} "
                 f"detected as: {content_type}"
@@ -5570,10 +5607,20 @@ if uploaded_files:
                 run_drawing_vision = False
               
             if content_type == "DRAWING" and run_drawing_vision:
+                selected_drawing_pages = select_relevant_drawing_page_numbers(
+                    file_pages,
+                    pending_drawing_question,
+                    max_pages=1,
+                )
+                selected_page_number = (
+                    selected_drawing_pages[0]
+                    if selected_drawing_pages
+                    else 1
+                )
                 rendered_drawing_pages = render_pdf_pages_for_vision(
                     uploaded_file,
                     max_pages=1,
-                    start_page=1
+                    start_page=selected_page_number
                 )
                 for rendered_page in rendered_drawing_pages:
                     rendered_page["source"] = getattr(
@@ -6340,6 +6387,21 @@ if uploaded_files:
             
             if drawing_analysis_page:
                 file_pages.append(drawing_analysis_page)
+
+            if project_engineer_register:
+                project_engineer_page = build_project_engineer_analysis_page(
+                    project_engineer_register,
+                    getattr(uploaded_file, "name", "Uploaded PDF"),
+                )
+                if project_engineer_page:
+                    file_pages.append(project_engineer_page)
+
+                st.caption(
+                    "🧭 Project Engineer indexed the full drawing set: "
+                    f"{project_engineer_register.get('sheet_count', 0)} sheet(s), "
+                    f"{len(project_engineer_register.get('rooms') or [])} room/area reference(s)."
+                )
+
             document_pages.extend(file_pages)
         if document_pages:
             text_chunks = split_text_into_chunks(document_pages)

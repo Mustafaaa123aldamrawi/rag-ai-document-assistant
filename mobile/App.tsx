@@ -269,7 +269,7 @@ export default function App() {
     }
   };
 
-  const generateReport = async (period: "daily" | "weekly" | "monthly") => {
+  const generateReport = async (period: "daily" | "weekly" | "monthly" | "final") => {
     if (!selectedId) return;
     setLoading(true);
     setBusyLabel(`Generating ${period} report`);
@@ -510,7 +510,7 @@ export default function App() {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Reports</Text>
           <View style={styles.reportButtons}>
-            {(["daily", "weekly", "monthly"] as const).map((period) => (
+            {(["daily", "weekly", "monthly", "final"] as const).map((period) => (
               <TouchableOpacity
                 key={period}
                 style={styles.reportButton}
@@ -518,7 +518,7 @@ export default function App() {
                 disabled={loading}
               >
                 <Text style={styles.reportButtonText}>
-                  {period.charAt(0).toUpperCase() + period.slice(1)}
+                  {period === "final" ? "Final Handover" : period.charAt(0).toUpperCase() + period.slice(1)}
                 </Text>
               </TouchableOpacity>
             ))}

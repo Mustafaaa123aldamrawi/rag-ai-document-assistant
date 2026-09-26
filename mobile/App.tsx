@@ -389,6 +389,43 @@ export default function App() {
               </View>
             )}
 
+            <Text style={styles.sectionTitle}>Connection Graph</Text>
+            <View style={styles.graphGrid}>
+              <View style={styles.graphMetric}>
+                <Text style={styles.graphMetricValue}>
+                  {result.qa?.connection_graph?.node_count || 0}
+                </Text>
+                <Text style={styles.graphMetricLabel}>Devices</Text>
+              </View>
+              <View style={styles.graphMetric}>
+                <Text style={styles.graphMetricValue}>
+                  {result.qa?.connection_graph?.edge_count || 0}
+                </Text>
+                <Text style={styles.graphMetricLabel}>Connections</Text>
+              </View>
+              <View style={styles.graphMetric}>
+                <Text style={styles.graphMetricValue}>
+                  {result.qa?.connection_graph?.resolved_edge_count || 0}
+                </Text>
+                <Text style={styles.graphMetricLabel}>Resolved</Text>
+              </View>
+              <View style={styles.graphMetric}>
+                <Text style={styles.graphMetricValue}>
+                  {Math.round(
+                    (result.qa?.connection_graph?.resolution_rate || 0) * 100
+                  )}%
+                </Text>
+                <Text style={styles.graphMetricLabel}>Confidence path</Text>
+              </View>
+            </View>
+
+            {(result.qa?.connection_graph?.ambiguous_edge_count || 0) > 0 && (
+              <Text style={styles.graphWarning}>
+                {result.qa?.connection_graph?.ambiguous_edge_count} connection(s)
+                still require drawing verification.
+              </Text>
+            )}
+
             <Text style={styles.sectionTitle}>Engineering Findings</Text>
             {findings.length === 0 ? (
               <Text style={styles.muted}>No extracted QA findings.</Text>
@@ -592,6 +629,33 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 8,
     fontSize: 11,
+  },
+  graphGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginHorizontal: -4,
+    marginBottom: 6,
+  },
+  graphMetric: {
+    width: "50%",
+    padding: 4,
+  },
+  graphMetricValue: {
+    color: "#FFFFFF",
+    fontSize: 21,
+    fontWeight: "800",
+  },
+  graphMetricLabel: {
+    color: "#8FA4C2",
+    fontSize: 12,
+    marginTop: 2,
+  },
+  graphWarning: {
+    color: "#FFB86B",
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 6,
+    marginBottom: 6,
   },
   finding: {
     paddingVertical: 12,

@@ -42,6 +42,10 @@ def main() -> int:
     checks["jwt_auth"] = (
         (health.get("auth") or {}).get("production_enforced") is True
     )
+    checks["private_cloud_storage"] = (
+        (health.get("storage") or {}).get("mode") == "s3"
+        and (health.get("storage") or {}).get("private") is True
+    )
 
     for path in ("/privacy", "/account-deletion"):
         try:

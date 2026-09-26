@@ -592,3 +592,74 @@ def is_project_engineer_question(message):
         "تقرير أسبوعي", "تقرير اسبوعي", "تقرير شهري", "وضع المشروع", "بروجريس",
     )
     return any(cue in value for cue in cues)
+
+
+
+def select_relevant_drawing_page_numbers(document_pages, question, max_pages=3):
+    question_text = _clean(question).casefold()
+    question_terms = {
+        term
+        for term in re.findall(r"[a-z0-9_-]{3,}|[\u0600-\u06FF]{3,}", question_text)
+        if term not in {
+            "this", "that", "drawing", "drawings", "page", "what", "where",
+            "which", "with", "from", "about", "show", "tell", "المخطط", "الرسم",
+            "شو", "وين", "كيف", "هذا", "هاي",
+        }
+    }
+
+    scored = []
+    for page in document_pages or []:
+        if not isinstance(page, dict):
+            continue
+        if page.get("is_drawing_analysis") or page.get("is_project_engineer_analysis"):
+            continue
+        page_number = page.get("page_number")
+        if not isinstance(page_number, int):
+            continue
+        text = _clean(page.get("text")).casefold()
+        score = sum(3 for term in question_terms if term in text)
+
+        if any(cue in question_text for cue in ("signal", "flow", "سيجنال", "signal flow")):
+            if "signal flow" in text:
+                score += 12
+        if any(cue in question_text for cue in ("containment", "conduit", "first fix", "فيرست")):
+            if "containment" in text or "conduit" in text:
+                score += 12
+        if any(cue in question_text for cue in ("ceiling", "speaker", "microphone", "سقف", "سبيكر", "مايك")):
+            if "ceiling plan" in text:
+                score += 10
+        if any(cue in question_text for cue in ("sightline", "display height", "elevation", "شاشة", "ارتفاع")):
+            if "sightline" in text or "elevation" in text:
+                score += 10
+
+        if score:
+            scored.append((score, page_number))
+
+    scored.sort(key=lambda item: (-item[0], item[1]))
+    selected = []
+    for _, page_number in scored:
+        if page_number not in selected:
+            selected.append(page_number)
+        if len(selected) >= max_pages:
+            break
+
+    if not selected:
+        # Prefer the scope key plan / first layout over the cover when possible.
+        for page in document_pages or []:
+            text = _clean(page.get("text")).casefold() if isinstance(page, dict) else ""
+            page_number = page.get("page_number") if isinstance(page, dict) else None
+            if isinstance(page_number, int) and (
+                "scope key plan" in text or "floor plan av layout" in text
+            ):
+                selected.append(page_number)
+                if len(selected) >= max_pages:
+                    break
+
+    if not selected:
+        selected = [
+            page.get("page_number")
+            for page in document_pages or []
+            if isinstance(page, dict) and isinstance(page.get("page_number"), int)
+        ][:max_pages]
+
+    return selected

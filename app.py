@@ -14,6 +14,7 @@ from pptx import Presentation
 from openpyxl import load_workbook
 import base64
 import hashlib
+from datetime import datetime
 import streamlit.components.v1 as components
 
 from PIL import Image
@@ -41,6 +42,18 @@ from deliverables import (
 from site_inspection import (
     build_site_inspection_summary,
     merge_site_inspection_into_survey_data,
+)
+from project_engineer import (
+    build_project_drawing_register,
+    build_project_engineer_analysis_page,
+    build_progress_report,
+    detect_report_period,
+    format_progress_report_markdown,
+    is_project_engineer_question,
+    is_project_update_message,
+    normalize_progress_entry,
+    project_engineer_context,
+    select_relevant_drawing_page_numbers,
 )
 from langfuse import get_client, observe
 
@@ -5531,6 +5544,13 @@ if "drawing_analysis_cache" not in st.session_state:
 if "visual_analysis_cache" not in st.session_state:
     st.session_state["visual_analysis_cache"] = {}
 
+if "project_engineer_register_cache" not in st.session_state:
+    st.session_state["project_engineer_register_cache"] = {}
+if "project_progress_log" not in st.session_state:
+    st.session_state["project_progress_log"] = []
+if "active_project_engineer_register" not in st.session_state:
+    st.session_state["active_project_engineer_register"] = None
+
 if uploaded_files:
     try:
         for uploaded_file in uploaded_files:
@@ -5546,6 +5566,24 @@ if uploaded_files:
                 if source_extension == ".pdf"
                 else "DOCUMENT"
             )
+
+            project_engineer_register = None
+            if content_type == "DRAWING":
+                project_engineer_register = st.session_state[
+                    "project_engineer_register_cache"
+                ].get(drawing_cache_key)
+                if project_engineer_register is None:
+                    project_engineer_register = build_project_drawing_register(
+                        file_pages
+                    )
+                    st.session_state[
+                        "project_engineer_register_cache"
+                    ][drawing_cache_key] = project_engineer_register
+
+                st.session_state[
+                    "active_project_engineer_register"
+                ] = project_engineer_register
+
             st.info(
                 f"{getattr(uploaded_file, 'name', 'Uploaded PDF')} "
                 f"detected as: {content_type}"
@@ -5570,10 +5608,20 @@ if uploaded_files:
                 run_drawing_vision = False
               
             if content_type == "DRAWING" and run_drawing_vision:
+                selected_drawing_pages = select_relevant_drawing_page_numbers(
+                    file_pages,
+                    pending_drawing_question,
+                    max_pages=1,
+                )
+                selected_page_number = (
+                    selected_drawing_pages[0]
+                    if selected_drawing_pages
+                    else 1
+                )
                 rendered_drawing_pages = render_pdf_pages_for_vision(
                     uploaded_file,
                     max_pages=1,
-                    start_page=1
+                    start_page=selected_page_number
                 )
                 for rendered_page in rendered_drawing_pages:
                     rendered_page["source"] = getattr(
@@ -6340,6 +6388,21 @@ if uploaded_files:
             
             if drawing_analysis_page:
                 file_pages.append(drawing_analysis_page)
+
+            if project_engineer_register:
+                project_engineer_page = build_project_engineer_analysis_page(
+                    project_engineer_register,
+                    getattr(uploaded_file, "name", "Uploaded PDF"),
+                )
+                if project_engineer_page:
+                    file_pages.append(project_engineer_page)
+
+                st.caption(
+                    "🧭 Project Engineer indexed the full drawing set: "
+                    f"{project_engineer_register.get('sheet_count', 0)} sheet(s), "
+                    f"{len(project_engineer_register.get('rooms') or [])} room/area reference(s)."
+                )
+
             document_pages.extend(file_pages)
         if document_pages:
             text_chunks = split_text_into_chunks(document_pages)
@@ -6818,6 +6881,71 @@ if assistant_interaction_mode == "💬 Chat" and st.session_state.messages:
                                 f"[WEB {web_number}] 🌐 **External Source** - "
                                 f"[{title}]({url})"
                             )
+def extract_project_progress_entry_with_llm(message, project_register):
+    """Extract only user-stated project progress facts into the project log."""
+    if not message or not isinstance(project_register, dict):
+        return None
+
+    prompt = f"""
+You are recording a factual AV project progress update.
+
+Extract ONLY facts explicitly stated by the user. Do not infer completed work,
+percentages, dates, rooms, causes, owners, or next steps.
+
+Return ONLY valid JSON with this schema:
+{{
+  "date": null,
+  "phase": null,
+  "rooms": [],
+  "completed": [],
+  "in_progress": [],
+  "issues": [],
+  "blockers": [],
+  "next_actions": [],
+  "responsible_parties": [],
+  "source_message": ""
+}}
+
+Rules:
+- If the user says today but gives no date, use today's date: {datetime.now().date().isoformat()}.
+- Keep unknown fields empty or null.
+- Preserve room names, device names and technical terms.
+- An issue is not a blocker unless the user explicitly says it prevents progress.
+- Do not mark something completed unless the user explicitly says it is complete/done/finished.
+- source_message must contain the user's original message.
+
+PROJECT:
+{json.dumps(project_register.get("project") or {}, ensure_ascii=False)}
+
+USER UPDATE:
+{message}
+"""
+    try:
+        raw = call_conversation_llm(
+            prompt=prompt,
+            temperature=0.0,
+            reasoning_effort="low",
+        ).strip()
+        start = raw.find("{")
+        end = raw.rfind("}")
+        if start == -1 or end == -1:
+            return None
+        parsed = json.loads(raw[start:end + 1])
+        parsed["source_message"] = message
+        return normalize_progress_entry(parsed)
+    except Exception:
+        return None
+
+
+def build_project_report_answer(period, project_register, progress_log):
+    report = build_progress_report(
+        progress_log,
+        period=period,
+        project=(project_register or {}).get("project") or {},
+    )
+    return format_progress_report_markdown(report)
+
+
 # Main interface
 
 
@@ -6987,6 +7115,43 @@ if should_process_question:
         })
     question_lower = question.lower() if question else ""
 
+    active_project_register = st.session_state.get(
+        "active_project_engineer_register"
+    )
+    project_report_period = detect_report_period(question)
+
+    if active_project_register and project_report_period:
+        report_answer = build_project_report_answer(
+            project_report_period,
+            active_project_register,
+            st.session_state.get("project_progress_log", []),
+        )
+        st.session_state.messages.append({
+            "role": "assistant",
+            "content": report_answer,
+            "mode": input_mode,
+        })
+        st.markdown(report_answer)
+        st.stop()
+
+    if (
+        active_project_register
+        and is_project_update_message(question)
+        and not project_report_period
+    ):
+        progress_entry = extract_project_progress_entry_with_llm(
+            question,
+            active_project_register,
+        )
+        if progress_entry:
+            existing_messages = {
+                item.get("source_message")
+                for item in st.session_state.get("project_progress_log", [])
+                if isinstance(item, dict)
+            }
+            if progress_entry.get("source_message") not in existing_messages:
+                st.session_state["project_progress_log"].append(progress_entry)
+
     # Intelligent conversation router
     router_history = build_recent_history(
         st.session_state.messages[:-1],
@@ -7124,6 +7289,13 @@ if should_process_question:
 
             if visual_reference_query:
                 query_route = "DOCUMENT"
+
+            if (
+                st.session_state.get("active_project_engineer_register")
+                and is_project_engineer_question(question)
+            ):
+                query_route = "DRAWING"
+                st.session_state["document_scope_active"] = True
 
             has_arabic_chars = bool(
                 re.search(r"[\u0600-\u06FF]", question)
@@ -8203,6 +8375,21 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
             context = "\n\n".join(
                 document.page_content for document in relevant_documents
             )
+
+        if (
+            st.session_state.get("active_project_engineer_register")
+            and is_project_engineer_question(question)
+        ):
+            lifecycle_context = project_engineer_context(
+                st.session_state.get("active_project_engineer_register"),
+                st.session_state.get("project_progress_log", []),
+            )
+            if lifecycle_context:
+                context = (
+                    context
+                    + "\n\n--- PROJECT ENGINEER LIFECYCLE CONTEXT ---\n"
+                    + lifecycle_context
+                ).strip()
         
         for document in relevant_documents:
             used_sources.add(

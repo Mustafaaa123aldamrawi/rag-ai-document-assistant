@@ -3,6 +3,7 @@ from PIL import Image
 from drawing_visual import (
     build_drawing_region_messages,
     parse_drawing_region_analysis,
+    reconcile_visual_with_connection_graph,
     select_visual_qa_pages,
     split_drawing_image_into_regions,
 )
@@ -82,3 +83,124 @@ def test_drawing_region_parser_normalizes_missing_lists():
     assert parsed["device_blocks"] == []
     assert parsed["connections"] == []
     assert parsed["possible_issues"] == []
+
+
+
+def test_visual_reconciliation_confirms_matching_connection():
+    qa = {
+        "connection_graph": {
+            "edges": [
+                {
+                    "wire_id": "V0001",
+                    "status": "resolved",
+                    "confidence": 0.9,
+                    "pages": [12],
+                    "source": {
+                        "device_id": "TX-01",
+                        "port": "HDMI OUT",
+                    },
+                    "destination": {
+                        "device_id": "MON-01",
+                        "port": "HDMI IN 1",
+                    },
+                }
+            ]
+        }
+    }
+    visual = {
+        "regions": [
+            {
+                "page_number": 12,
+                "region_number": 2,
+                "drawing_number": "AV-305",
+                "connections": [
+                    {
+                        "wire_id": "V0001",
+                        "source_device": "TX-01",
+                        "source_port": "HDMI OUT",
+                        "destination_device": "MON-01",
+                        "destination_port": "HDMI IN 1",
+                        "signal_type": "video",
+                        "connector_type": "HDMI",
+                        "confidence": "high",
+                        "evidence": "Wire V0001 visibly links both device blocks.",
+                    }
+                ],
+            }
+        ]
+    }
+
+    result = reconcile_visual_with_connection_graph(qa, visual)
+
+    assert result["confirmed_count"] == 1
+    assert result["conflict_count"] == 0
+    assert result["confirmed"][0]["status"] == "VISUALLY_CONFIRMED"
+    assert result["confirmation_rate"] == 1.0
+
+
+def test_visual_reconciliation_flags_endpoint_conflict():
+    qa = {
+        "connection_graph": {
+            "edges": [
+                {
+                    "wire_id": "V0002",
+                    "status": "resolved",
+                    "confidence": 0.88,
+                    "pages": [20],
+                    "source": {"device_id": "TX-01", "port": "HDMI OUT"},
+                    "destination": {"device_id": "MON-01", "port": "HDMI IN 1"},
+                }
+            ]
+        }
+    }
+    visual = {
+        "regions": [
+            {
+                "page_number": 20,
+                "region_number": 1,
+                "connections": [
+                    {
+                        "wire_id": "V0002",
+                        "source_device": "TX-01",
+                        "source_port": "HDMI OUT",
+                        "destination_device": "MON-02",
+                        "destination_port": "HDMI IN 1",
+                        "confidence": "high",
+                        "evidence": "Visible destination label reads MON-02.",
+                    }
+                ],
+            }
+        ]
+    }
+
+    result = reconcile_visual_with_connection_graph(qa, visual)
+
+    assert result["confirmed_count"] == 0
+    assert result["conflict_count"] == 1
+    assert result["conflicts"][0]["status"] == "CONFLICT_REVIEW"
+    assert result["conflicts"][0]["severity"] == "high"
+
+
+def test_visual_reconciliation_preserves_unmatched_visual_wire():
+    qa = {"connection_graph": {"edges": []}}
+    visual = {
+        "regions": [
+            {
+                "page_number": 3,
+                "region_number": 1,
+                "connections": [
+                    {
+                        "wire_id": "C0999",
+                        "source_device": "CU-01",
+                        "destination_device": "MON-01",
+                        "confidence": "medium",
+                    }
+                ],
+            }
+        ]
+    }
+
+    result = reconcile_visual_with_connection_graph(qa, visual)
+
+    assert result["visual_only_count"] == 1
+    assert result["visual_only"][0]["wire_id"] == "C0999"

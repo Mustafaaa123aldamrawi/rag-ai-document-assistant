@@ -318,6 +318,200 @@ def call_drawing_vision(
     raise RuntimeError("No vision model succeeded. " + " | ".join(errors[-3:]))
 
 
+def _norm_token(value: Any) -> str | None:
+    text = re.sub(r"\s+", " ", str(value or "")).strip().upper()
+    return text or None
+
+
+def _visual_connection_records(visual_review: dict) -> list[dict]:
+    records = []
+    for region in (visual_review or {}).get("regions") or []:
+        page_number = region.get("page_number")
+        region_number = region.get("region_number")
+        drawing_number = _norm_token(region.get("drawing_number"))
+        for connection in region.get("connections") or []:
+            if not isinstance(connection, dict):
+                continue
+            wire_id = _norm_token(connection.get("wire_id"))
+            source_device = _norm_token(connection.get("source_device"))
+            destination_device = _norm_token(connection.get("destination_device"))
+            source_port = _norm_token(connection.get("source_port"))
+            destination_port = _norm_token(connection.get("destination_port"))
+            signal_type = _norm_token(connection.get("signal_type"))
+            connector_type = _norm_token(connection.get("connector_type"))
+            if not any(
+                (
+                    wire_id,
+                    source_device,
+                    destination_device,
+                    source_port,
+                    destination_port,
+                )
+            ):
+                continue
+            records.append(
+                {
+                    "page_number": page_number,
+                    "region_number": region_number,
+                    "drawing_number": drawing_number,
+                    "wire_id": wire_id,
+                    "source_device": source_device,
+                    "source_port": source_port,
+                    "destination_device": destination_device,
+                    "destination_port": destination_port,
+                    "signal_type": signal_type,
+                    "connector_type": connector_type,
+                    "confidence": _norm_token(connection.get("confidence")),
+                    "evidence": str(connection.get("evidence") or "").strip(),
+                }
+            )
+    return records
+
+
+def _same_or_unknown(left: str | None, right: str | None) -> bool:
+    return not left or not right or left == right
+
+
+def reconcile_visual_with_connection_graph(
+    qa: dict,
+    visual_review: dict,
+) -> dict:
+    """Cross-check text-derived graph edges against visual observations.
+
+    This function never overwrites the text graph. It adds a second evidence
+    layer that can confirm, contradict, or leave a connection unresolved.
+    """
+    graph_edges = (qa or {}).get("connection_graph", {}).get("edges") or []
+    visual_connections = _visual_connection_records(visual_review)
+
+    by_wire: dict[str, list[dict]] = {}
+    for item in visual_connections:
+        wire_id = item.get("wire_id")
+        if wire_id:
+            by_wire.setdefault(wire_id, []).append(item)
+
+    confirmed = []
+    conflicts = []
+    unresolved = []
+
+    for edge in graph_edges:
+        if edge.get("status") != "resolved":
+            continue
+        wire_id = _norm_token(edge.get("wire_id"))
+        source = edge.get("source") or {}
+        destination = edge.get("destination") or {}
+        text_source = _norm_token(source.get("device_id"))
+        text_destination = _norm_token(destination.get("device_id"))
+        text_source_port = _norm_token(source.get("port"))
+        text_destination_port = _norm_token(destination.get("port"))
+
+        candidates = by_wire.get(wire_id or "", [])
+        if not candidates:
+            unresolved.append(
+                {
+                    "wire_id": wire_id,
+                    "status": "NO_VISUAL_MATCH",
+                    "text_source_device": text_source,
+                    "text_destination_device": text_destination,
+                    "pages": edge.get("pages") or [],
+                }
+            )
+            continue
+
+        best_match = None
+        best_score = -1
+        for candidate in candidates:
+            score = 0
+            if candidate.get("source_device") == text_source and text_source:
+                score += 3
+            if candidate.get("destination_device") == text_destination and text_destination:
+                score += 3
+            if candidate.get("source_port") and text_source_port and candidate.get("source_port") in text_source_port:
+                score += 1
+            if candidate.get("destination_port") and text_destination_port and candidate.get("destination_port") in text_destination_port:
+                score += 1
+            if score > best_score:
+                best_match = candidate
+                best_score = score
+
+        candidate = best_match or candidates[0]
+        source_ok = _same_or_unknown(candidate.get("source_device"), text_source)
+        destination_ok = _same_or_unknown(
+            candidate.get("destination_device"), text_destination
+        )
+
+        if source_ok and destination_ok:
+            confirmed.append(
+                {
+                    "wire_id": wire_id,
+                    "status": "VISUALLY_CONFIRMED",
+                    "text": {
+                        "source_device": text_source,
+                        "source_port": source.get("port"),
+                        "destination_device": text_destination,
+                        "destination_port": destination.get("port"),
+                        "confidence": edge.get("confidence"),
+                    },
+                    "visual": candidate,
+                }
+            )
+        else:
+            conflicts.append(
+                {
+                    "wire_id": wire_id,
+                    "status": "CONFLICT_REVIEW",
+                    "severity": "high",
+                    "title": f"{wire_id} visual endpoints conflict with extracted connection graph",
+                    "why_it_matters": (
+                        "The text-derived signal-flow graph and visual drawing review "
+                        "do not agree on the same endpoint device IDs."
+                    ),
+                    "recommended_action": (
+                        "Open the referenced page/region and verify the wire label and "
+                        "both device blocks before installation or programming."
+                    ),
+                    "text": {
+                        "source_device": text_source,
+                        "source_port": source.get("port"),
+                        "destination_device": text_destination,
+                        "destination_port": destination.get("port"),
+                    },
+                    "visual": candidate,
+                }
+            )
+
+    graph_wire_ids = {
+        _norm_token(edge.get("wire_id"))
+        for edge in graph_edges
+        if _norm_token(edge.get("wire_id"))
+    }
+    visual_only = [
+        item
+        for item in visual_connections
+        if item.get("wire_id") and item.get("wire_id") not in graph_wire_ids
+    ]
+
+    reviewed = len(confirmed) + len(conflicts)
+    return {
+        "visual_connection_count": len(visual_connections),
+        "confirmed_count": len(confirmed),
+        "conflict_count": len(conflicts),
+        "no_visual_match_count": len(unresolved),
+        "visual_only_count": len(visual_only),
+        "confirmation_rate": round(
+            len(confirmed) / reviewed, 3
+        ) if reviewed else 0.0,
+        "confirmed": confirmed,
+        "conflicts": conflicts,
+        "unresolved": unresolved,
+        "visual_only": visual_only,
+        "quality_note": (
+            "Visual confirmation strengthens evidence but does not replace field "
+            "verification, manufacturer documentation, or commissioning tests."
+        ),
+    }
+
+
 def analyze_visual_drawing_pages(
     *,
     file_name: str,

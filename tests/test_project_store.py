@@ -115,3 +115,65 @@ def test_project_store_date_filters(tmp_path: Path):
         "2026-09-25",
         "2026-09-26",
     ]
+
+
+
+def test_project_store_isolates_projects_by_owner(tmp_path: Path):
+    store = ProjectStore(tmp_path / "project.db")
+    alpha = store.create_project(
+        name="Alpha Project",
+        phase="First Fix",
+        owner_id="user-alpha",
+    )
+    beta = store.create_project(
+        name="Beta Project",
+        phase="First Fix",
+        owner_id="user-beta",
+    )
+
+    alpha_projects = store.list_projects(owner_id="user-alpha")
+    beta_projects = store.list_projects(owner_id="user-beta")
+
+    assert [item["id"] for item in alpha_projects] == [alpha["id"]]
+    assert [item["id"] for item in beta_projects] == [beta["id"]]
+    assert store.get_project(beta["id"], owner_id="user-alpha") is None
+    assert store.delete_project(beta["id"], owner_id="user-alpha") is False
+    assert store.get_project(beta["id"], owner_id="user-beta") is not None
+
+
+def test_project_store_migrates_existing_database_with_local_owner(tmp_path: Path):
+    import sqlite3
+
+    db_path = tmp_path / "legacy.db"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        """
+        CREATE TABLE projects (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            location TEXT,
+            client TEXT,
+            opportunity_number TEXT,
+            phase TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'active',
+            metadata_json TEXT NOT NULL DEFAULT '{}',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        )
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO projects(
+            id, name, phase, status, metadata_json, created_at, updated_at
+        ) VALUES('legacy-1', 'Legacy', 'First Fix', 'active', '{}', 'x', 'x')
+        """
+    )
+    conn.commit()
+    conn.close()
+
+    store = ProjectStore(db_path)
+    migrated = store.get_project("legacy-1")
+
+    assert migrated is not None
+    assert migrated["owner_id"] == "local-dev"

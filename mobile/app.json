@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "AV Intelligence Assistant",
+    "slug": "av-intelligence-assistant",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.avintelligence.assistant"
+    },
+    "android": {
+      "package": "com.avintelligence.assistant",
+      "adaptiveIcon": {
+        "backgroundColor": "#0B1220"
+      }
+    },
+    "plugins": [
+      "expo-document-picker"
+    ]
+  }
+}

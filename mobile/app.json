@@ -5,12 +5,21 @@
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
+    "scheme": "avintelligence",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.avintelligence.assistant"
+      "bundleIdentifier": "com.avintelligence.assistant",
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.avintelligence.assistant",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#0B1220"
       }

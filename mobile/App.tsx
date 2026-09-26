@@ -51,6 +51,7 @@ type DrawingAnalysis = {
       edge_count?: number;
       resolved_edge_count?: number;
       ambiguous_edge_count?: number;
+      resolution_rate?: number;
     };
   };
   created_at: string;
@@ -386,7 +387,16 @@ export default function App() {
                 <Text style={styles.graphMetric}>{graph.edge_count || 0} wires</Text>
                 <Text style={styles.graphMetric}>{graph.resolved_edge_count || 0} resolved</Text>
                 <Text style={styles.graphMetric}>{graph.ambiguous_edge_count || 0} verify</Text>
+                <Text style={styles.graphMetric}>
+                  {Math.round((graph.resolution_rate || 0) * 100)}% resolved
+                </Text>
               </View>
+            )}
+
+            {!!graph && (graph.ambiguous_edge_count || 0) > 0 && (
+              <Text style={styles.graphWarning}>
+                {graph.ambiguous_edge_count} connection(s) still require drawing verification.
+              </Text>
             )}
 
             <Text style={styles.sectionTitle}>Engineering Findings</Text>
@@ -592,6 +602,13 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 8,
     fontSize: 11,
+  },
+  graphWarning: {
+    color: "#FFB86B",
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 6,
+    marginBottom: 6,
   },
   finding: {
     paddingVertical: 12,

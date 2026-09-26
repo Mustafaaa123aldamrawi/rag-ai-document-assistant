@@ -199,3 +199,84 @@ def test_ambiguous_graph_does_not_invent_direction():
     assert edge["status"] == "ambiguous"
     assert edge["source"] is None
     assert edge["destination"] is None
+
+
+
+def test_connection_graph_includes_traceability_and_confidence():
+    pages = [
+        {
+            "page_number": 12,
+            "source": "project.pdf",
+            "text": """
+            AV-305
+            SOURCE
+            VTC-01
+            HDMI OUT
+            V0100
+            DESTINATION
+            MON-01
+            HDMI IN 1
+            V0100
+            """,
+        }
+    ]
+
+    graph = build_connection_graph(pages)
+    edge = next(item for item in graph["edges"] if item["wire_id"] == "V0100")
+
+    assert edge["status"] == "resolved"
+    assert edge["confidence"] > 0.5
+    assert edge["drawings"] == ["AV-305"]
+    assert edge["pages"] == [12]
+    assert graph["resolution_rate"] == 1.0
+    assert edge["source"]["drawing_number"] == "AV-305"
+    assert edge["destination"]["drawing_number"] == "AV-305"
+
+
+def test_equipment_without_connection_graph_is_verify_finding():
+    pages = [
+        {
+            "page_number": 1,
+            "source": "layout.pdf",
+            "text": """
+            AV-201
+            SHURE
+            MXA920W-S
+            MIC-01
+            """,
+        }
+    ]
+
+    audit = audit_drawing_set(pages)
+    assert any(
+        item["category"] == "device_missing_from_connection_graph"
+        and "MIC-01" in item["title"]
+        for item in audit["findings"]
+    )
+
+
+def test_resolved_media_mismatch_is_high_severity_review():
+    pages = [
+        {
+            "page_number": 20,
+            "source": "signal-flow.pdf",
+            "text": """
+            AV-306
+            SOURCE
+            TX-01
+            HDMI OUT
+            V0200
+            DESTINATION
+            RX-01
+            RJ45 IN
+            V0200
+            """,
+        }
+    ]
+
+    audit = audit_drawing_set(pages)
+    assert any(
+        item["category"] == "resolved_media_mismatch"
+        and item["severity"] == "high"
+        for item in audit["findings"]
+    )

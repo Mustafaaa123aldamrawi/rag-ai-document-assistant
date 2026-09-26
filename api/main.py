@@ -6,16 +6,19 @@ from io import BytesIO
 
 from fastapi import Depends, FastAPI, File, HTTPException, Query, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import PlainTextResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, StreamingResponse
 from pydantic import BaseModel, Field
 from pypdf import PdfReader
 
 from api.auth_context import AuthUser, auth_capabilities, get_current_user
 from api.runtime_config import load_runtime_config
+from account_deletion import AccountDeletionError, delete_auth_identity
+from compliance_pages import account_deletion_html, privacy_policy_html
 from artifact_store import (
     create_artifact_store,
     drawing_artifact_key,
     report_artifact_key,
+    user_artifact_prefix,
 )
 from drawing_qa import audit_drawing_set
 from drawing_visual import analyze_visual_drawing_pages, reconcile_visual_with_connection_graph
@@ -164,6 +167,50 @@ def health() -> dict:
             "managed_database" if runtime.database_url else "sqlite"
         ),
         "auth": auth_capabilities(),
+    }
+
+
+@app.get("/privacy", response_class=HTMLResponse)
+def privacy_policy() -> str:
+    return privacy_policy_html(
+        support_email=runtime.support_email,
+        public_base_url=runtime.public_base_url,
+    )
+
+
+@app.get("/account-deletion", response_class=HTMLResponse)
+def account_deletion_page() -> str:
+    return account_deletion_html(
+        support_email=runtime.support_email,
+    )
+
+
+@app.delete("/v1/account")
+def delete_account(
+    user: AuthUser = Depends(get_current_user),
+) -> dict:
+    artifacts_deleted = artifact_store.delete_prefix(
+        user_artifact_prefix(user.id)
+    )
+    projects_deleted = store.delete_projects_for_owner(user.id)
+
+    try:
+        identity = delete_auth_identity(user.id)
+    except AccountDeletionError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=(
+                "Application data was deleted, but the authentication provider "
+                "could not complete account deletion. Retry the request or "
+                "contact support."
+            ),
+        ) from exc
+
+    return {
+        "status": "deleted",
+        "projects_deleted": projects_deleted,
+        "artifacts_deleted": artifacts_deleted,
+        "identity": identity,
     }
 
 

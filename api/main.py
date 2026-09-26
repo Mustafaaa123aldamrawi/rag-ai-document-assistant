@@ -19,6 +19,7 @@ from project_engineer import (
 )
 from project_store import ProjectStore
 from project_plan import build_phase_engineering_plan
+from project_dashboard import build_project_dashboard
 
 
 APP_VERSION = "0.2.0"
@@ -224,6 +225,17 @@ def get_project_engineering_plan(project_id: str,
     if not snapshot:
         raise HTTPException(status_code=404, detail="Project not found.")
     return build_phase_engineering_plan(snapshot)
+
+
+@app.get("/v1/projects/{project_id}/dashboard")
+def get_project_dashboard(
+    project_id: str,
+    user: AuthUser = Depends(get_current_user),
+) -> dict:
+    snapshot = store.project_snapshot(project_id, owner_id=user.id)
+    if not snapshot:
+        raise HTTPException(status_code=404, detail="Project not found.")
+    return build_project_dashboard(snapshot)
 
 
 @app.patch("/v1/projects/{project_id}")

@@ -25,7 +25,7 @@ VENDOR_PATTERNS = (
 )
 
 DEVICE_ID_RE = re.compile(
-    r"\b(?:CAM|MON|MIC|SPK|TP|TB|TX|RX|VTC|DSP|NSW|OCS|WPR|AVR|PDU|UCE|PRJ|SCN|DEC|ENC)-?\d{1,3}\b",
+    r"\b(?:CAM|MON|MIC|SPK|TP|TB|TX|RX|VTC|DSP|NSW|OCS|WPR|AVR|PDU|UCE|PRJ|SCN|DEC|ENC|SW|CI|CU|DA|PA)-?\d{1,3}\b",
     flags=re.I,
 )
 WIRE_ID_RE = re.compile(r"\b[ACDPV]\d{4}\b", flags=re.I)
@@ -56,6 +56,11 @@ CONNECTOR_TOKENS = (
     "LC",
     "SC",
     "ST",
+)
+
+PORT_DIRECTION_PATTERNS = (
+    ("out", re.compile(r"\b(?:OUT|OUTPUT|TX)\b", flags=re.I)),
+    ("in", re.compile(r"\b(?:IN|INPUT|RX)\b", flags=re.I)),
 )
 
 PROGRAMMING_HINTS = {
@@ -101,6 +106,69 @@ def _nearby_connector_tags(text: str) -> list[str]:
     return found
 
 
+def _media_family(tags: list[str]) -> str | None:
+    upper = {tag.upper() for tag in tags}
+    if "HDMI" in upper:
+        return "video"
+    if upper.intersection({"USB", "USB-A", "USB-B", "USB-C"}):
+        return "usb"
+    if upper.intersection({"RJ45", "DANTE", "AES67"}):
+        return "network"
+    if upper.intersection({"RS232", "RS-232", "GPIO", "CRESNET", "CNET"}):
+        return "control"
+    if upper.intersection({"XLR", "3.5S", "3.5RS", "TOS"}):
+        return "audio"
+    if upper.intersection({"DISPLAYPORT", "DP", "SDI"}):
+        return "video"
+    if upper.intersection({"LC", "SC", "ST"}):
+        return "fiber"
+    return None
+
+
+def _infer_direction(text: str) -> str | None:
+    upper = _clean(text).upper()
+    hits = []
+    for direction, pattern in PORT_DIRECTION_PATTERNS:
+        if pattern.search(upper):
+            hits.append(direction)
+    if len(set(hits)) == 1:
+        return hits[0]
+    return None
+
+
+def _nearest_device(lines: list[str], index: int, radius: int = 7) -> str | None:
+    candidates: list[tuple[int, str]] = []
+    start = max(0, index - radius)
+    end = min(len(lines), index + radius + 1)
+    for j in range(start, end):
+        for device in DEVICE_ID_RE.findall(lines[j]):
+            candidates.append((abs(index - j), device.upper()))
+    if not candidates:
+        return None
+    candidates.sort(key=lambda item: item[0])
+    return candidates[0][1]
+
+
+def _port_label(lines: list[str], index: int, radius: int = 2) -> str | None:
+    candidates = []
+    for j in range(max(0, index - radius), min(len(lines), index + radius + 1)):
+        line = _clean(lines[j])
+        upper = line.upper()
+        if len(line) > 90:
+            continue
+        if WIRE_ID_RE.fullmatch(line):
+            continue
+        if any(token in upper for token in CONNECTOR_TOKENS) and (
+            re.search(r"\b(?:IN|OUT|INPUT|OUTPUT|TX|RX|LAN|PORT|USB|HDMI)\b", upper)
+            or any(token in upper for token in ("RJ45", "PHX", "DANTE", "CRESNET"))
+        ):
+            candidates.append((abs(index - j), line))
+    if not candidates:
+        return None
+    candidates.sort(key=lambda item: item[0])
+    return candidates[0][1][:120]
+
+
 def extract_equipment_mentions(document_pages: list[dict]) -> list[dict]:
     mentions: list[dict] = []
     seen = set()
@@ -117,7 +185,6 @@ def extract_equipment_mentions(document_pages: list[dict]) -> list[dict]:
             device_ids = DEVICE_ID_RE.findall(nearby)
             model = None
 
-            # Prefer a short model-like line near the vendor name.
             candidates = lines[max(0, i - 2): min(len(lines), i + 4)]
             for candidate in candidates:
                 cu = candidate.upper()
@@ -151,24 +218,124 @@ def extract_equipment_mentions(document_pages: list[dict]) -> list[dict]:
     return mentions
 
 
-def extract_connection_index(document_pages: list[dict]) -> dict:
-    wires: dict[str, list[dict]] = defaultdict(list)
+def extract_connection_endpoints(document_pages: list[dict]) -> list[dict]:
+    """Extract conservative structured endpoint observations from drawing text.
+
+    Endpoint observations are evidence records, not guaranteed physical truth.
+    Visual confirmation remains required when text extraction is ambiguous.
+    """
+    endpoints: list[dict] = []
+    seen = set()
 
     for page in document_pages or []:
         lines = _page_lines(page)
         for i, line in enumerate(lines):
-            for wire in WIRE_ID_RE.findall(line):
-                context = _context(lines, i, radius=5)
-                devices = [d.upper() for d in DEVICE_ID_RE.findall(context)]
-                wires[wire.upper()].append(
-                    {
-                        "page_number": page.get("page_number"),
-                        "source": page.get("source"),
-                        "devices": sorted(set(devices)),
-                        "connector_tags": _nearby_connector_tags(context),
-                        "evidence": context[:900],
-                    }
+            wires = WIRE_ID_RE.findall(line)
+            if not wires:
+                continue
+
+            local_context = _context(lines, i, radius=4)
+            device_id = _nearest_device(lines, i)
+            port = _port_label(lines, i)
+            connector_tags = _nearby_connector_tags(
+                " | ".join(lines[max(0, i - 2): min(len(lines), i + 3)])
+            )
+            direction = _infer_direction(port or local_context)
+            media = _media_family(connector_tags)
+
+            for wire in wires:
+                endpoint = {
+                    "wire_id": wire.upper(),
+                    "page_number": page.get("page_number"),
+                    "source": page.get("source"),
+                    "device_id": device_id,
+                    "port": port,
+                    "direction": direction,
+                    "connector_tags": connector_tags,
+                    "media_family": media,
+                    "evidence": local_context[:900],
+                }
+                key = (
+                    endpoint["wire_id"],
+                    endpoint["page_number"],
+                    endpoint["device_id"],
+                    endpoint["port"],
+                    endpoint["direction"],
                 )
+                if key in seen:
+                    continue
+                seen.add(key)
+                endpoints.append(endpoint)
+
+    return endpoints
+
+
+def build_connection_graph(document_pages: list[dict]) -> dict:
+    endpoints = extract_connection_endpoints(document_pages)
+    by_wire: dict[str, list[dict]] = defaultdict(list)
+    nodes: set[str] = set()
+
+    for endpoint in endpoints:
+        by_wire[endpoint["wire_id"]].append(endpoint)
+        if endpoint.get("device_id"):
+            nodes.add(endpoint["device_id"])
+
+    edges = []
+    resolved = 0
+    ambiguous = 0
+
+    for wire_id, observations in sorted(by_wire.items()):
+        output_eps = [ep for ep in observations if ep.get("direction") == "out"]
+        input_eps = [ep for ep in observations if ep.get("direction") == "in"]
+
+        source = output_eps[0] if len(output_eps) == 1 else None
+        destination = input_eps[0] if len(input_eps) == 1 else None
+
+        status = "resolved" if source and destination else "ambiguous"
+        if status == "resolved":
+            resolved += 1
+        else:
+            ambiguous += 1
+
+        edges.append(
+            {
+                "wire_id": wire_id,
+                "status": status,
+                "source": source,
+                "destination": destination,
+                "observations": observations,
+                "observation_count": len(observations),
+            }
+        )
+
+    return {
+        "node_count": len(nodes),
+        "edge_count": len(edges),
+        "resolved_edge_count": resolved,
+        "ambiguous_edge_count": ambiguous,
+        "nodes": sorted(nodes),
+        "edges": edges,
+    }
+
+
+def extract_connection_index(document_pages: list[dict]) -> dict:
+    graph = build_connection_graph(document_pages)
+    wires: dict[str, list[dict]] = defaultdict(list)
+
+    for edge in graph["edges"]:
+        for endpoint in edge["observations"]:
+            wires[edge["wire_id"]].append(
+                {
+                    "page_number": endpoint.get("page_number"),
+                    "source": endpoint.get("source"),
+                    "devices": [endpoint["device_id"]] if endpoint.get("device_id") else [],
+                    "connector_tags": endpoint.get("connector_tags") or [],
+                    "port": endpoint.get("port"),
+                    "direction": endpoint.get("direction"),
+                    "media_family": endpoint.get("media_family"),
+                    "evidence": endpoint.get("evidence"),
+                }
+            )
 
     return {
         "wire_count": len(wires),
@@ -216,10 +383,15 @@ def _device_model_conflicts(equipment_mentions: list[dict]) -> list[dict]:
     return findings
 
 
-def _wire_findings(connection_index: dict) -> list[dict]:
+def _graph_findings(connection_graph: dict) -> list[dict]:
     findings = []
-    for wire_id, occurrences in (connection_index.get("wires") or {}).items():
-        if len(occurrences) == 1:
+
+    for edge in connection_graph.get("edges") or []:
+        wire_id = edge["wire_id"]
+        observations = edge.get("observations") or []
+        directions = [ep.get("direction") for ep in observations if ep.get("direction")]
+
+        if len(observations) == 1:
             findings.append(
                 {
                     "severity": "medium",
@@ -228,29 +400,64 @@ def _wire_findings(connection_index: dict) -> list[dict]:
                     "title": f"{wire_id} appears only once in extracted signal-flow text",
                     "why_it_matters": "A one-sided wire reference can indicate an orphaned signal, a missing continuation, or incomplete text extraction.",
                     "recommended_action": "Open the referenced signal-flow page visually and confirm both source and destination before installation.",
-                    "evidence": occurrences,
+                    "evidence": observations,
                 }
             )
             continue
 
-        connector_sets = [set(o.get("connector_tags") or []) for o in occurrences if o.get("connector_tags")]
-        if len(connector_sets) >= 2:
-            common = set.intersection(*connector_sets) if connector_sets else set()
-            union = set.union(*connector_sets) if connector_sets else set()
-            major_media = {"HDMI", "USB", "RJ45", "DANTE", "RS232", "RS-232", "DISPLAYPORT", "DP", "SDI"}
-            media_seen = union.intersection(major_media)
-            if len(media_seen) > 1 and not common.intersection(media_seen):
-                findings.append(
-                    {
-                        "severity": "medium",
-                        "status": "REVIEW",
-                        "category": "connector_media_mismatch",
-                        "title": f"{wire_id} has inconsistent connector/media tags",
-                        "why_it_matters": "The same wire reference is associated with different media/connector families in the extracted drawing text.",
-                        "recommended_action": "Verify both endpoints visually and confirm whether an active converter/extender is intentionally present.",
-                        "evidence": occurrences,
-                    }
-                )
+        if directions and all(direction == "out" for direction in directions):
+            findings.append(
+                {
+                    "severity": "high",
+                    "status": "REVIEW",
+                    "category": "direction_conflict",
+                    "title": f"{wire_id} appears connected output-to-output",
+                    "why_it_matters": "A signal path normally requires a source output feeding a compatible destination input.",
+                    "recommended_action": "Verify the two endpoint port labels visually. If both are outputs, correct the design before installation.",
+                    "evidence": observations,
+                }
+            )
+        elif directions and all(direction == "in" for direction in directions):
+            findings.append(
+                {
+                    "severity": "high",
+                    "status": "REVIEW",
+                    "category": "direction_conflict",
+                    "title": f"{wire_id} appears connected input-to-input",
+                    "why_it_matters": "A signal path normally requires a source output feeding a compatible destination input.",
+                    "recommended_action": "Verify the two endpoint port labels visually. If both are inputs, correct the design before installation.",
+                    "evidence": observations,
+                }
+            )
+
+        media = {ep.get("media_family") for ep in observations if ep.get("media_family")}
+        if len(media) > 1:
+            findings.append(
+                {
+                    "severity": "medium",
+                    "status": "REVIEW",
+                    "category": "connector_media_mismatch",
+                    "title": f"{wire_id} crosses multiple media families: {', '.join(sorted(media))}",
+                    "why_it_matters": "Different media families on the same wire reference can indicate a wrong port/cable callout or an undocumented converter/extender.",
+                    "recommended_action": "Confirm the intended active conversion path and ensure the converter/extender is shown and scheduled.",
+                    "evidence": observations,
+                }
+            )
+
+        device_ids = {ep.get("device_id") for ep in observations if ep.get("device_id")}
+        if len(device_ids) == 1 and len(observations) >= 2:
+            findings.append(
+                {
+                    "severity": "medium",
+                    "status": "VERIFY",
+                    "category": "same_device_loop",
+                    "title": f"{wire_id} resolves repeatedly near the same device",
+                    "why_it_matters": "This can be a legitimate internal loop, but often indicates text extraction failed to capture the opposite endpoint.",
+                    "recommended_action": "Confirm both physical endpoints on the signal-flow drawing before installation.",
+                    "evidence": observations,
+                }
+            )
+
     return findings
 
 
@@ -332,11 +539,12 @@ def build_programming_requirements(equipment_mentions: list[dict]) -> list[dict]
 
 def audit_drawing_set(document_pages: list[dict]) -> dict:
     equipment = extract_equipment_mentions(document_pages)
+    connection_graph = build_connection_graph(document_pages)
     connections = extract_connection_index(document_pages)
 
     findings = []
     findings.extend(_device_model_conflicts(equipment))
-    findings.extend(_wire_findings(connections))
+    findings.extend(_graph_findings(connection_graph))
     findings.extend(_drawing_completeness_findings(document_pages))
 
     severity_order = {"high": 0, "medium": 1, "low": 2}
@@ -345,11 +553,13 @@ def audit_drawing_set(document_pages: list[dict]) -> dict:
     return {
         "equipment_mentions": equipment,
         "connection_index": connections,
+        "connection_graph": connection_graph,
         "findings": findings,
         "finding_count": len(findings),
         "programming_requirements": build_programming_requirements(equipment),
         "disclaimer": (
             "Findings are engineering review candidates, not automatic as-built truth. "
-            "Items marked REVIEW/VERIFY require visual drawing confirmation and, where applicable, field verification."
+            "Structured connection edges derived from extracted PDF text are marked resolved only when one output and one input are unambiguous. "
+            "Items marked REVIEW/VERIFY still require visual drawing confirmation and, where applicable, field verification."
         ),
     }

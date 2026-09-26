@@ -12,6 +12,11 @@ from pypdf import PdfReader
 
 from api.auth_context import AuthUser, auth_capabilities, get_current_user
 from api.runtime_config import load_runtime_config
+from artifact_store import (
+    create_artifact_store,
+    drawing_artifact_key,
+    report_artifact_key,
+)
 from drawing_qa import audit_drawing_set
 from drawing_visual import analyze_visual_drawing_pages, reconcile_visual_with_connection_graph
 from project_engineer import (
@@ -34,6 +39,7 @@ from report_export import build_report_docx, safe_report_filename
 APP_VERSION = "0.3.0"
 runtime = load_runtime_config()
 store = create_project_store()
+artifact_store = create_artifact_store()
 
 app = FastAPI(
     title="AV Intelligence Assistant API",
@@ -359,10 +365,22 @@ async def analyze_and_save_project_drawing(
     payload, pages = await _read_pdf(file)
     register = build_project_drawing_register(pages)
     qa = audit_drawing_set(pages)
+    digest = hashlib.sha256(payload).hexdigest()
+    source_artifact = artifact_store.put_bytes(
+        key=drawing_artifact_key(
+            user.id,
+            project_id,
+            file.filename or "drawing.pdf",
+            digest,
+        ),
+        payload=payload,
+        content_type="application/pdf",
+    )
+    qa["source_artifact"] = source_artifact
     saved = store.save_drawing_analysis(
         project_id,
         file_name=file.filename or "drawing.pdf",
-        file_hash=hashlib.sha256(payload).hexdigest(),
+        file_hash=digest,
         page_count=len(pages),
         register=register,
         qa=qa,
@@ -382,6 +400,18 @@ async def analyze_and_save_project_drawing_visual(
     payload, pages = await _read_pdf(file)
     register = build_project_drawing_register(pages)
     qa = audit_drawing_set(pages)
+    digest = hashlib.sha256(payload).hexdigest()
+    source_artifact = artifact_store.put_bytes(
+        key=drawing_artifact_key(
+            user.id,
+            project_id,
+            file.filename or "drawing.pdf",
+            digest,
+        ),
+        payload=payload,
+        content_type="application/pdf",
+    )
+    qa["source_artifact"] = source_artifact
 
     try:
         visual_review = analyze_visual_drawing_pages(
@@ -420,7 +450,7 @@ async def analyze_and_save_project_drawing_visual(
     saved = store.save_drawing_analysis(
         project_id,
         file_name=file.filename or "drawing.pdf",
-        file_hash=hashlib.sha256(payload).hexdigest(),
+        file_hash=digest,
         page_count=len(pages),
         register=register,
         qa=qa,
@@ -497,6 +527,21 @@ def build_and_save_professional_project_report(
         snapshot,
         period=period,
         anchor_date=anchor_date,
+    )
+    document = build_professional_project_report_docx(report)
+    project_name = str((snapshot.get("project") or {}).get("name") or "project")
+    safe_name = "".join(
+        char if char.isalnum() or char in {"-", "_"} else "_"
+        for char in project_name
+    ).strip("_") or "project"
+    filename = f"{safe_name}_{period}_report.docx"
+    report["artifact"] = artifact_store.put_bytes(
+        key=report_artifact_key(user.id, project_id, period, filename),
+        payload=document,
+        content_type=(
+            "application/vnd.openxmlformats-officedocument."
+            "wordprocessingml.document"
+        ),
     )
     saved = store.save_report(
         project_id,

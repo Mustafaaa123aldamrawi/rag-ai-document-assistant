@@ -20,6 +20,8 @@ class RuntimeConfig:
     cors_origins: tuple[str, ...]
     jwt_jwks_url: str | None
     jwt_has_static_key: bool
+    storage_mode: str
+    storage_bucket: str | None
 
     @property
     def production(self) -> bool:
@@ -37,6 +39,10 @@ class RuntimeConfig:
                 errors.append("AVIA_CORS_ORIGINS is required in production.")
             if "*" in self.cors_origins:
                 errors.append("Wildcard CORS is not allowed in production.")
+            if self.storage_mode != "s3":
+                errors.append("AVIA_STORAGE_MODE must be s3 in production.")
+            if not self.storage_bucket:
+                errors.append("AVIA_STORAGE_BUCKET is required in production.")
             if not (self.jwt_jwks_url or self.jwt_has_static_key):
                 errors.append(
                     "Configure AVIA_JWT_JWKS_URL or a JWT verification key in production."
@@ -65,6 +71,9 @@ def load_runtime_config() -> RuntimeConfig:
         _csv(os.getenv("AVIA_CORS_ORIGINS", default_cors))
     )
 
+    storage_mode = os.getenv("AVIA_STORAGE_MODE", "local").strip().lower()
+    storage_bucket = os.getenv("AVIA_STORAGE_BUCKET", "").strip() or None
+
     config = RuntimeConfig(
         environment=environment,
         database_url=database_url,
@@ -72,6 +81,8 @@ def load_runtime_config() -> RuntimeConfig:
         cors_origins=cors_origins,
         jwt_jwks_url=jwt_jwks_url,
         jwt_has_static_key=jwt_has_static_key,
+        storage_mode=storage_mode,
+        storage_bucket=storage_bucket,
     )
     config.validate()
     return config

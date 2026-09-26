@@ -1,6 +1,7 @@
 import { StatusBar } from "expo-status-bar";
 import * as DocumentPicker from "expo-document-picker";
 import React, { useEffect, useMemo, useState } from "react";
+import type { Session } from "@supabase/supabase-js";
 import {
   ActivityIndicator,
   SafeAreaView,
@@ -12,8 +13,9 @@ import {
   View,
 } from "react-native";
 
-const API_URL =
-  process.env.EXPO_PUBLIC_API_URL || "http://localhost:8000";
+import { api } from "./api";
+import { AuthScreen } from "./AuthScreen";
+import { supabase } from "./supabase";
 
 type Project = {
   id: string;
@@ -99,24 +101,13 @@ type EngineeringPlan = {
   }>;
 };
 
-async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, init);
-  const payload = response.status === 204 ? null : await response.json();
-  if (!response.ok) {
-    const detail =
-      typeof payload?.detail === "string"
-        ? payload.detail
-        : payload?.detail?.message || "Request failed.";
-    throw new Error(detail);
-  }
-  return payload as T;
-}
-
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
 }
 
 export default function App() {
+  const [session, setSession] = useState<Session | null>(null);
+  const [authReady, setAuthReady] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
@@ -160,16 +151,47 @@ export default function App() {
   };
 
   useEffect(() => {
-    loadProjects();
+    let mounted = true;
+
+    const bootstrap = async () => {
+      if (!supabase) {
+        if (mounted) setAuthReady(true);
+        return;
+      }
+      const { data } = await supabase.auth.getSession();
+      if (mounted) {
+        setSession(data.session);
+        setAuthReady(true);
+      }
+    };
+
+    bootstrap();
+
+    const subscription = supabase?.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession);
+      setSelectedId(null);
+      setSnapshot(null);
+      setEngineeringPlan(null);
+      setProjects([]);
+    });
+
+    return () => {
+      mounted = false;
+      subscription?.data.subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
-    if (selectedId) loadSnapshot(selectedId);
+    if (session) loadProjects();
+  }, [session]);
+
+  useEffect(() => {
+    if (session && selectedId) loadSnapshot(selectedId);
     else {
       setSnapshot(null);
       setEngineeringPlan(null);
     }
-  }, [selectedId]);
+  }, [session, selectedId]);
 
   const createProject = async () => {
     if (!newProjectName.trim()) return;
@@ -287,6 +309,21 @@ export default function App() {
     }
   };
 
+  if (!authReady) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.authLoading}>
+          <ActivityIndicator color="#68A7FF" />
+          <Text style={styles.loadingText}>Starting secure session…</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!session) {
+    return <AuthScreen />;
+  }
+
   if (!selectedId) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -297,6 +334,14 @@ export default function App() {
           <Text style={styles.subtitle}>
             Project engineering from drawing review and first fix to commissioning and handover.
           </Text>
+          <View style={styles.accountRow}>
+            <Text style={styles.accountEmail} numberOfLines={1}>
+              {session.user.email || "Signed in"}
+            </Text>
+            <TouchableOpacity onPress={() => supabase?.auth.signOut()}>
+              <Text style={styles.signOut}>Sign out</Text>
+            </TouchableOpacity>
+          </View>
 
           <View style={styles.card}>
             <Text style={styles.cardTitle}>New Project</Text>
@@ -563,6 +608,29 @@ export default function App() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#07101D" },
+  authLoading: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+  },
+  accountRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    marginBottom: 8,
+  },
+  accountEmail: {
+    color: "#8FA4C2",
+    flex: 1,
+    fontSize: 12,
+  },
+  signOut: {
+    color: "#80B5FF",
+    fontWeight: "700",
+    fontSize: 12,
+  },
   container: {
     flexGrow: 1,
     paddingHorizontal: 20,

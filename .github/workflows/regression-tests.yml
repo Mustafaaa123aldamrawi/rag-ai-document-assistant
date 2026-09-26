@@ -28,7 +28,7 @@ jobs:
 
       - name: Compile production modules
         run: |
-          python -m py_compile api/main.py project_store.py drawing_qa.py drawing_visual.py project_engineer.py
+          python -m py_compile api/main.py project_store.py drawing_qa.py drawing_visual.py project_engineer.py project_plan.py
 
       - name: Run regression tests
         run: |

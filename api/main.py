@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from pypdf import PdfReader
 
-from auth_context import AuthUser, auth_capabilities, get_current_user
+from api.auth_context import AuthUser, auth_capabilities, get_current_user
 from drawing_qa import audit_drawing_set
 from drawing_visual import analyze_visual_drawing_pages
 from project_engineer import (

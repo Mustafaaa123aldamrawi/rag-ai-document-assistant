@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 from pypdf import PdfReader
 
 from api.auth_context import AuthUser, auth_capabilities, get_current_user
+from api.runtime_config import load_runtime_config
 from drawing_qa import audit_drawing_set
 from drawing_visual import analyze_visual_drawing_pages, reconcile_visual_with_connection_graph
 from project_engineer import (
@@ -18,15 +19,16 @@ from project_engineer import (
     build_progress_report,
     build_project_drawing_register,
 )
-from project_store import ProjectStore
+from cloud_store import create_project_store
 from project_plan import build_phase_engineering_plan
 from project_dashboard import build_project_dashboard
 from professional_reports import build_professional_project_report
 from report_export import build_report_docx, safe_report_filename
 
 
-APP_VERSION = "0.2.0"
-store = ProjectStore()
+APP_VERSION = "0.3.0"
+runtime = load_runtime_config()
+store = create_project_store()
 
 app = FastAPI(
     title="AV Intelligence Assistant API",
@@ -39,10 +41,10 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=list(runtime.cors_origins),
     allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 
@@ -146,7 +148,10 @@ def health() -> dict:
         "status": "ok",
         "service": "av-intelligence-assistant-api",
         "version": APP_VERSION,
-        "persistence": "sqlite",
+        "environment": runtime.environment,
+        "persistence": (
+            "managed_database" if runtime.database_url else "sqlite"
+        ),
         "auth": auth_capabilities(),
     }
 

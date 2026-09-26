@@ -8,6 +8,7 @@ from typing import Any
 
 from sqlalchemy import (
     Column,
+    Integer,
     MetaData,
     String,
     Table,
@@ -82,7 +83,7 @@ drawing_analyses = Table(
     Column("project_id", String(64), nullable=False, index=True),
     Column("file_name", String(512), nullable=False),
     Column("file_hash", String(128)),
-    Column("page_count", String(16), nullable=False, default="0"),
+    Column("page_count", Integer, nullable=False, default=0),
     Column("register_json", Text, nullable=False, default="{}"),
     Column("qa_json", Text, nullable=False, default="{}"),
     Column("created_at", String(64), nullable=False),
@@ -377,7 +378,7 @@ class SqlAlchemyProjectStore:
             "project_id": project_id,
             "file_name": file_name,
             "file_hash": file_hash,
-            "page_count": str(int(page_count)),
+            "page_count": int(page_count),
             "register_json": _json_dumps(register),
             "qa_json": _json_dumps(qa),
             "created_at": now,
@@ -518,10 +519,21 @@ class SqlAlchemyProjectStore:
         }
 
 
+def _normalize_database_url(database_url: str) -> str:
+    value = str(database_url or "").strip()
+    if value.startswith("postgres://"):
+        return "postgresql+psycopg://" + value[len("postgres://"):]
+    if value.startswith("postgresql://"):
+        return "postgresql+psycopg://" + value[len("postgresql://"):]
+    return value
+
+
 def create_project_store():
     database_url = os.getenv("AVIA_DATABASE_URL", "").strip()
     if database_url:
-        return SqlAlchemyProjectStore(database_url)
+        return SqlAlchemyProjectStore(
+            _normalize_database_url(database_url)
+        )
 
     from project_store import ProjectStore
 

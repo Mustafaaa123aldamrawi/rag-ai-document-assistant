@@ -559,3 +559,36 @@ def format_progress_report_markdown(report):
             lines.append("- No recorded items.")
 
     return "\n".join(lines).strip()
+
+
+
+def detect_report_period(message):
+    value = _clean(message).casefold()
+    if not value:
+        return None
+
+    daily = ("daily report", "day report", "تقرير يومي", "تقرير اليوم", "daily")
+    weekly = ("weekly report", "week report", "تقرير أسبوعي", "تقرير اسبوعي", "weekly")
+    monthly = ("monthly report", "month report", "تقرير شهري", "monthly")
+
+    if any(cue in value for cue in daily):
+        return "daily"
+    if any(cue in value for cue in weekly):
+        return "weekly"
+    if any(cue in value for cue in monthly):
+        return "monthly"
+    return None
+
+
+def is_project_engineer_question(message):
+    value = _clean(message).casefold()
+    cues = (
+        "first fix", "second fix", "commission", "handover", "handing over",
+        "project status", "project progress", "what should i start", "where do i start",
+        "next step", "site readiness", "snag", "drawing set", "shop drawing",
+        "daily report", "weekly report", "monthly report",
+        "شو ابلش", "من وين ابلش", "شو الخطوة الجاية", "اول خطوة", "أول خطوة",
+        "فيرست فكس", "سكند فكس", "كومشن", "تسليم", "هاند اوفر", "تقرير يومي",
+        "تقرير أسبوعي", "تقرير اسبوعي", "تقرير شهري", "وضع المشروع", "بروجريس",
+    )
+    return any(cue in value for cue in cues)

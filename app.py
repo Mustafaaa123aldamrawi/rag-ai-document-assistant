@@ -6880,6 +6880,71 @@ if assistant_interaction_mode == "💬 Chat" and st.session_state.messages:
                                 f"[WEB {web_number}] 🌐 **External Source** - "
                                 f"[{title}]({url})"
                             )
+def extract_project_progress_entry_with_llm(message, project_register):
+    """Extract only user-stated project progress facts into the project log."""
+    if not message or not isinstance(project_register, dict):
+        return None
+
+    prompt = f"""
+You are recording a factual AV project progress update.
+
+Extract ONLY facts explicitly stated by the user. Do not infer completed work,
+percentages, dates, rooms, causes, owners, or next steps.
+
+Return ONLY valid JSON with this schema:
+{{
+  "date": null,
+  "phase": null,
+  "rooms": [],
+  "completed": [],
+  "in_progress": [],
+  "issues": [],
+  "blockers": [],
+  "next_actions": [],
+  "responsible_parties": [],
+  "source_message": ""
+}}
+
+Rules:
+- If the user says today but gives no date, use today's date: {datetime.now().date().isoformat()}.
+- Keep unknown fields empty or null.
+- Preserve room names, device names and technical terms.
+- An issue is not a blocker unless the user explicitly says it prevents progress.
+- Do not mark something completed unless the user explicitly says it is complete/done/finished.
+- source_message must contain the user's original message.
+
+PROJECT:
+{json.dumps(project_register.get("project") or {}, ensure_ascii=False)}
+
+USER UPDATE:
+{message}
+"""
+    try:
+        raw = call_conversation_llm(
+            prompt=prompt,
+            temperature=0.0,
+            reasoning_effort="low",
+        ).strip()
+        start = raw.find("{")
+        end = raw.rfind("}")
+        if start == -1 or end == -1:
+            return None
+        parsed = json.loads(raw[start:end + 1])
+        parsed["source_message"] = message
+        return normalize_progress_entry(parsed)
+    except Exception:
+        return None
+
+
+def build_project_report_answer(period, project_register, progress_log):
+    report = build_progress_report(
+        progress_log,
+        period=period,
+        project=(project_register or {}).get("project") or {},
+    )
+    return format_progress_report_markdown(report)
+
+
 # Main interface
 
 

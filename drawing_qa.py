@@ -395,6 +395,229 @@ def build_connection_graph(document_pages: list[dict]) -> dict:
     }
 
 
+def _normalized_port_signature(port: str | None) -> str | None:
+    if not port:
+        return None
+    value = _clean(port).upper()
+    value = re.sub(r"\s+", " ", value)
+    # Wire numbers and punctuation noise should not make one physical port
+    # look like multiple different ports.
+    value = WIRE_ID_RE.sub("", value)
+    value = re.sub(r"[^A-Z0-9+./ -]", "", value)
+    value = re.sub(r"\s+", " ", value).strip(" -|")
+    return value or None
+
+
+def build_signal_paths(connection_graph: dict, max_depth: int = 12) -> dict:
+    """Build directed device-to-device paths from resolved connection edges.
+
+    Only edges with one unambiguous output and one unambiguous input are used.
+    The result is traceability evidence for engineering review; ambiguous PDF
+    observations are deliberately excluded instead of guessed.
+    """
+    segments = []
+    for edge in connection_graph.get("edges") or []:
+        if edge.get("status") != "resolved":
+            continue
+        source = edge.get("source") or {}
+        destination = edge.get("destination") or {}
+        source_device = source.get("device_id")
+        destination_device = destination.get("device_id")
+        if not source_device or not destination_device:
+            continue
+        segments.append(
+            {
+                "wire_id": edge.get("wire_id"),
+                "source_device": source_device,
+                "source_port": source.get("port"),
+                "destination_device": destination_device,
+                "destination_port": destination.get("port"),
+                "media_family": (
+                    source.get("media_family")
+                    or destination.get("media_family")
+                ),
+                "confidence": edge.get("confidence", 0.0),
+                "pages": edge.get("pages") or [],
+                "drawings": edge.get("drawings") or [],
+            }
+        )
+
+    adjacency: dict[str, list[dict]] = defaultdict(list)
+    incoming: set[str] = set()
+    outgoing: set[str] = set()
+    for segment in segments:
+        adjacency[segment["source_device"]].append(segment)
+        outgoing.add(segment["source_device"])
+        incoming.add(segment["destination_device"])
+
+    roots = sorted(outgoing - incoming)
+    # A fully cyclic graph has no root. Still inspect it so cycles are visible.
+    traversal_starts = roots or sorted(outgoing)
+    paths: list[dict] = []
+    cycles: list[dict] = []
+    seen_cycles: set[tuple[str, ...]] = set()
+
+    def walk(
+        device: str,
+        path_segments: list[dict],
+        visited_devices: list[str],
+        used_wires: set[str],
+    ) -> None:
+        if len(path_segments) >= max_depth:
+            paths.append(
+                {
+                    "status": "depth_limit",
+                    "devices": visited_devices,
+                    "segments": path_segments,
+                }
+            )
+            return
+
+        candidates = [
+            segment
+            for segment in adjacency.get(device, [])
+            if segment.get("wire_id") not in used_wires
+        ]
+        if not candidates:
+            if path_segments:
+                paths.append(
+                    {
+                        "status": "complete",
+                        "devices": visited_devices,
+                        "segments": path_segments,
+                    }
+                )
+            return
+
+        for segment in candidates:
+            destination = segment["destination_device"]
+            new_segments = path_segments + [segment]
+            new_devices = visited_devices + [destination]
+            new_wires = set(used_wires)
+            new_wires.add(segment.get("wire_id"))
+
+            if destination in visited_devices:
+                cycle_start = visited_devices.index(destination)
+                cycle_devices = tuple(new_devices[cycle_start:])
+                canonical = tuple(sorted(cycle_devices[:-1]))
+                if canonical and canonical not in seen_cycles:
+                    seen_cycles.add(canonical)
+                    cycles.append(
+                        {
+                            "devices": list(cycle_devices),
+                            "segments": new_segments,
+                        }
+                    )
+                continue
+
+            walk(destination, new_segments, new_devices, new_wires)
+
+    for root in traversal_starts:
+        walk(root, [], [root], set())
+
+    terminal_devices = sorted(incoming - outgoing)
+    return {
+        "segment_count": len(segments),
+        "path_count": len(paths),
+        "cycle_count": len(cycles),
+        "root_devices": roots,
+        "terminal_devices": terminal_devices,
+        "paths": paths[:200],
+        "cycles": cycles[:50],
+    }
+
+
+def _duplicate_port_findings(connection_graph: dict) -> list[dict]:
+    """Flag multiple distinct wires terminating on the same physical port."""
+    terminations: dict[tuple[str, str, str], list[dict]] = defaultdict(list)
+
+    for edge in connection_graph.get("edges") or []:
+        if edge.get("status") != "resolved":
+            continue
+        for endpoint_role, endpoint in (
+            ("output", edge.get("source") or {}),
+            ("input", edge.get("destination") or {}),
+        ):
+            device_id = endpoint.get("device_id")
+            port_signature = _normalized_port_signature(endpoint.get("port"))
+            if not device_id or not port_signature:
+                continue
+            if float(endpoint.get("confidence") or 0.0) < 0.65:
+                continue
+            terminations[(endpoint_role, device_id, port_signature)].append(
+                {
+                    "wire_id": edge.get("wire_id"),
+                    "page_number": endpoint.get("page_number"),
+                    "drawing_number": endpoint.get("drawing_number"),
+                    "device_id": device_id,
+                    "port": endpoint.get("port"),
+                    "confidence": endpoint.get("confidence"),
+                    "evidence": endpoint.get("evidence"),
+                }
+            )
+
+    findings = []
+    for (role, device_id, port_signature), items in terminations.items():
+        unique_wires = sorted(
+            {item.get("wire_id") for item in items if item.get("wire_id")}
+        )
+        if len(unique_wires) <= 1:
+            continue
+        label = "input" if role == "input" else "output"
+        findings.append(
+            {
+                "severity": "high",
+                "status": "REVIEW",
+                "category": "duplicate_port_termination",
+                "title": (
+                    f"{device_id} {label} port appears terminated by "
+                    f"multiple wires: {', '.join(unique_wires)}"
+                ),
+                "why_it_matters": (
+                    "A single physical connector normally accepts one physical "
+                    "termination. Multiple wire IDs on the same port can indicate "
+                    "a drawing error, duplicated callout, or extraction ambiguity."
+                ),
+                "recommended_action": (
+                    "Visually verify the device block and port callouts. If the "
+                    "same physical port is truly assigned to multiple cables, "
+                    "correct the signal flow before installation."
+                ),
+                "evidence": items,
+                "port_signature": port_signature,
+            }
+        )
+    return findings
+
+
+def _signal_path_findings(signal_paths: dict) -> list[dict]:
+    findings = []
+    for cycle in signal_paths.get("cycles") or []:
+        devices = cycle.get("devices") or []
+        findings.append(
+            {
+                "severity": "medium",
+                "status": "VERIFY",
+                "category": "directed_signal_cycle",
+                "title": (
+                    "Directed signal path loops back through "
+                    + " → ".join(devices)
+                ),
+                "why_it_matters": (
+                    "A directed loop can be intentional for some control/audio "
+                    "architectures, but it can also indicate a feedback path or "
+                    "incorrect source/destination assignment."
+                ),
+                "recommended_action": (
+                    "Review the full path visually and confirm that the loop is "
+                    "intentional and supported by the system design."
+                ),
+                "evidence": cycle.get("segments") or [],
+            }
+        )
+    return findings
+
+
 def extract_connection_index(document_pages: list[dict]) -> dict:
     graph = build_connection_graph(document_pages)
     wires: dict[str, list[dict]] = defaultdict(list)
@@ -689,10 +912,13 @@ def audit_drawing_set(document_pages: list[dict]) -> dict:
     equipment = extract_equipment_mentions(document_pages)
     connection_graph = build_connection_graph(document_pages)
     connections = extract_connection_index(document_pages)
+    signal_paths = build_signal_paths(connection_graph)
 
     findings = []
     findings.extend(_device_model_conflicts(equipment))
     findings.extend(_graph_findings(connection_graph))
+    findings.extend(_duplicate_port_findings(connection_graph))
+    findings.extend(_signal_path_findings(signal_paths))
     findings.extend(_cross_sheet_findings(equipment, connection_graph))
     findings.extend(_drawing_completeness_findings(document_pages))
 
@@ -703,6 +929,7 @@ def audit_drawing_set(document_pages: list[dict]) -> dict:
         "equipment_mentions": equipment,
         "connection_index": connections,
         "connection_graph": connection_graph,
+        "signal_paths": signal_paths,
         "findings": findings,
         "finding_count": len(findings),
         "programming_requirements": build_programming_requirements(equipment),

@@ -5,7 +5,7 @@ import jwt
 import pytest
 from fastapi import HTTPException
 
-from auth_context import get_current_user
+from api.auth_context import get_current_user
 
 
 def _set_jwt_env(monkeypatch):

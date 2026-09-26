@@ -564,7 +564,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   projectHeader: { flexDirection: "row", justifyContent: "space-between", gap: 8 },
-  projectName: { color: "#FFFFFF", fontSize: 17, fontWeight: "750", flex: 1 },
+  projectName: { color: "#FFFFFF", fontSize: 17, fontWeight: "700", flex: 1 },
   status: { color: "#65D6A8", fontSize: 10, fontWeight: "800" },
   phase: { color: "#80B5FF", marginTop: 8, fontSize: 13 },
   muted: { color: "#8FA4C2", lineHeight: 20 },

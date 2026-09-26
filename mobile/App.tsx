@@ -51,6 +51,7 @@ type DrawingAnalysis = {
       edge_count?: number;
       resolved_edge_count?: number;
       ambiguous_edge_count?: number;
+      resolution_rate?: number;
     };
   };
   created_at: string;
@@ -386,43 +387,15 @@ export default function App() {
                 <Text style={styles.graphMetric}>{graph.edge_count || 0} wires</Text>
                 <Text style={styles.graphMetric}>{graph.resolved_edge_count || 0} resolved</Text>
                 <Text style={styles.graphMetric}>{graph.ambiguous_edge_count || 0} verify</Text>
+                <Text style={styles.graphMetric}>
+                  {Math.round((graph.resolution_rate || 0) * 100)}% resolved
+                </Text>
               </View>
             )}
 
-            <Text style={styles.sectionTitle}>Connection Graph</Text>
-            <View style={styles.graphGrid}>
-              <View style={styles.graphMetric}>
-                <Text style={styles.graphMetricValue}>
-                  {result.qa?.connection_graph?.node_count || 0}
-                </Text>
-                <Text style={styles.graphMetricLabel}>Devices</Text>
-              </View>
-              <View style={styles.graphMetric}>
-                <Text style={styles.graphMetricValue}>
-                  {result.qa?.connection_graph?.edge_count || 0}
-                </Text>
-                <Text style={styles.graphMetricLabel}>Connections</Text>
-              </View>
-              <View style={styles.graphMetric}>
-                <Text style={styles.graphMetricValue}>
-                  {result.qa?.connection_graph?.resolved_edge_count || 0}
-                </Text>
-                <Text style={styles.graphMetricLabel}>Resolved</Text>
-              </View>
-              <View style={styles.graphMetric}>
-                <Text style={styles.graphMetricValue}>
-                  {Math.round(
-                    (result.qa?.connection_graph?.resolution_rate || 0) * 100
-                  )}%
-                </Text>
-                <Text style={styles.graphMetricLabel}>Confidence path</Text>
-              </View>
-            </View>
-
-            {(result.qa?.connection_graph?.ambiguous_edge_count || 0) > 0 && (
+            {!!graph && (graph.ambiguous_edge_count || 0) > 0 && (
               <Text style={styles.graphWarning}>
-                {result.qa?.connection_graph?.ambiguous_edge_count} connection(s)
-                still require drawing verification.
+                {graph.ambiguous_edge_count} connection(s) still require drawing verification.
               </Text>
             )}
 
@@ -629,26 +602,6 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 8,
     fontSize: 11,
-  },
-  graphGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    marginHorizontal: -4,
-    marginBottom: 6,
-  },
-  graphMetric: {
-    width: "50%",
-    padding: 4,
-  },
-  graphMetricValue: {
-    color: "#FFFFFF",
-    fontSize: 21,
-    fontWeight: "800",
-  },
-  graphMetricLabel: {
-    color: "#8FA4C2",
-    fontSize: 12,
-    marginTop: 2,
   },
   graphWarning: {
     color: "#FFB86B",

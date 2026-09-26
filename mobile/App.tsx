@@ -17,6 +17,24 @@ const API_URL =
 type DrawingResult = {
   file_name: string;
   page_count: number;
+  qa?: {
+    finding_count?: number;
+    findings?: Array<{
+      severity?: string;
+      status?: string;
+      category?: string;
+      title?: string;
+      why_it_matters?: string;
+      recommended_action?: string;
+    }>;
+    programming_requirements?: Array<{
+      vendor?: string;
+      models_detected?: string[];
+      programming_scope?: string;
+      engineering_tool?: string;
+      status?: string;
+    }>;
+  };
   register: {
     project?: {
       project_name?: string | null;
@@ -72,7 +90,7 @@ export default function App() {
 
     setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/v1/drawings/register`, {
+      const response = await fetch(`${API_URL}/v1/drawings/qa`, {
         method: "POST",
         body: form,
       });
@@ -133,6 +151,38 @@ export default function App() {
                   <Text style={styles.requirementText}>{item.requirement}</Text>
                 </View>
               ))}
+            <Text style={styles.sectionTitle}>Engineering Findings</Text>
+            {(result.qa?.findings || []).length === 0 ? (
+              <Text style={styles.row}>No text-extraction QA findings detected.</Text>
+            ) : (
+              (result.qa?.findings || []).slice(0, 10).map((item, index) => (
+                <View style={styles.finding} key={`${item.category}-${index}`}>
+                  <Text style={styles.findingBadge}>
+                    {(item.severity || "verify").toUpperCase()} · {item.status || "VERIFY"}
+                  </Text>
+                  <Text style={styles.findingTitle}>{item.title}</Text>
+                  {!!item.why_it_matters && (
+                    <Text style={styles.findingText}>{item.why_it_matters}</Text>
+                  )}
+                  {!!item.recommended_action && (
+                    <Text style={styles.findingAction}>Next: {item.recommended_action}</Text>
+                  )}
+                </View>
+              ))
+            )}
+
+            <Text style={styles.sectionTitle}>Programming Scope</Text>
+            {(result.qa?.programming_requirements || []).length === 0 ? (
+              <Text style={styles.row}>No supported vendor programming scope detected yet.</Text>
+            ) : (
+              (result.qa?.programming_requirements || []).map((item, index) => (
+                <View style={styles.requirement} key={`${item.vendor}-${index}`}>
+                  <Text style={styles.requirementTitle}>{item.vendor}</Text>
+                  <Text style={styles.requirementText}>{item.programming_scope}</Text>
+                  <Text style={styles.toolText}>{item.engineering_tool}</Text>
+                </View>
+              ))
+            )}
           </View>
         )}
       </ScrollView>
@@ -218,6 +268,38 @@ const styles = StyleSheet.create({
     color: "#CDD6E4",
     marginBottom: 5,
     lineHeight: 20,
+  },
+  finding: {
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "#2B3B52",
+  },
+  findingBadge: {
+    color: "#FFB86B",
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 0.6,
+  },
+  findingTitle: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "700",
+    marginTop: 5,
+  },
+  findingText: {
+    color: "#C4CFDF",
+    marginTop: 4,
+    lineHeight: 19,
+  },
+  findingAction: {
+    color: "#8CC6FF",
+    marginTop: 6,
+    lineHeight: 19,
+  },
+  toolText: {
+    color: "#8FA4C2",
+    marginTop: 4,
+    fontSize: 12,
   },
   requirement: {
     paddingVertical: 9,

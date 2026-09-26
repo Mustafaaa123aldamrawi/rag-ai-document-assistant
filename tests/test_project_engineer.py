@@ -5,8 +5,11 @@ from project_engineer import (
     build_progress_report,
     build_project_drawing_register,
     classify_sheet_type,
+    detect_report_period,
     format_progress_report_markdown,
+    is_project_engineer_question,
     is_project_update_message,
+    select_relevant_drawing_page_numbers,
 )
 
 
@@ -151,3 +154,18 @@ def test_daily_weekly_monthly_reports():
     markdown = format_progress_report_markdown(monthly)
     assert "Monthly Project Report" in markdown
     assert "Missing data outlet" in markdown
+
+
+
+def test_project_engineer_intents_and_page_selection():
+    assert detect_report_period("اعمل تقرير أسبوعي") == "weekly"
+    assert detect_report_period("monthly report please") == "monthly"
+    assert is_project_engineer_question("شو ابلش بال first fix؟")
+
+    pages = sample_pages()
+    selected = select_relevant_drawing_page_numbers(
+        pages,
+        "Show me the divisible meeting room signal flow",
+        max_pages=1,
+    )
+    assert selected == [20]

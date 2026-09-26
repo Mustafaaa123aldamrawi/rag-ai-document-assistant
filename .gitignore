@@ -216,3 +216,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# AV Intelligence runtime data
+data/
+*.db
+*.db-wal
+*.db-shm

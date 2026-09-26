@@ -16,3 +16,7 @@ python-docx
 langdetect
 python-pptx
 openpyxl
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic

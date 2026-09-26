@@ -11,7 +11,7 @@ from pypdf import PdfReader
 
 from api.auth_context import AuthUser, auth_capabilities, get_current_user
 from drawing_qa import audit_drawing_set
-from drawing_visual import analyze_visual_drawing_pages
+from drawing_visual import analyze_visual_drawing_pages, reconcile_visual_with_connection_graph
 from project_engineer import (
     PROJECT_PHASES,
     build_progress_report,
@@ -371,6 +371,25 @@ async def analyze_and_save_project_drawing_visual(
         raise HTTPException(status_code=status_code, detail=message) from exc
 
     qa["visual_review"] = visual_review
+    reconciliation = reconcile_visual_with_connection_graph(qa, visual_review)
+    qa["visual_reconciliation"] = reconciliation
+    if reconciliation.get("conflicts"):
+        qa.setdefault("findings", []).extend(
+            {
+                "severity": item.get("severity", "high"),
+                "status": "REVIEW",
+                "category": "visual_graph_conflict",
+                "title": item.get("title"),
+                "why_it_matters": item.get("why_it_matters"),
+                "recommended_action": item.get("recommended_action"),
+                "evidence": [
+                    item.get("text") or {},
+                    item.get("visual") or {},
+                ],
+            }
+            for item in reconciliation["conflicts"]
+        )
+        qa["finding_count"] = len(qa.get("findings") or [])
     saved = store.save_drawing_analysis(
         project_id,
         file_name=file.filename or "drawing.pdf",

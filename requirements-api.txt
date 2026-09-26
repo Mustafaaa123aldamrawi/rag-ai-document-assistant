@@ -1,12 +1,13 @@
 fastapi
 uvicorn[standard]
-pypdf
 python-multipart
 pydantic
+pypdf
+PyMuPDF
+Pillow
+requests
 PyJWT[crypto]
 SQLAlchemy>=2.0
 psycopg[binary]>=3.2
 python-docx
-PyMuPDF
-Pillow
-requests
+boto3>=1.35

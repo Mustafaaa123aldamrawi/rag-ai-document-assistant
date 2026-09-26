@@ -17,6 +17,7 @@ from project_engineer import (
     build_project_drawing_register,
 )
 from project_store import ProjectStore
+from project_plan import build_phase_engineering_plan
 
 
 APP_VERSION = "0.2.0"
@@ -162,6 +163,7 @@ def capabilities() -> dict:
             "weekly_reports": True,
             "monthly_reports": True,
             "persistent_project_memory": True,
+            "phase_engineering_plan": True,
         },
         "vendor_programming": {
             "Extron": "planned",
@@ -199,6 +201,14 @@ def get_project(project_id: str) -> dict:
     if not snapshot:
         raise HTTPException(status_code=404, detail="Project not found.")
     return snapshot
+
+
+@app.get("/v1/projects/{project_id}/plan")
+def get_project_engineering_plan(project_id: str) -> dict:
+    snapshot = store.project_snapshot(project_id)
+    if not snapshot:
+        raise HTTPException(status_code=404, detail="Project not found.")
+    return build_phase_engineering_plan(snapshot)
 
 
 @app.patch("/v1/projects/{project_id}")

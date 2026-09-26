@@ -177,3 +177,37 @@ def test_project_store_migrates_existing_database_with_local_owner(tmp_path: Pat
 
     assert migrated is not None
     assert migrated["owner_id"] == "local-dev"
+
+
+
+def test_delete_projects_for_owner_removes_only_that_users_data(tmp_path: Path):
+    store = ProjectStore(tmp_path / "project.db")
+    first = store.create_project(
+        name="User One Project",
+        owner_id="user-1",
+        phase="First Fix",
+    )
+    second = store.create_project(
+        name="User Two Project",
+        owner_id="user-2",
+        phase="First Fix",
+    )
+    store.add_progress_entry(
+        first["id"],
+        entry_date="2026-09-26",
+        completed=["Work"],
+    )
+    store.save_report(
+        first["id"],
+        period="daily",
+        anchor_date="2026-09-26",
+        payload={"ok": True},
+    )
+
+    deleted = store.delete_projects_for_owner("user-1")
+
+    assert deleted == 1
+    assert store.get_project(first["id"]) is None
+    assert store.list_progress_entries(first["id"]) == []
+    assert store.list_reports(first["id"]) == []
+    assert store.get_project(second["id"], owner_id="user-2") is not None

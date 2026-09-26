@@ -46,3 +46,23 @@ Before a store build:
 6. Test in-app account deletion with a disposable user and verify projects, reports, drawing analyses, private artifacts, and the auth identity are removed.
 7. Verify the public `/privacy` and `/account-deletion` pages load over HTTPS and use the real support email.
 8. Use the deployed `/privacy` URL for App Store / Play privacy disclosures and the `/account-deletion` URL for Google Play's external deletion resource.
+
+
+## Render + Supabase deployment path
+
+The repository includes `render.yaml` for a Docker-based API deployment. Create or select the production service from the blueprint, then provide the values marked `sync: false` in the hosting dashboard.
+
+Recommended first production stack:
+
+- Supabase Auth for mobile account signup/signin.
+- Supabase managed PostgreSQL for project data.
+- Render Docker web service for the FastAPI API.
+- A private S3 or S3-compatible bucket for uploaded drawings and generated report artifacts.
+
+After the API is deployed, run:
+
+```bash
+AVIA_SMOKE_BASE_URL=https://YOUR_API_HOST python scripts/production_smoke_check.py
+```
+
+Only configure the mobile production build after this smoke check passes.

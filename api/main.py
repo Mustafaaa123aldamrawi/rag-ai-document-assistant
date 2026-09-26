@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 from pypdf import PdfReader
 
 from drawing_qa import audit_drawing_set
+from drawing_visual import analyze_visual_drawing_pages
 from project_engineer import (
     PROJECT_PHASES,
     build_progress_report,
@@ -153,6 +154,7 @@ def capabilities() -> dict:
             "risk_flags": True,
             "connection_graph": "beta",
             "design_error_detection": "beta",
+            "visual_deep_review": "beta",
         },
         "project_lifecycle": {
             "phases": list(PROJECT_PHASES),
@@ -288,6 +290,44 @@ async def analyze_and_save_project_drawing(
     payload, pages = await _read_pdf(file)
     register = build_project_drawing_register(pages)
     qa = audit_drawing_set(pages)
+    saved = store.save_drawing_analysis(
+        project_id,
+        file_name=file.filename or "drawing.pdf",
+        file_hash=hashlib.sha256(payload).hexdigest(),
+        page_count=len(pages),
+        register=register,
+        qa=qa,
+    )
+    return saved
+
+
+@app.post("/v1/projects/{project_id}/drawings/qa-visual", status_code=201)
+async def analyze_and_save_project_drawing_visual(
+    project_id: str,
+    file: UploadFile = File(...),
+    max_pages: int = Query(default=6, ge=1, le=12),
+    regions_per_page: int = Query(default=4, ge=1, le=4),
+) -> dict:
+    _require_project(project_id)
+    payload, pages = await _read_pdf(file)
+    register = build_project_drawing_register(pages)
+    qa = audit_drawing_set(pages)
+
+    try:
+        visual_review = analyze_visual_drawing_pages(
+            file_name=file.filename or "drawing.pdf",
+            payload=payload,
+            document_pages=pages,
+            qa=qa,
+            max_pages=max_pages,
+            regions_per_page=regions_per_page,
+        )
+    except RuntimeError as exc:
+        message = str(exc)
+        status_code = 503 if "HF_TOKEN" in message else 502
+        raise HTTPException(status_code=status_code, detail=message) from exc
+
+    qa["visual_review"] = visual_review
     saved = store.save_drawing_analysis(
         project_id,
         file_name=file.filename or "drawing.pdf",

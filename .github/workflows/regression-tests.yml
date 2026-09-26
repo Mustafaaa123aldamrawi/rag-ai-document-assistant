@@ -24,11 +24,11 @@ jobs:
       - name: Install test dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest python-docx fastapi pydantic pypdf python-multipart
+          pip install pytest python-docx fastapi pydantic pypdf python-multipart PyMuPDF Pillow requests
 
       - name: Compile production modules
         run: |
-          python -m py_compile api/main.py project_store.py drawing_qa.py project_engineer.py
+          python -m py_compile api/main.py project_store.py drawing_qa.py drawing_visual.py project_engineer.py
 
       - name: Run regression tests
         run: |

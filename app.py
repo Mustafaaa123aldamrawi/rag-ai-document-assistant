@@ -8375,6 +8375,21 @@ If multiple sources support the same claim, cite them like [WEB 1] [WEB 2].
             context = "\n\n".join(
                 document.page_content for document in relevant_documents
             )
+
+        if (
+            st.session_state.get("active_project_engineer_register")
+            and is_project_engineer_question(question)
+        ):
+            lifecycle_context = project_engineer_context(
+                st.session_state.get("active_project_engineer_register"),
+                st.session_state.get("project_progress_log", []),
+            )
+            if lifecycle_context:
+                context = (
+                    context
+                    + "\n\n--- PROJECT ENGINEER LIFECYCLE CONTEXT ---\n"
+                    + lifecycle_context
+                ).strip()
         
         for document in relevant_documents:
             used_sources.add(

@@ -14,6 +14,11 @@ def _clear(monkeypatch):
         "AVIA_JWT_SECRET",
         "AVIA_STORAGE_MODE",
         "AVIA_STORAGE_BUCKET",
+        "AVIA_ACCOUNT_DELETE_PROVIDER",
+        "AVIA_SUPABASE_URL",
+        "AVIA_SUPABASE_SERVICE_ROLE_KEY",
+        "AVIA_SUPPORT_EMAIL",
+        "AVIA_PUBLIC_BASE_URL",
     ):
         monkeypatch.delenv(key, raising=False)
 
@@ -59,6 +64,11 @@ def test_production_accepts_managed_db_jwt_and_restricted_cors(monkeypatch):
         "AVIA_JWT_JWKS_URL",
         "https://auth.example.com/.well-known/jwks.json",
     )
+    monkeypatch.setenv("AVIA_ACCOUNT_DELETE_PROVIDER", "supabase")
+    monkeypatch.setenv("AVIA_SUPABASE_URL", "https://project.supabase.co")
+    monkeypatch.setenv("AVIA_SUPABASE_SERVICE_ROLE_KEY", "service-role")
+    monkeypatch.setenv("AVIA_SUPPORT_EMAIL", "support@example.com")
+    monkeypatch.setenv("AVIA_PUBLIC_BASE_URL", "https://api.example.com")
 
     config = load_runtime_config()
 
@@ -80,6 +90,11 @@ def test_production_rejects_wildcard_cors(monkeypatch):
     monkeypatch.setenv("AVIA_JWT_SECRET", "secret")
     monkeypatch.setenv("AVIA_STORAGE_MODE", "s3")
     monkeypatch.setenv("AVIA_STORAGE_BUCKET", "avia-production")
+    monkeypatch.setenv("AVIA_ACCOUNT_DELETE_PROVIDER", "supabase")
+    monkeypatch.setenv("AVIA_SUPABASE_URL", "https://project.supabase.co")
+    monkeypatch.setenv("AVIA_SUPABASE_SERVICE_ROLE_KEY", "service-role")
+    monkeypatch.setenv("AVIA_SUPPORT_EMAIL", "support@example.com")
+    monkeypatch.setenv("AVIA_PUBLIC_BASE_URL", "https://api.example.com")
 
     with pytest.raises(RuntimeError) as exc:
         load_runtime_config()
@@ -102,3 +117,50 @@ def test_production_requires_cloud_artifact_storage(monkeypatch):
     message = str(exc.value)
     assert "AVIA_STORAGE_MODE" in message
     assert "AVIA_STORAGE_BUCKET" in message
+
+
+
+def test_production_requires_account_deletion_and_public_privacy_config(monkeypatch):
+    _clear(monkeypatch)
+    monkeypatch.setenv("AVIA_ENV", "production")
+    monkeypatch.setenv(
+        "AVIA_DATABASE_URL",
+        "postgresql+psycopg://u:p@example.com/db",
+    )
+    monkeypatch.setenv("AVIA_AUTH_MODE", "jwt")
+    monkeypatch.setenv("AVIA_CORS_ORIGINS", "https://app.example.com")
+    monkeypatch.setenv("AVIA_JWT_SECRET", "secret")
+    monkeypatch.setenv("AVIA_STORAGE_MODE", "s3")
+    monkeypatch.setenv("AVIA_STORAGE_BUCKET", "avia-production")
+
+    with pytest.raises(RuntimeError) as exc:
+        load_runtime_config()
+
+    message = str(exc.value)
+    assert "AVIA_ACCOUNT_DELETE_PROVIDER" in message
+    assert "AVIA_SUPPORT_EMAIL" in message
+    assert "AVIA_PUBLIC_BASE_URL" in message
+
+
+def test_production_public_base_url_must_use_https(monkeypatch):
+    _clear(monkeypatch)
+    monkeypatch.setenv("AVIA_ENV", "production")
+    monkeypatch.setenv(
+        "AVIA_DATABASE_URL",
+        "postgresql+psycopg://u:p@example.com/db",
+    )
+    monkeypatch.setenv("AVIA_AUTH_MODE", "jwt")
+    monkeypatch.setenv("AVIA_CORS_ORIGINS", "https://app.example.com")
+    monkeypatch.setenv("AVIA_JWT_SECRET", "secret")
+    monkeypatch.setenv("AVIA_STORAGE_MODE", "s3")
+    monkeypatch.setenv("AVIA_STORAGE_BUCKET", "avia-production")
+    monkeypatch.setenv("AVIA_ACCOUNT_DELETE_PROVIDER", "supabase")
+    monkeypatch.setenv("AVIA_SUPABASE_URL", "https://project.supabase.co")
+    monkeypatch.setenv("AVIA_SUPABASE_SERVICE_ROLE_KEY", "service-role")
+    monkeypatch.setenv("AVIA_SUPPORT_EMAIL", "support@example.com")
+    monkeypatch.setenv("AVIA_PUBLIC_BASE_URL", "http://api.example.com")
+
+    with pytest.raises(RuntimeError) as exc:
+        load_runtime_config()
+
+    assert "must use HTTPS" in str(exc.value)

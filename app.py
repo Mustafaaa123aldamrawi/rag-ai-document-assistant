@@ -5286,59 +5286,125 @@ st.markdown(
     """
     <style>
     .block-container {
-        max-width: 1080px;
-        padding-top: 1.5rem;
-        padding-bottom: 7rem;
+        max-width: 980px;
+        padding-top: 1.1rem;
+        padding-bottom: 7.5rem;
     }
+
     [data-testid="stSidebar"] {
-        border-right: 1px solid rgba(120,120,120,.12);
+        width: 236px !important;
+        min-width: 236px !important;
+        border-right: 1px solid rgba(0,0,0,.08);
+        background: #f7f7f8;
+    }
+    [data-testid="stSidebar"] > div:first-child {
+        padding-top: .7rem;
     }
     [data-testid="stSidebar"] .stButton > button {
         justify-content: flex-start;
-        border-radius: 10px;
+        min-height: 36px;
+        padding: 7px 10px;
+        border-radius: 8px;
         border: 0;
         background: transparent;
-        font-weight: 500;
+        font-weight: 450;
+        box-shadow: none;
     }
     [data-testid="stSidebar"] .stButton > button:hover {
-        background: rgba(120,120,120,.10);
+        background: rgba(0,0,0,.055);
     }
-    div[data-testid="stTextInput"] input {
-        border-radius: 22px;
-        min-height: 46px;
+    [data-testid="stSidebar"] hr {
+        margin: .75rem 0;
+        border-color: rgba(0,0,0,.08);
     }
-    div[data-testid="stPopover"] > button {
-        border-radius: 22px;
-        min-height: 46px;
-        font-size: 22px;
-    }
+
     .av-brand {
-        font-size: 19px;
-        font-weight: 760;
-        margin: 2px 0 18px 0;
-    }
-    .av-home-title {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
-        font-size: 32px;
-        font-weight: 700;
-        letter-spacing: 0;
+        font-size: 15px;
+        font-weight: 650;
         line-height: 1.35;
-        margin: 12px 0 4px 0;
-        padding: 5px 0 2px 0;
-        display: block;
-        overflow: visible;
+        margin: 4px 8px 14px 8px;
+        white-space: nowrap;
     }
-    .av-home-subtitle {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
-        font-size: 14px;
-        line-height: 1.5;
-        opacity: .66;
-        margin: 0 0 18px 0;
+    .av-sidebar-section {
+        font-size: 12px;
+        font-weight: 600;
+        opacity: .55;
+        margin: 16px 10px 5px;
+    }
+
+    [data-testid="stMainBlockContainer"] {
+        min-height: 100vh;
+    }
+
+    .st-key-chat_composer {
+        position: fixed;
+        z-index: 999;
+        left: calc(50% + 118px);
+        bottom: 18px;
+        transform: translateX(-50%);
+        width: min(760px, calc(100vw - 330px));
+        background: #ffffff;
+        border: 1px solid rgba(0,0,0,.10);
+        border-radius: 28px;
+        padding: 5px 7px;
+        box-shadow: 0 2px 10px rgba(0,0,0,.10);
+    }
+    .st-key-chat_composer [data-testid="stHorizontalBlock"] {
+        gap: 4px !important;
+        align-items: center;
+    }
+    .st-key-chat_composer div[data-testid="stTextInput"] {
+        margin: 0 !important;
+    }
+    .st-key-chat_composer div[data-testid="stTextInput"] input {
+        min-height: 42px;
+        border: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+    .st-key-chat_composer div[data-testid="stPopover"] > button,
+    .st-key-chat_composer .stButton > button {
+        width: 42px;
+        min-width: 42px;
+        height: 42px;
+        min-height: 42px;
+        border-radius: 999px;
+        border: 0;
+        background: transparent;
+        box-shadow: none;
         padding: 0;
+        font-size: 18px;
+    }
+    .st-key-chat_composer div[data-testid="stPopover"] > button:hover,
+    .st-key-chat_composer .stButton > button:hover {
+        background: rgba(0,0,0,.055);
+    }
+    .st-key-chat_composer .stButton > button[kind="primary"] {
+        background: #111111;
+        color: #ffffff;
+    }
+    .st-key-chat_composer .stButton > button[kind="primary"]:hover {
+        background: #2a2a2a;
+    }
+
+    @media (max-width: 768px) {
+        [data-testid="stSidebar"] {
+            width: 220px !important;
+            min-width: 220px !important;
+        }
+        .st-key-chat_composer {
+            left: 50%;
+            width: calc(100vw - 24px);
+            bottom: 10px;
+        }
+        .block-container {
+            padding-bottom: 6.5rem;
+        }
     }
     </style>
-    <div class="av-home-title">AV Intelligence Assistant</div>
-    <div class="av-home-subtitle">Professional AV & UC intelligence, documents, web research, site surveys, and project workflows.</div>
     """,
     unsafe_allow_html=True,
 )
@@ -5349,9 +5415,9 @@ if "site_inspection_photo_registry" not in st.session_state:
 
 # ChatGPT-style workspace navigation
 with st.sidebar:
-    st.markdown('<div class="av-brand">AV Intelligence</div>', unsafe_allow_html=True)
+    st.markdown('<div class="av-brand">AV Intelligence Assistant</div>', unsafe_allow_html=True)
 
-    if st.button("＋  New chat", use_container_width=True, key="new_chat_sidebar"):
+    if st.button("✎  New chat", use_container_width=True, key="new_chat_sidebar"):
         st.session_state.messages = [
             message
             for message in st.session_state.get("messages", [])
@@ -5363,7 +5429,7 @@ with st.sidebar:
         st.session_state.question_input = ""
         st.rerun()
 
-    st.markdown("##### Workspace")
+    st.markdown('<div class="av-sidebar-section">Workspace</div>', unsafe_allow_html=True)
     for workspace_label in (
         "💬 Chats",
         "📁 Projects",
@@ -5379,7 +5445,7 @@ with st.sidebar:
             st.session_state["active_workspace"] = workspace_label
 
     st.divider()
-    st.caption("Recents")
+    st.markdown('<div class="av-sidebar-section">Recents</div>', unsafe_allow_html=True)
 
     recent_prompts = []
     for message in reversed(st.session_state.get("messages", [])):
@@ -6716,19 +6782,6 @@ if assistant_interaction_mode == "💬 Chat" and st.session_state.messages:
                                 f"[{title}]({url})"
                             )
 # Main interface
-st.markdown(
-    """
-    <div style="margin:8px 0 16px 0;">
-        <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif; font-size:25px; font-weight:700; letter-spacing:0;">
-            Ask AV Assistant
-        </div>
-        <div style="font-size:14px; opacity:.62; margin-top:4px;">
-            Ask naturally. AV Assistant automatically decides when to use your files, drawings, site photos, trusted web sources, or both.
-        </div>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
 
 
 def submit_question():
@@ -6742,11 +6795,12 @@ def submit_question():
 
 submitted = False
 
-plus_col, prompt_col, mic_col, send_col = st.columns(
-    [0.72, 10.8, 0.72, 0.72],
-    gap="small",
-    vertical_alignment="bottom",
-)
+with st.container(key="chat_composer"):
+    plus_col, prompt_col, mic_col, send_col = st.columns(
+        [0.62, 9.4, 0.62, 0.62],
+        gap="small",
+        vertical_alignment="center",
+    )
 
 with plus_col:
     with st.popover("＋", use_container_width=True):

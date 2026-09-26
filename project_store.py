@@ -126,8 +126,6 @@ class ProjectStore:
                     FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE
                 );
 
-                CREATE INDEX IF NOT EXISTS idx_projects_owner_updated
-                    ON projects(owner_id, updated_at);
                 CREATE INDEX IF NOT EXISTS idx_progress_project_date
                     ON progress_entries(project_id, entry_date);
                 CREATE INDEX IF NOT EXISTS idx_drawings_project_created

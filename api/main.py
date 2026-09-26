@@ -6,7 +6,7 @@ from io import BytesIO
 
 from fastapi import Depends, FastAPI, File, HTTPException, Query, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, PlainTextResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, StreamingResponse
 from pydantic import BaseModel, Field
 from pypdf import PdfReader
 
@@ -32,6 +32,7 @@ from project_plan import build_phase_engineering_plan
 from project_dashboard import build_project_dashboard
 from professional_reports import REPORT_TYPES, build_professional_project_report
 from report_export import build_report_docx, safe_report_filename
+from release_readiness import build_backend_readiness
 
 
 APP_VERSION = "0.3.0"
@@ -163,6 +164,16 @@ def health() -> dict:
         ),
         "auth": auth_capabilities(),
     }
+
+
+@app.get("/ready")
+def readiness() -> JSONResponse:
+    payload, status_code = build_backend_readiness(
+        runtime,
+        store,
+        artifact_store,
+    )
+    return JSONResponse(content=payload, status_code=status_code)
 
 
 @app.get("/privacy", response_class=HTMLResponse)

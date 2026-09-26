@@ -46,3 +46,26 @@ Before a store build:
 6. Test in-app account deletion with a disposable user and verify projects, reports, drawing analyses, private artifacts, and the auth identity are removed.
 7. Verify the public `/privacy` and `/account-deletion` pages load over HTTPS and use the real support email.
 8. Use the deployed `/privacy` URL for App Store / Play privacy disclosures and the `/account-deletion` URL for Google Play's external deletion resource.
+
+
+## Automated Store Release Gate
+
+Before creating a TestFlight or Google Play build:
+
+```bash
+cd mobile
+EXPO_PUBLIC_API_URL=https://api.example.com \
+EXPO_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT.supabase.co \
+EXPO_PUBLIC_SUPABASE_ANON_KEY=YOUR_PUBLIC_ANON_KEY \
+npm run release:check
+```
+
+The check rejects missing/non-HTTPS production endpoints, missing Supabase public
+configuration, invalid bundle/package identifiers, and an invalid EAS production
+profile.
+
+After backend deployment, verify:
+
+- `GET /health` reports the expected production environment.
+- `GET /ready` returns HTTP 200 and `status=ready`.
+- `/privacy` and `/account-deletion` load over HTTPS.

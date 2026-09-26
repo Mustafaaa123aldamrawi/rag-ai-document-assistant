@@ -4,7 +4,7 @@ import hashlib
 from datetime import date
 from io import BytesIO
 
-from fastapi import Depends, FastAPI, File, HTTPException, Query, UploadFile
+from fastapi import Depends, FastAPI, File, HTTPException, Query, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse, StreamingResponse
 from pydantic import BaseModel, Field
@@ -22,6 +22,11 @@ from project_engineer import (
 from cloud_store import create_project_store
 from project_plan import build_phase_engineering_plan
 from project_dashboard import build_project_dashboard
+from project_reports import (
+    REPORT_PERIODS,
+    build_professional_project_report,
+    build_professional_project_report_docx,
+)
 from professional_reports import build_professional_project_report
 from report_export import build_report_docx, safe_report_filename
 
@@ -469,6 +474,82 @@ def build_and_save_project_report(
         period=period,
         anchor_date=report_date.isoformat(),
         payload=report,
+    )
+
+
+@app.post("/v1/projects/{project_id}/reports/{period}/professional", status_code=201)
+def build_and_save_professional_project_report(
+    project_id: str,
+    period: str,
+    anchor_date: date | None = None,
+    user: AuthUser = Depends(get_current_user),
+) -> dict:
+    if period not in REPORT_PERIODS:
+        raise HTTPException(
+            status_code=422,
+            detail="period must be daily, weekly, monthly, or final",
+        )
+    snapshot = store.project_snapshot(project_id, owner_id=user.id)
+    if not snapshot:
+        raise HTTPException(status_code=404, detail="Project not found.")
+
+    report = build_professional_project_report(
+        snapshot,
+        period=period,
+        anchor_date=anchor_date,
+    )
+    saved = store.save_report(
+        project_id,
+        period=period,
+        anchor_date=(
+            anchor_date.isoformat()
+            if anchor_date
+            else date.today().isoformat()
+        ),
+        payload=report,
+    )
+    return saved
+
+
+@app.get("/v1/projects/{project_id}/reports/{period}/docx")
+def download_professional_project_report_docx(
+    project_id: str,
+    period: str,
+    anchor_date: date | None = None,
+    user: AuthUser = Depends(get_current_user),
+) -> Response:
+    if period not in REPORT_PERIODS:
+        raise HTTPException(
+            status_code=422,
+            detail="period must be daily, weekly, monthly, or final",
+        )
+    snapshot = store.project_snapshot(project_id, owner_id=user.id)
+    if not snapshot:
+        raise HTTPException(status_code=404, detail="Project not found.")
+
+    report = build_professional_project_report(
+        snapshot,
+        period=period,
+        anchor_date=anchor_date,
+    )
+    document = build_professional_project_report_docx(report)
+    project_name = str(
+        (snapshot.get("project") or {}).get("name") or "project"
+    )
+    safe_name = "".join(
+        char if char.isalnum() or char in {"-", "_"} else "_"
+        for char in project_name
+    ).strip("_") or "project"
+    filename = f"{safe_name}_{period}_report.docx"
+    return Response(
+        content=document,
+        media_type=(
+            "application/vnd.openxmlformats-officedocument."
+            "wordprocessingml.document"
+        ),
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"'
+        },
     )
 
 

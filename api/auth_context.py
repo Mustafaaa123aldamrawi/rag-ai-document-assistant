@@ -4,6 +4,7 @@ import os
 from dataclasses import dataclass
 
 import jwt
+from jwt import PyJWKClient
 from fastapi import Header, HTTPException
 
 
@@ -31,9 +32,13 @@ def get_current_user(authorization: str | None = Header(default=None)) -> AuthUs
     token = authorization.split(" ", 1)[1].strip()
     secret = os.getenv("AVIA_JWT_SECRET")
     public_key = os.getenv("AVIA_JWT_PUBLIC_KEY")
+    jwks_url = os.getenv("AVIA_JWT_JWKS_URL")
     key = public_key or secret
-    if not key:
-        raise HTTPException(status_code=500, detail="JWT verification key is not configured.")
+    if not key and not jwks_url:
+        raise HTTPException(
+            status_code=500,
+            detail="JWT verification key or JWKS URL is not configured.",
+        )
 
     algorithms = [
         item.strip()
@@ -51,7 +56,11 @@ def get_current_user(authorization: str | None = Header(default=None)) -> AuthUs
         kwargs["issuer"] = issuer
 
     try:
-        claims = jwt.decode(token, key, algorithms=algorithms, **kwargs)
+        decode_key = key
+        if jwks_url:
+            signing_key = PyJWKClient(jwks_url).get_signing_key_from_jwt(token)
+            decode_key = signing_key.key
+        claims = jwt.decode(token, decode_key, algorithms=algorithms, **kwargs)
     except jwt.ExpiredSignatureError as exc:
         raise HTTPException(status_code=401, detail="Token expired.") from exc
     except jwt.PyJWTError as exc:
@@ -71,4 +80,5 @@ def auth_capabilities() -> dict:
         "mode": mode,
         "production_enforced": mode == "jwt",
         "provider_agnostic": True,
+        "jwks_supported": True,
     }

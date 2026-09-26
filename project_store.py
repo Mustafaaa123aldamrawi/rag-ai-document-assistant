@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any, Iterator
 
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 DEFAULT_DB_PATH = os.getenv("AVIA_DATABASE_PATH", "data/av_intelligence.db")
 _DB_LOCK = threading.RLock()
 
@@ -74,6 +74,7 @@ class ProjectStore:
 
                 CREATE TABLE IF NOT EXISTS projects (
                     id TEXT PRIMARY KEY,
+                    owner_id TEXT NOT NULL DEFAULT 'local-dev',
                     name TEXT NOT NULL,
                     location TEXT,
                     client TEXT,
@@ -133,6 +134,18 @@ class ProjectStore:
                     ON generated_reports(project_id, created_at);
                 """
             )
+            columns = {
+                row["name"]
+                for row in conn.execute("PRAGMA table_info(projects)").fetchall()
+            }
+            if "owner_id" not in columns:
+                conn.execute(
+                    "ALTER TABLE projects ADD COLUMN owner_id TEXT NOT NULL DEFAULT 'local-dev'"
+                )
+                conn.execute(
+                    "CREATE INDEX IF NOT EXISTS idx_projects_owner_updated ON projects(owner_id, updated_at)"
+                )
+
             conn.execute(
                 """
                 INSERT INTO schema_meta(key, value)
@@ -146,6 +159,7 @@ class ProjectStore:
     def _project_from_row(row: sqlite3.Row) -> dict:
         return {
             "id": row["id"],
+            "owner_id": row["owner_id"],
             "name": row["name"],
             "location": row["location"],
             "client": row["client"],
@@ -183,6 +197,7 @@ class ProjectStore:
         *,
         name: str,
         phase: str,
+        owner_id: str = "local-dev",
         location: str | None = None,
         client: str | None = None,
         opportunity_number: str | None = None,
@@ -195,12 +210,13 @@ class ProjectStore:
             conn.execute(
                 """
                 INSERT INTO projects(
-                    id, name, location, client, opportunity_number, phase,
+                    id, owner_id, name, location, client, opportunity_number, phase,
                     status, metadata_json, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     project_id,
+                    owner_id,
                     name.strip(),
                     location,
                     client,
@@ -217,24 +233,40 @@ class ProjectStore:
             ).fetchone()
         return self._project_from_row(row)
 
-    def list_projects(self, status: str | None = None) -> list[dict]:
+    def list_projects(
+        self,
+        status: str | None = None,
+        owner_id: str | None = None,
+    ) -> list[dict]:
+        query = "SELECT * FROM projects WHERE 1=1"
+        params: list[Any] = []
+        if owner_id is not None:
+            query += " AND owner_id=?"
+            params.append(owner_id)
+        if status:
+            query += " AND status=?"
+            params.append(status)
+        query += " ORDER BY updated_at DESC"
         with self._connect() as conn:
-            if status:
-                rows = conn.execute(
-                    "SELECT * FROM projects WHERE status = ? ORDER BY updated_at DESC",
-                    (status,),
-                ).fetchall()
-            else:
-                rows = conn.execute(
-                    "SELECT * FROM projects ORDER BY updated_at DESC"
-                ).fetchall()
+            rows = conn.execute(query, params).fetchall()
         return [self._project_from_row(row) for row in rows]
 
-    def get_project(self, project_id: str) -> dict | None:
+    def get_project(
+        self,
+        project_id: str,
+        owner_id: str | None = None,
+    ) -> dict | None:
         with self._connect() as conn:
-            row = conn.execute(
-                "SELECT * FROM projects WHERE id = ?", (project_id,)
-            ).fetchone()
+            if owner_id is None:
+                row = conn.execute(
+                    "SELECT * FROM projects WHERE id = ?",
+                    (project_id,),
+                ).fetchone()
+            else:
+                row = conn.execute(
+                    "SELECT * FROM projects WHERE id = ? AND owner_id = ?",
+                    (project_id, owner_id),
+                ).fetchone()
         return self._project_from_row(row) if row else None
 
     def update_project(
@@ -248,8 +280,9 @@ class ProjectStore:
         phase: str | None = None,
         status: str | None = None,
         metadata: dict | None = None,
+        owner_id: str | None = None,
     ) -> dict | None:
-        current = self.get_project(project_id)
+        current = self.get_project(project_id, owner_id=owner_id)
         if not current:
             return None
 
@@ -293,9 +326,15 @@ class ProjectStore:
             ).fetchone()
         return self._project_from_row(row)
 
-    def delete_project(self, project_id: str) -> bool:
+    def delete_project(self, project_id: str, owner_id: str | None = None) -> bool:
         with self._connect() as conn:
-            cur = conn.execute("DELETE FROM projects WHERE id=?", (project_id,))
+            if owner_id is None:
+                cur = conn.execute("DELETE FROM projects WHERE id=?", (project_id,))
+            else:
+                cur = conn.execute(
+                    "DELETE FROM projects WHERE id=? AND owner_id=?",
+                    (project_id, owner_id),
+                )
         return cur.rowcount > 0
 
     def add_progress_entry(
@@ -508,8 +547,12 @@ class ProjectStore:
             for row in rows
         ]
 
-    def project_snapshot(self, project_id: str) -> dict | None:
-        project = self.get_project(project_id)
+    def project_snapshot(
+        self,
+        project_id: str,
+        owner_id: str | None = None,
+    ) -> dict | None:
+        project = self.get_project(project_id, owner_id=owner_id)
         if not project:
             return None
         return {

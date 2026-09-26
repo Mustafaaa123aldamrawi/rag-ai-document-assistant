@@ -4,11 +4,12 @@ import hashlib
 from datetime import date
 from io import BytesIO
 
-from fastapi import FastAPI, File, HTTPException, Query, UploadFile
+from fastapi import Depends, FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from pypdf import PdfReader
 
+from api.auth_context import AuthUser, auth_capabilities, get_current_user
 from drawing_qa import audit_drawing_set
 from drawing_visual import analyze_visual_drawing_pages
 from project_engineer import (
@@ -91,8 +92,8 @@ def _validate_phase(phase: str | None) -> None:
         )
 
 
-def _require_project(project_id: str) -> dict:
-    project = store.get_project(project_id)
+def _require_project(project_id: str, owner_id: str) -> dict:
+    project = store.get_project(project_id, owner_id=owner_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found.")
     return project
@@ -142,6 +143,7 @@ def health() -> dict:
         "service": "av-intelligence-assistant-api",
         "version": APP_VERSION,
         "persistence": "sqlite",
+        "auth": auth_capabilities(),
     }
 
 
@@ -178,10 +180,14 @@ def capabilities() -> dict:
 
 
 @app.post("/v1/projects", status_code=201)
-def create_project(request: ProjectCreate) -> dict:
+def create_project(
+    request: ProjectCreate,
+    user: AuthUser = Depends(get_current_user),
+) -> dict:
     _validate_phase(request.phase)
     return store.create_project(
         name=request.name,
+        owner_id=user.id,
         location=request.location,
         client=request.client,
         opportunity_number=request.opportunity_number,
@@ -191,29 +197,42 @@ def create_project(request: ProjectCreate) -> dict:
 
 
 @app.get("/v1/projects")
-def list_projects(status: str | None = Query(default=None)) -> dict:
-    return {"projects": store.list_projects(status=status)}
+def list_projects(
+    status: str | None = Query(default=None),
+    user: AuthUser = Depends(get_current_user),
+) -> dict:
+    return {
+        "projects": store.list_projects(status=status, owner_id=user.id)
+    }
 
 
 @app.get("/v1/projects/{project_id}")
-def get_project(project_id: str) -> dict:
-    snapshot = store.project_snapshot(project_id)
+def get_project(
+    project_id: str,
+    user: AuthUser = Depends(get_current_user),
+) -> dict:
+    snapshot = store.project_snapshot(project_id, owner_id=user.id)
     if not snapshot:
         raise HTTPException(status_code=404, detail="Project not found.")
     return snapshot
 
 
 @app.get("/v1/projects/{project_id}/plan")
-def get_project_engineering_plan(project_id: str) -> dict:
-    snapshot = store.project_snapshot(project_id)
+def get_project_engineering_plan(project_id: str,
+    user: AuthUser = Depends(get_current_user),) -> dict:
+    snapshot = store.project_snapshot(project_id, owner_id=user.id)
     if not snapshot:
         raise HTTPException(status_code=404, detail="Project not found.")
     return build_phase_engineering_plan(snapshot)
 
 
 @app.patch("/v1/projects/{project_id}")
-def update_project(project_id: str, request: ProjectUpdate) -> dict:
-    _require_project(project_id)
+def update_project(
+    project_id: str,
+    request: ProjectUpdate,
+    user: AuthUser = Depends(get_current_user),
+) -> dict:
+    _require_project(project_id, user.id)
     _validate_phase(request.phase)
     project = store.update_project(
         project_id,
@@ -224,19 +243,24 @@ def update_project(project_id: str, request: ProjectUpdate) -> dict:
         phase=request.phase,
         status=request.status,
         metadata=request.metadata,
+        owner_id=user.id,
     )
     return project
 
 
 @app.delete("/v1/projects/{project_id}", status_code=204)
-def delete_project(project_id: str) -> None:
-    if not store.delete_project(project_id):
+def delete_project(
+    project_id: str,
+    user: AuthUser = Depends(get_current_user),
+) -> None:
+    if not store.delete_project(project_id, owner_id=user.id):
         raise HTTPException(status_code=404, detail="Project not found.")
 
 
 @app.post("/v1/projects/{project_id}/progress", status_code=201)
-def add_project_progress(project_id: str, request: ProgressEntry) -> dict:
-    _require_project(project_id)
+def add_project_progress(project_id: str, request: ProgressEntry,
+    user: AuthUser = Depends(get_current_user),) -> dict:
+    _require_project(project_id, user.id)
     _validate_phase(request.phase)
     return store.add_progress_entry(
         project_id,
@@ -258,8 +282,9 @@ def project_progress(
     project_id: str,
     start_date: str | None = None,
     end_date: str | None = None,
-) -> dict:
-    _require_project(project_id)
+
+    user: AuthUser = Depends(get_current_user),) -> dict:
+    _require_project(project_id, user.id)
     return {
         "entries": store.list_progress_entries(
             project_id,
@@ -270,7 +295,10 @@ def project_progress(
 
 
 @app.post("/v1/drawings/register")
-async def analyze_drawing_register(file: UploadFile = File(...)) -> dict:
+async def analyze_drawing_register(
+    file: UploadFile = File(...),
+    user: AuthUser = Depends(get_current_user),
+) -> dict:
     _, pages = await _read_pdf(file)
     register = build_project_drawing_register(pages)
     return {
@@ -281,7 +309,10 @@ async def analyze_drawing_register(file: UploadFile = File(...)) -> dict:
 
 
 @app.post("/v1/drawings/qa")
-async def analyze_drawing_qa(file: UploadFile = File(...)) -> dict:
+async def analyze_drawing_qa(
+    file: UploadFile = File(...),
+    user: AuthUser = Depends(get_current_user),
+) -> dict:
     _, pages = await _read_pdf(file)
     return {
         "file_name": file.filename,
@@ -295,8 +326,9 @@ async def analyze_drawing_qa(file: UploadFile = File(...)) -> dict:
 async def analyze_and_save_project_drawing(
     project_id: str,
     file: UploadFile = File(...),
-) -> dict:
-    _require_project(project_id)
+
+    user: AuthUser = Depends(get_current_user),) -> dict:
+    _require_project(project_id, user.id)
     payload, pages = await _read_pdf(file)
     register = build_project_drawing_register(pages)
     qa = audit_drawing_set(pages)
@@ -317,8 +349,9 @@ async def analyze_and_save_project_drawing_visual(
     file: UploadFile = File(...),
     max_pages: int = Query(default=6, ge=1, le=12),
     regions_per_page: int = Query(default=4, ge=1, le=4),
-) -> dict:
-    _require_project(project_id)
+
+    user: AuthUser = Depends(get_current_user),) -> dict:
+    _require_project(project_id, user.id)
     payload, pages = await _read_pdf(file)
     register = build_project_drawing_register(pages)
     qa = audit_drawing_set(pages)
@@ -350,8 +383,9 @@ async def analyze_and_save_project_drawing_visual(
 
 
 @app.get("/v1/projects/{project_id}/drawings")
-def list_project_drawings(project_id: str) -> dict:
-    _require_project(project_id)
+def list_project_drawings(project_id: str,
+    user: AuthUser = Depends(get_current_user),) -> dict:
+    _require_project(project_id, user.id)
     return {"drawing_analyses": store.list_drawing_analyses(project_id)}
 
 
@@ -371,11 +405,12 @@ def build_and_save_project_report(
     project_id: str,
     period: str,
     anchor_date: date | None = None,
-) -> dict:
+
+    user: AuthUser = Depends(get_current_user),) -> dict:
     if period not in {"daily", "weekly", "monthly"}:
         raise HTTPException(status_code=422, detail="period must be daily, weekly, or monthly")
 
-    project = _require_project(project_id)
+    project = _require_project(project_id, user.id)
     report_date = anchor_date or date.today()
     entries = store.list_progress_entries(project_id)
     report = build_progress_report(
@@ -393,6 +428,7 @@ def build_and_save_project_report(
 
 
 @app.get("/v1/projects/{project_id}/reports")
-def list_project_reports(project_id: str) -> dict:
-    _require_project(project_id)
+def list_project_reports(project_id: str,
+    user: AuthUser = Depends(get_current_user),) -> dict:
+    _require_project(project_id, user.id)
     return {"reports": store.list_reports(project_id)}

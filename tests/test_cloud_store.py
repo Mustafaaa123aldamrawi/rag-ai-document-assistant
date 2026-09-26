@@ -89,3 +89,45 @@ def test_postgres_urls_are_normalized_to_psycopg3_driver():
     assert _normalize_database_url(
         "postgresql+psycopg://user:pass@example.com/db"
     ) == "postgresql+psycopg://user:pass@example.com/db"
+
+
+
+def test_managed_store_delete_projects_for_owner_is_isolated(tmp_path: Path):
+    db_path = tmp_path / "cloud-delete.db"
+    store = SqlAlchemyProjectStore(f"sqlite+pysqlite:///{db_path}")
+
+    alpha = store.create_project(
+        name="Alpha",
+        owner_id="user-alpha",
+        phase="First Fix",
+    )
+    beta = store.create_project(
+        name="Beta",
+        owner_id="user-beta",
+        phase="First Fix",
+    )
+    store.add_progress_entry(
+        alpha["id"],
+        entry_date="2026-09-26",
+        completed=["Installed"],
+    )
+    store.save_drawing_analysis(
+        alpha["id"],
+        file_name="drawing.pdf",
+        page_count=1,
+        register={},
+        qa={},
+    )
+    store.save_report(
+        alpha["id"],
+        period="daily",
+        anchor_date="2026-09-26",
+        payload={"ok": True},
+    )
+
+    assert store.delete_projects_for_owner("user-alpha") == 1
+    assert store.get_project(alpha["id"]) is None
+    assert store.list_progress_entries(alpha["id"]) == []
+    assert store.list_drawing_analyses(alpha["id"]) == []
+    assert store.list_reports(alpha["id"]) == []
+    assert store.get_project(beta["id"], owner_id="user-beta") is not None

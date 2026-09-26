@@ -30,7 +30,7 @@ jobs:
 
       - name: Compile production modules
         run: |
-          python -m py_compile api/main.py api/runtime_config.py account_deletion.py compliance_pages.py artifact_store.py project_store.py cloud_store.py drawing_qa.py drawing_visual.py project_engineer.py project_plan.py project_dashboard.py professional_reports.py report_export.py api/auth_context.py
+          python -m py_compile api/main.py api/runtime_config.py account_deletion.py compliance_pages.py artifact_store.py project_store.py cloud_store.py drawing_qa.py drawing_visual.py project_engineer.py project_plan.py project_dashboard.py professional_reports.py report_export.py release_readiness.py api/auth_context.py
 
       - name: Run regression tests
         run: |
@@ -55,6 +55,14 @@ jobs:
       - name: Typecheck mobile app
         working-directory: mobile
         run: npm run typecheck
+
+      - name: Validate store release configuration
+        working-directory: mobile
+        env:
+          EXPO_PUBLIC_API_URL: https://api.example.com
+          EXPO_PUBLIC_SUPABASE_URL: https://project.supabase.co
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ci-public-anon-key
+        run: npm run release:check
 
 
   api-container-build:

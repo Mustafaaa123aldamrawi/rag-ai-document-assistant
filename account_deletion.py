@@ -14,6 +14,22 @@ def deletion_provider() -> str:
     return os.getenv("AVIA_ACCOUNT_DELETE_PROVIDER", "disabled").strip().lower()
 
 
+def _supabase_admin_headers(api_key: str) -> dict[str, str]:
+    """Build headers compatible with both current and legacy Supabase admin keys.
+
+    Current sb_secret_* keys are API keys, not JWTs, and must be sent via the
+    apikey header. Legacy service_role keys are JWTs and additionally require
+    Authorization: Bearer for older Auth Admin API behavior.
+    """
+    headers = {
+        "apikey": api_key,
+        "Content-Type": "application/json",
+    }
+    if not api_key.startswith("sb_secret_"):
+        headers["Authorization"] = f"Bearer {api_key}"
+    return headers
+
+
 def delete_auth_identity(user_id: str, *, timeout: int = 20) -> dict:
     """Delete the authenticated identity from the configured auth provider.
 
@@ -45,11 +61,7 @@ def delete_auth_identity(user_id: str, *, timeout: int = 20) -> dict:
 
     response = requests.delete(
         f"{base_url}/auth/v1/admin/users/{quote(str(user_id), safe='')}",
-        headers={
-            "apikey": service_key,
-            "Authorization": f"Bearer {service_key}",
-            "Content-Type": "application/json",
-        },
+        headers=_supabase_admin_headers(service_key),
         timeout=timeout,
     )
 

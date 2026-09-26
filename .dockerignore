@@ -1,0 +1,12 @@
+.git
+.github
+__pycache__
+.pytest_cache
+.venv
+venv
+data
+mobile/node_modules
+*.db
+*.db-wal
+*.db-shm
+.streamlit
